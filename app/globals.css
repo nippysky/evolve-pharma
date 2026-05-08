@@ -1,26 +1,305 @@
-@import "tailwindcss";
+/**
+ * ENVOLVE PHARMACEUTICALS — Global Styles
+ *
+ * Tailwind v4 with @theme tokens. Every brand color, font, radius, and
+ * shadow declared here is auto-generated as utility classes
+ * (`bg-brand-primary`, `text-ink-2`, `font-display`, `shadow-glow`, etc.).
+ *
+ * Custom CSS at the bottom only covers what utilities can't cleanly
+ * express: keyframes, page-enter animation, and the prose helpers used
+ * by long-form copy (legal, about).
+ */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@import 'tailwindcss';
+
+/* =====================================================================
+   THEME — design tokens become Tailwind utilities
+   ===================================================================== */
+@theme {
+  /* ---------- Brand palette ---------- */
+  --color-brand-50: #e6f6fb;
+  --color-brand-100: #cdeff7;
+  --color-brand-200: #a4e0ee;
+  --color-brand-300: #6cd1ed;
+  --color-brand-400: #36bce0;
+  --color-brand-500: #00a6d4; /* primary */
+  --color-brand-600: #0091ba;
+  --color-brand-700: #007a9c;
+  --color-brand-800: #00657f;
+  --color-brand-900: #064e62;
+
+  --color-leaf-50: #ecfdf5;
+  --color-leaf-100: #dcfce7;
+  --color-leaf-200: #bbf7d0;
+  --color-leaf-300: #86efac;
+  --color-leaf-400: #4ade80;
+  --color-leaf-500: #16a34a; /* accent */
+  --color-leaf-600: #138838;
+  --color-leaf-700: #0f6b2c;
+  --color-leaf-800: #0c5523;
+  --color-leaf-900: #0a4319;
+
+  /* ---------- Surfaces ---------- */
+  --color-bg: #fafaf9;
+  --color-bg-subtle: #f7f7f5;
+  --color-bg-muted: #f0f0ee;
+  --color-surface: #ffffff;
+  --color-surface-overlay: rgb(255 255 255 / 0.85);
+
+  /* Console (dark) sidebar */
+  --color-ink-bg: #0c1418;
+  --color-ink-bg-elev: #111c21;
+
+  /* ---------- Text ---------- */
+  --color-ink: #0b1417; /* primary */
+  --color-ink-2: #4a5560;
+  --color-ink-3: #6b7780;
+  --color-ink-4: #94a0ab;
+
+  /* ---------- Borders ---------- */
+  --color-line: #e7e5e0;
+  --color-line-subtle: #efede8;
+  --color-line-strong: #d4d2cc;
+
+  /* ---------- Status ---------- */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-info: #0891b2;
+  --color-info-soft: #cffafe;
+
+  /* ---------- Fonts ---------- */
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: var(--font-instrument-serif), 'Instrument Serif', Georgia, serif;
+
+  /* ---------- Radii ---------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  /* ---------- Shadows ---------- */
+  --shadow-sm: 0 1px 2px rgb(11 20 23 / 0.04);
+  --shadow-md: 0 4px 12px rgb(11 20 23 / 0.06);
+  --shadow-lg: 0 10px 30px rgb(11 20 23 / 0.08);
+  --shadow-xl: 0 20px 50px rgb(11 20 23 / 0.12);
+  --shadow-glow: 0 0 0 4px rgb(0 166 212 / 0.16);
+
+  /* ---------- Layout constants ---------- */
+  --spacing-header: 4.5rem; /* 72px sticky header */
+  --spacing-sidebar: 15.5rem; /* 248px console/portal sidebar */
+
+  /* ---------- Easing ---------- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---------- Custom keyframes (Tailwind v4 supports this) ---------- */
+  --animate-fade-in: fadeIn 320ms var(--ease-out-soft) both;
+  --animate-fade-in-up: fadeInUp 480ms var(--ease-out-soft) both;
+  --animate-scale-in: scaleIn 180ms var(--ease-out-soft) both;
+  --animate-slide-in-right: slideInRight 240ms var(--ease-out-soft) both;
+  --animate-slide-in-left: slideInLeft 240ms var(--ease-out-soft) both;
+  --animate-shimmer: shimmer 2s linear infinite;
+--animate-page-enter: pageEnter 280ms var(--ease-out-soft) both;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* =====================================================================
+   KEYFRAMES — referenced by --animate-* tokens above
+   ===================================================================== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+@keyframes loadingBar {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+@keyframes loadingFade {
+  to { opacity: 1; }
+}
+
+/* =====================================================================
+   BASE — reset + element defaults
+   ===================================================================== */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  ::selection {
+    background: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+
+  /* Custom scrollbar — modern browsers */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  /* Focus styles — single source of truth */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Skip link for a11y */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -10000px;
+    padding: 0.5rem 1rem;
+    background: var(--color-ink);
+    color: white;
+    border-radius: var(--radius-md);
+    z-index: 100;
+  }
+  .skip-link:focus {
+    inset-inline-start: 1rem;
+    inset-block-start: 1rem;
+  }
+}
+
+/* =====================================================================
+   COMPONENTS — reusable styles that don't fit utility classes
+   ===================================================================== */
+@layer components {
+  /* Display serif — used by all hero headlines */
+  .display-serif {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Long-form prose helper — for legal, about, articles */
+  .prose-envolve h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+    margin-top: 1rem;
+  }
+  .prose-envolve h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-top: 0.75rem;
+  }
+  .prose-envolve a {
+    color: var(--color-brand-500);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  .prose-envolve a:hover {
+    color: var(--color-brand-600);
+  }
+  .prose-envolve p {
+    color: var(--color-ink-2);
+    line-height: 1.7;
+  }
+
+  /* Page-enter — wraps every routed page via template.tsx */
+.page-enter {
+  animation: pageEnter 280ms var(--ease-out-soft) both;
+}
+
+  /* Sparkline gradient (used by overview KPI cards) */
+  .spark-fill-from { stop-color: var(--color-brand-500); stop-opacity: 0.18; }
+  .spark-fill-to { stop-color: var(--color-brand-500); stop-opacity: 0; }
+}
+
+/* =====================================================================
+   UTILITIES — small additions to Tailwind's vocabulary
+   ===================================================================== */
+@layer utilities {
+  /* Tabular numbers — useful for prices, quantities, stats */
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Pad-safe — respects iOS safe area on notched devices */
+  .px-safe { padding-inline: max(1rem, env(safe-area-inset-left, 1rem)); }
+
+  /* Hide scrollbars but keep scroll */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Frosted glass panel — used by sticky topbars */
+  .glass {
+    background: var(--color-surface-overlay);
+    backdrop-filter: saturate(180%) blur(16px);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+  }
+
+  /* Shimmer — applied to skeletons */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-bg-muted) 0%,
+      var(--color-line-subtle) 50%,
+      var(--color-bg-muted) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
 }
