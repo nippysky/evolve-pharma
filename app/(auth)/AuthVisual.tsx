@@ -33,7 +33,7 @@ export function AuthVisual({
   return (
     <aside
       aria-hidden
-      className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-leaf-700 p-10 text-white lg:flex lg:p-16"
+      className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-brand-500 via-brand-600 to-leaf-700 p-10 text-white lg:flex lg:p-16"
     >
       <div
         aria-hidden

@@ -2,14 +2,14 @@
  * ENVOLVE PHARMACEUTICALS — Root Layout
  *
  * Sets up:
- *   • next/font: Geist Sans (body) + Instrument Serif (editorial display)
+ *   • next/font: Geist Sans (body + display) + Geist Mono (codes/SKUs)
  *   • Global stylesheet (design tokens + reset)
  *   • Toast provider (custom, no third-party)
  *   • App-wide metadata
  */
 
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { SITE } from '@/lib/constants';
 import './globals.css';
@@ -25,14 +25,6 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
-  display: 'swap',
-});
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-instrument-serif',
   display: 'swap',
 });
 
@@ -90,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
         <ToastProvider>{children}</ToastProvider>

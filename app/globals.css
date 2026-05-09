@@ -71,11 +71,15 @@
   --color-info: #0891b2;
   --color-info-soft: #cffafe;
 
-  /* ---------- Fonts ---------- */
+  /* ---------- Fonts ----------
+     One typeface across the system. The "display" alias points at the
+     same Geist family — display treatment is achieved via size, weight,
+     and tracking, not a separate face. */
   --font-sans:
     var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-display: var(--font-instrument-serif), 'Instrument Serif', Georgia, serif;
+  --font-display:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* ---------- Radii ---------- */
   --radius-sm: 4px;
@@ -105,7 +109,7 @@
   --animate-slide-in-right: slideInRight 240ms var(--ease-out-soft) both;
   --animate-slide-in-left: slideInLeft 240ms var(--ease-out-soft) both;
   --animate-shimmer: shimmer 2s linear infinite;
---animate-page-enter: pageEnter 280ms var(--ease-out-soft) both;
+  --animate-page-enter: pageEnter 280ms var(--ease-out-soft) both;
 }
 
 /* =====================================================================
@@ -153,7 +157,6 @@
     filter: blur(0);
   }
 }
-
 
 @keyframes loadingBar {
   0%   { transform: translateX(-100%); }
@@ -225,18 +228,21 @@
    COMPONENTS — reusable styles that don't fit utility classes
    ===================================================================== */
 @layer components {
-  /* Display serif — used by all hero headlines */
+  /* Display treatment — same Geist family as body, but typographically
+     distinct via medium weight, tighter tracking, and OpenType features.
+     Editorial feel without leaning on a serif typeface. */
   .display-serif {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
   }
 
   /* Long-form prose helper — for legal, about, articles */
   .prose-envolve h2 {
-    font-family: var(--font-display);
     font-size: 1.5rem;
-    letter-spacing: -0.01em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     color: var(--color-ink);
     margin-top: 1rem;
   }
@@ -261,9 +267,9 @@
   }
 
   /* Page-enter — wraps every routed page via template.tsx */
-.page-enter {
-  animation: pageEnter 280ms var(--ease-out-soft) both;
-}
+  .page-enter {
+    animation: pageEnter 280ms var(--ease-out-soft) both;
+  }
 
   /* Sparkline gradient (used by overview KPI cards) */
   .spark-fill-from { stop-color: var(--color-brand-500); stop-opacity: 0.18; }

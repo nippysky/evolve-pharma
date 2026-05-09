@@ -12,28 +12,19 @@ import type { OrderStatus, PaymentStatus, DeliveryStatus, Role } from '@/types';
 export const SITE = {
   name: 'Envolve Pharmaceuticals',
   shortName: 'Envolve',
-  tagline: 'Wholesale pharmaceuticals, evolved.',
+  tagline: 'Order pharmaceuticals and industrial chemicals online.',
   description:
-    'Envolve Pharmaceuticals is a B2B platform for licensed Nigerian pharmacies to source authentic medicines, manage orders and track deliveries — end-to-end.',
+    'The online ordering platform of Envolve Pharmaceuticals — a Nigerian distributor of pharmaceuticals, industrial chemicals, and related products. Browse the catalog and order from your verified account.',
   url: 'https://envolvepharm.com.ng',
-  email: 'hello@envolvepharm.com.ng',
+  email: 'orders@envolvepharm.com.ng',
   phone: '+234 800 000 0000',
-  address: '14B Yakubu Gowon Crescent, Asokoro, Abuja, Nigeria',
+  address: 'Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos, Nigeria',
   socials: {
     twitter: 'https://twitter.com/envolvepharm',
     linkedin: 'https://linkedin.com/company/envolvepharm',
     instagram: 'https://instagram.com/envolvepharm',
   },
 } as const;
-
-// ---------- Public navigation -------------------------------------------
-
-export const PUBLIC_NAV = [
-  { label: 'About', href: '/about' },
-  { label: 'Products', href: '/products' },
-  { label: 'FAQ', href: '/faq' },
-  { label: 'Contact', href: '/contact' },
-] as const;
 
 // ---------- Portal navigation (customer) --------------------------------
 
@@ -179,6 +170,7 @@ export const PRODUCT_CATEGORIES = [
   'Antifungals',
   'Hormonal',
   'Ophthalmics',
+  'Industrial Chemicals',
 ] as const;
 
 export const PRODUCT_FORMS = [
