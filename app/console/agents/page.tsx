@@ -1,136 +1,149 @@
 /**
- * Table primitives — minimal building blocks for data tables.
- * Wraps in a scroll container; rows can be made interactive via onClick.
+ * Console · Sales agents (admin-only, server-rendered).
  *
- * Marked `'use client'` because the interactive Tr row binds keyboard
- * and click handlers (event handlers can only be attached on the client).
+ * Architecture:
+ *   - `async` server component → zero JS shipped for the page logic itself.
+ *   - Role guarded server-side (sales_agent can't reach this URL directly).
+ *   - Data is fetched at request time on the server; the table is rendered
+ *     to static HTML even though the Table primitives are client-marked —
+ *     hydration only kicks in for interactive rows (there are none here).
  */
 
-'use client';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
+import { PageHead } from '@/components/shared/PageHead';
+import { ButtonLink } from '@/components/ui/Button';
+import { Badge, Avatar, EmptyState } from '@/components/ui/Primitives';
+import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
+import { Plus, Users, Calendar, Mail } from '@/components/icons';
+import { AGENTS, CUSTOMERS } from '@/lib/data/operational';
+import { formatDate, timeAgo } from '@/lib/utils';
 
-import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
-import { cn } from '@/lib/utils';
+export const metadata = {
+  title: 'Sales agents',
+};
 
-export function TableWrap({ children, className }: { children: ReactNode; className?: string }) {
+export default async function ConsoleAgentsPage() {
+  // Server-side RBAC — admin only.
+  const session = await getSession();
+  if (!session) redirect('/sign-in');
+  if (session.role !== 'admin') redirect('/console/overview');
+
+  // Enrich each agent with stats derived from CUSTOMERS.
+  const rows = AGENTS.map((agent) => {
+    const onboarded = CUSTOMERS.filter((c) => c.onboarded_by === agent.id);
+    const lastActivity = onboarded
+      .map((c) => c.last_order_at ?? c.created_at)
+      .filter((d): d is string => Boolean(d))
+      .sort()
+      .reverse()[0];
+    return { agent, onboardedCount: onboarded.length, lastActivity };
+  });
+
+  const totals = {
+    agents: AGENTS.length,
+    active: AGENTS.filter((a) => a.status === 'active').length,
+    onboarded: CUSTOMERS.filter((c) => c.onboarded_by).length,
+  };
+
   return (
-    <div className={cn('overflow-x-auto rounded-xl border border-line bg-white', className)}>
-      {children}
+    <>
+      <PageHead
+        title="Sales agents"
+        subtitle="Field reps onboarding pharmacies across Nigeria."
+        actions={
+          <ButtonLink href="/console/agents" leadingIcon={<Plus size={14} />}>
+            Invite agent
+          </ButtonLink>
+        }
+      />
+
+      {/* Stat strip */}
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <StatCard label="Total agents" value={totals.agents} />
+        <StatCard label="Active this month" value={totals.active} />
+        <StatCard label="Customers onboarded" value={totals.onboarded} />
+      </div>
+
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={<Users size={24} />}
+          title="No agents yet"
+          description="When you invite sales agents, they'll appear here."
+        />
+      ) : (
+        <TableWrap>
+          <Table>
+            <Thead>
+              <tr>
+                <Th>Agent</Th>
+                <Th>Contact</Th>
+                <Th>Status</Th>
+                <Th align="right">Customers onboarded</Th>
+                <Th>Joined</Th>
+                <Th>Last activity</Th>
+              </tr>
+            </Thead>
+            <Tbody>
+              {rows.map(({ agent, onboardedCount, lastActivity }) => (
+                <Tr key={agent.id}>
+                  <Td>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={`${agent.fname} ${agent.lname}`} />
+                      <div>
+                        <Link
+                          href={`/console/agents/${agent.id}`}
+                          className="font-medium text-ink hover:text-brand-600"
+                        >
+                          {agent.fname} {agent.lname}
+                        </Link>
+                        <div className="mt-0.5 text-xs text-ink-3">Agent #{agent.id}</div>
+                      </div>
+                    </div>
+                  </Td>
+                  <Td>
+                    <div className="flex items-center gap-1.5 text-sm text-ink">
+                      <Mail size={12} className="text-ink-3" />
+                      {agent.email}
+                    </div>
+                    <div className="mt-0.5 text-xs text-ink-3">{agent.phone}</div>
+                  </Td>
+                  <Td>
+                    <Badge tone={agent.status === 'active' ? 'success' : 'neutral'} noDot>
+                      {agent.status}
+                    </Badge>
+                  </Td>
+                  <Td right num>
+                    {onboardedCount}
+                  </Td>
+                  <Td muted>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar size={11} /> {formatDate(agent.created_at)}
+                    </span>
+                  </Td>
+                  <Td muted>{lastActivity ? timeAgo(lastActivity) : '—'}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </TableWrap>
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Small local KPI card. Kept inline because it's specific to this page's
+// scale (3 simple stats); doesn't need to be a global primitive.
+// ---------------------------------------------------------------------------
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-line bg-white p-4">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-3">
+        {label}
+      </div>
+      <div className="num mt-1 font-display text-2xl tracking-tight text-ink">{value}</div>
     </div>
   );
 }
-
-export function Table({
-  children,
-  className,
-  compact = false,
-}: {
-  children: ReactNode;
-  className?: string;
-  compact?: boolean;
-}) {
-  return (
-    <table
-      className={cn(
-        'w-full border-collapse text-sm',
-        compact && '[&_td]:py-2 [&_th]:py-2',
-        className,
-      )}
-    >
-      {children}
-    </table>
-  );
-}
-
-export const Tr = ({
-  children,
-  onClick,
-  className,
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  className?: string;
-}) => {
-  const interactive = !!onClick;
-  return (
-    <tr
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (interactive && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      tabIndex={interactive ? 0 : undefined}
-      className={cn(
-        'border-b border-line-subtle last:border-b-0',
-        interactive && 'cursor-pointer hover:bg-bg-subtle focus-visible:bg-bg-subtle',
-        className,
-      )}
-    >
-      {children}
-    </tr>
-  );
-};
-
-export const Thead = ({ children }: { children: ReactNode }) => (
-  <thead className="bg-bg-subtle">{children}</thead>
-);
-
-export const Tbody = ({ children }: { children: ReactNode }) => (
-  <tbody>{children}</tbody>
-);
-
-export const Th = ({
-  children,
-  align,
-  className,
-  ...rest
-}: ThHTMLAttributes<HTMLTableCellElement> & {
-  align?: 'left' | 'right' | 'center';
-}) => (
-  <th
-    className={cn(
-      'whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-3',
-      align === 'right' && 'text-right',
-      align === 'center' && 'text-center',
-      className,
-    )}
-    {...rest}
-  >
-    {children}
-  </th>
-);
-
-export const Td = ({
-  children,
-  muted,
-  num,
-  right,
-  className,
-  ...rest
-}: TdHTMLAttributes<HTMLTableCellElement> & {
-  muted?: boolean;
-  num?: boolean;
-  right?: boolean;
-}) => (
-  <td
-    className={cn(
-      'px-4 py-3.5 text-sm align-middle',
-      muted ? 'text-ink-3' : 'text-ink',
-      num && 'num font-medium tabular-nums',
-      right && 'text-right',
-      className,
-    )}
-    {...rest}
-  >
-    {children}
-  </td>
-);
-
-export const TableEmpty = ({ children, colSpan }: { children: ReactNode; colSpan: number }) => (
-  <tr>
-    <td colSpan={colSpan} className="px-4 py-12 text-center text-sm text-ink-3">
-      {children}
-    </td>
-  </tr>
-);
