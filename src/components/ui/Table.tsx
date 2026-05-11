@@ -3,7 +3,7 @@
  * Wraps in a scroll container; rows can be made interactive via onClick.
  */
 
-import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
+import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 export function TableWrap({ children, className }: { children: ReactNode; className?: string }) {
@@ -85,7 +85,7 @@ export const Th = ({
 }) => (
   <th
     className={cn(
-      'whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3',
+      'whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-3',
       align === 'right' && 'text-right',
       align === 'center' && 'text-center',
       className,

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MapPin, Shield, Building } from '@/components/icons';
+import { ArrowLeft, Mail, MapPin, Shield, Building } from '@/components/icons';
 import { Badge, Stat } from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { CUSTOMERS, ORDERS, AGENTS } from '@/lib/data/operational';
@@ -37,7 +37,7 @@ export default async function ConsoleCustomerDetailPage({
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-leaf-500 font-display text-xl text-white">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-linear-to-br from-brand-500 to-leaf-500 font-display text-xl text-white">
             {initials(customer.company_name)}
           </span>
           <div>

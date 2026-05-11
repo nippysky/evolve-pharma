@@ -1,3 +1,12 @@
+/**
+ * Console · Reports (admin-only, server-rendered).
+ *
+ * All KPI math + customer/category aggregations happen on the server.
+ * The sparklines are pure SVG — no client JS needed.
+ */
+
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
 import { TrendingUp, TrendingDown, Box, CreditCard, Building, Truck } from '@/components/icons';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { Avatar, Badge } from '@/components/ui/Primitives';
@@ -7,16 +16,28 @@ import { getAllProducts } from '@/lib/data/products';
 import { formatNaira, formatCompact } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-export default function ReportsPage() {
-  const totalRevenue = ORDERS.filter((o) => o.payment_status === 'paid').reduce((sum, o) => sum + o.total_amount, 0);
+export const metadata = {
+  title: 'Reports',
+};
+
+export default async function ReportsPage() {
+  // Server-side RBAC — admin only.
+  const session = await getSession();
+  if (!session) redirect('/sign-in');
+  if (session.role !== 'admin') redirect('/console/overview');
+
+  const totalRevenue = ORDERS.filter((o) => o.payment_status === 'paid').reduce(
+    (sum, o) => sum + o.total_amount,
+    0,
+  );
   const avgOrder = totalRevenue / Math.max(1, ORDERS.length);
   const inFlight = DELIVERIES.filter((d) => d.status !== 'delivered').length;
 
   const topCustomers = [...CUSTOMERS]
     .map((c) => {
-      const spend = ORDERS
-        .filter((o) => o.customer_id === c.id && o.payment_status === 'paid')
-        .reduce((sum, o) => sum + o.total_amount, 0);
+      const spend = ORDERS.filter(
+        (o) => o.customer_id === c.id && o.payment_status === 'paid',
+      ).reduce((sum, o) => sum + o.total_amount, 0);
       const ordersCount = ORDERS.filter((o) => o.customer_id === c.id).length;
       return { ...c, spend, ordersCount };
     })
@@ -26,11 +47,15 @@ export default function ReportsPage() {
   const products = getAllProducts();
   const topByCategory = Object.entries(
     products.reduce<Record<string, number>>((acc, p) => {
-      const units = ORDERS.flatMap((o) => o.items).filter((i) => i.product_id === p.id).reduce((s, i) => s + i.quantity, 0);
+      const units = ORDERS.flatMap((o) => o.items)
+        .filter((i) => i.product_id === p.id)
+        .reduce((s, i) => s + i.quantity, 0);
       acc[p.category] = (acc[p.category] ?? 0) + units * p.price;
       return acc;
     }, {}),
-  ).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
   const kpis = [
     { label: 'Revenue', value: formatNaira(totalRevenue), delta: '+12.4%', up: true, Icon: CreditCard },
@@ -115,7 +140,10 @@ export default function ReportsPage() {
                     <span className="num font-medium text-ink">{formatCompact(value)}</span>
                   </div>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg-muted">
-                    <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-leaf-500" style={{ width: `${pct}%` }} />
+                    <div
+                      className="h-full rounded-full bg-linear-to-r from-brand-500 to-leaf-500"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                 </li>
               );
@@ -144,21 +172,28 @@ export default function ReportsPage() {
   );
 }
 
+// ---------- Sparkline helpers ----------------------------------------------
+
 function SparklineMini() {
   const points = [4, 6, 5, 8, 7, 11, 10, 14, 12, 16, 18, 22];
   return <SparkSvg points={points} className="mt-1 h-9 w-full" />;
 }
+
 function SparklineLarge() {
   const points = [12, 18, 16, 22, 24, 20, 28, 32, 30, 38, 42, 48, 46, 52];
   return <SparkSvg points={points} className="mt-3 h-32 w-full" />;
 }
 
 function SparkSvg({ points, className }: { points: number[]; className: string }) {
-  const max = Math.max(...points), min = Math.min(...points);
-  const w = 100, h = 100;
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const w = 100;
+  const h = 100;
   const stepX = w / (points.length - 1);
   const norm = (n: number) => h - ((n - min) / (max - min)) * h * 0.85 - 4;
-  const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * stepX).toFixed(1)},${norm(p).toFixed(1)}`).join(' ');
+  const path = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * stepX).toFixed(1)},${norm(p).toFixed(1)}`)
+    .join(' ');
   const area = `${path} L${w},${h} L0,${h} Z`;
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className={className} preserveAspectRatio="none" aria-hidden>
@@ -169,7 +204,14 @@ function SparkSvg({ points, className }: { points: number[]; className: string }
         </linearGradient>
       </defs>
       <path d={area} fill="url(#sparkR)" />
-      <path d={path} stroke="var(--color-brand-500)" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={path}
+        stroke="var(--color-brand-500)"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
