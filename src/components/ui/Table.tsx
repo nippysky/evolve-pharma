@@ -2,6 +2,7 @@
  * Table primitives — minimal building blocks for data tables.
  * Wraps in a scroll container; rows can be made interactive via onClick.
  */
+"use client";
 
 import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
