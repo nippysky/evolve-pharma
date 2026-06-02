@@ -1,10 +1,12 @@
 /**
- * RoleSwitcher — demo widget that flips the active session role
- * between Customer / Sales Agent / Admin without going through real
- * auth. Pinned to bottom-right; visible on all authenticated pages.
+ * RoleSwitcher — demo widget that flips the active session role.
  *
- * In production, this is removed (no env var needed — just delete this
- * component's render in the layout).
+ * Now scoped to STAFF roles only (Admin ⇄ Sales Agent). Customers don't
+ * get a switcher — they're just customers — so this is rendered solely in
+ * the console shell. To re-enter a customer demo session, sign in at
+ * /sign-in; to re-enter staff, sign in at /staff/sign-in.
+ *
+ * In production, this is removed (just delete its render in the layout).
  */
 
 'use client';
@@ -18,15 +20,22 @@ import { cn } from '@/lib/utils';
 
 interface RoleSwitcherProps {
   current: Role;
+  /**
+   * Which roles this switcher may flip between. Defaults to staff roles —
+   * customer is intentionally excluded.
+   */
+  roles?: Role[];
 }
 
+const STAFF_ROLES: Role[] = ['admin', 'sales_agent'];
+
 const OPTIONS: { value: Role; label: string; sub: string; Icon: typeof User }[] = [
-  { value: 'customer', label: 'Customer (Pharmacy)', sub: 'Browse catalog, place orders', Icon: User },
-  { value: 'sales_agent', label: 'Sales Agent', sub: 'Onboard customers, track orders', Icon: Users },
   { value: 'admin', label: 'Admin', sub: 'Full access — products, agents, reports', Icon: Shield },
+  { value: 'sales_agent', label: 'Sales Agent', sub: 'Onboard customers, track orders', Icon: Users },
+  { value: 'customer', label: 'Customer (Pharmacy)', sub: 'Browse catalog, place orders', Icon: User },
 ];
 
-export function RoleSwitcher({ current }: RoleSwitcherProps) {
+export function RoleSwitcher({ current, roles = STAFF_ROLES }: RoleSwitcherProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -41,6 +50,8 @@ export function RoleSwitcher({ current }: RoleSwitcherProps) {
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
+  const options = OPTIONS.filter((o) => roles.includes(o.value));
+
   const select = (role: Role) => {
     startTransition(async () => {
       await setDemoRole(role);
@@ -50,7 +61,7 @@ export function RoleSwitcher({ current }: RoleSwitcherProps) {
     });
   };
 
-  const currentOption = OPTIONS.find((o) => o.value === current) ?? OPTIONS[0]!;
+  const currentOption = options.find((o) => o.value === current) ?? options[0]!;
 
   return (
     <div className="fixed bottom-4 right-4 z-50" ref={wrapRef}>
@@ -62,7 +73,7 @@ export function RoleSwitcher({ current }: RoleSwitcherProps) {
           <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3">
             Demo · view as
           </div>
-          {OPTIONS.map(({ value, label, sub, Icon }) => {
+          {options.map(({ value, label, sub, Icon }) => {
             const active = current === value;
             return (
               <button
@@ -93,7 +104,7 @@ export function RoleSwitcher({ current }: RoleSwitcherProps) {
             );
           })}
           <p className="mt-2 border-t border-line-subtle px-3 py-2 text-xs leading-relaxed text-ink-3">
-            This switcher is part of the Envolve demo build. Real auth uses signed sessions.
+            Staff demo switcher — flip between Admin and Sales Agent. Real auth uses signed sessions.
           </p>
         </div>
       )}
@@ -107,10 +118,7 @@ export function RoleSwitcher({ current }: RoleSwitcherProps) {
       >
         <span className="relative inline-block h-2 w-2 rounded-full bg-leaf-500 ring-2 ring-leaf-100" aria-hidden />
         <span>Demo · {currentOption.label}</span>
-        <ChevronUp
-          size={12}
-          className={cn('transition-transform', open && 'rotate-180')}
-        />
+        <ChevronUp size={12} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
     </div>
   );

@@ -16,7 +16,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       <div className="flex min-w-0 flex-1 flex-col">
         <ConsoleTopbar role={session.role} notificationCount={2} />
         <div className="px-safe py-6 sm:py-8">
-          <div className="mx-auto max-w-[1320px]">{children}</div>
+          <div className="mx-auto max-w-330">{children}</div>
         </div>
       </div>
       <RoleSwitcher current={session.role} />

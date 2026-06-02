@@ -100,10 +100,6 @@ export default function SignInPage() {
             Onboard your pharmacy
           </Link>
         </p>
-        <p className="mt-3 text-center text-xs text-ink-4">
-          Sales agent or admin? Use this same form with your staff credentials, then flip the
-          demo role switcher.
-        </p>
       </div>
     </form>
   );

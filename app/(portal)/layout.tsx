@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { PortalSidebar } from '@/components/portal/PortalSidebar';
 import { PortalTopbar } from '@/components/portal/PortalTopbar';
-import { RoleSwitcher } from '@/components/shared/RoleSwitcher';
 import { NOTIFICATIONS } from '@/lib/data/operational';
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
@@ -19,10 +18,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       <div className="flex min-w-0 flex-1 flex-col">
         <PortalTopbar notificationCount={unread} />
         <div className="px-safe py-6 sm:py-8">
-          <div className="mx-auto max-w-[1280px]">{children}</div>
+          <div className="mx-auto max-w-7xl">{children}</div>
         </div>
       </div>
-      <RoleSwitcher current={session.role} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/shared/Logo';
 import { Icon, type IconName, Logout, Shield, Users as UsersIcon } from '@/components/icons';
 import { CONSOLE_NAV } from '@/lib/constants';
+import { signOutAction } from '@/lib/actions/role';
 import { cn } from '@/lib/utils';
 import type { SessionUser } from '@/types';
 
@@ -23,7 +24,7 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
     .join('');
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[var(--spacing-sidebar)] shrink-0 flex-col bg-ink-bg px-4 pb-4 pt-5 text-white/85 lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-sidebar shrink-0 flex-col bg-ink-bg px-4 pb-4 pt-5 text-white/85 lg:flex">
       <div className="border-b border-white/8 px-2 pb-4">
         <Logo monochrome />
         <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-300">
@@ -51,7 +52,7 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
                       'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
                       active
                         ? 'bg-brand-500/16 font-medium text-brand-300'
-                        : 'text-white/70 hover:bg-white/[0.04] hover:text-white',
+                        : 'text-white/70 hover:bg-white/4 hover:text-white',
                     )}
                   >
                     <Icon name={item.icon as IconName} size={16} />
@@ -65,7 +66,7 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
 
         <div className="flex-1" />
 
-        <div className="mt-3 flex items-center gap-2.5 rounded-md border border-white/8 bg-white/[0.03] px-3 py-2.5">
+        <div className="mt-3 flex items-center gap-2.5 rounded-md border border-white/8 bg-white/3 px-3 py-2.5">
           <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-500/20 text-xs font-semibold text-brand-300">
             {initials}
           </span>
@@ -75,13 +76,15 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
             </div>
             <div className="truncate text-xs text-white/50">{session.email}</div>
           </div>
-          <Link
-            href="/sign-in"
-            className="grid h-7 w-7 place-items-center rounded text-white/55 hover:bg-white/[0.05] hover:text-white"
-            aria-label="Sign out"
-          >
-            <Logout size={14} />
-          </Link>
+          <form action={signOutAction} className="contents">
+            <button
+              type="submit"
+              className="grid h-7 w-7 place-items-center rounded text-white/55 transition-colors hover:bg-white/5 hover:text-white"
+              aria-label="Sign out"
+            >
+              <Logout size={14} />
+            </button>
+          </form>
         </div>
       </nav>
     </aside>

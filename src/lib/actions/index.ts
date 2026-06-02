@@ -12,6 +12,7 @@
 
 'use server';
 
+import { cookies } from 'next/headers';
 import {
   signInSchema,
   customerSignUpSchema,
@@ -21,7 +22,9 @@ import {
   checkoutSchema,
   productSchema,
 } from '@/lib/schemas';
+import { ROLE_COOKIE_NAME } from '@/lib/auth';
 import { sleep } from '@/lib/utils';
+import type { Role } from '@/types';
 
 export type ActionResult<T = unknown> =
   | { ok: true; data?: T }
@@ -35,8 +38,28 @@ function fail(err: unknown, fallback = 'Something went wrong'): ActionResult {
   return { ok: false, message: fallback };
 }
 
+/**
+ * Establish the active session role (demo build). In production this is
+ * replaced by the signed session cookie/JWT the PHP backend issues after
+ * verifying credentials — the action signatures don't change. We mirror
+ * the cookie options used by the role switcher so the two stay coherent.
+ */
+async function setSessionRole(role: Role): Promise<void> {
+  const store = await cookies();
+  store.set(ROLE_COOKIE_NAME, role, {
+    path: '/',
+    httpOnly: false,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 30,
+  });
+}
+
 // ---------- Auth actions -------------------------------------------------
 
+/**
+ * Customer sign-in — the public entry point reached from the "Sign in"
+ * button. Customers are always, and only, customers. Routes to /portal/*.
+ */
 export async function signInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
   await sleep(900); // simulate network
   const parsed = signInSchema.safeParse({
@@ -44,7 +67,30 @@ export async function signInAction(_prev: unknown, formData: FormData): Promise<
     password: formData.get('password'),
   });
   if (!parsed.success) return fail(parsed.error);
+  await setSessionRole('customer');
   return { ok: true };
+}
+
+/**
+ * Staff sign-in — internal entry point for sales agents and admins,
+ * served from /staff/sign-in and never linked from any public surface.
+ *
+ * In production the staff role is resolved server-side from the verified
+ * account. In the demo build it's chosen at the door via the `role` field
+ * (admin | sales_agent); anything unexpected falls back to admin, and
+ * `customer` can never be reached through this action. Routes to /console/*.
+ */
+export async function staffSignInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
+  await sleep(900); // simulate network
+  const parsed = signInSchema.safeParse({
+    email: formData.get('email'),
+    password: formData.get('password'),
+  });
+  if (!parsed.success) return fail(parsed.error);
+  const requested = String(formData.get('role') ?? 'admin');
+  const role: Role = requested === 'sales_agent' ? 'sales_agent' : 'admin';
+  await setSessionRole(role);
+  return { ok: true, data: { role } };
 }
 
 export async function customerSignUpAction(

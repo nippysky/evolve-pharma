@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Search, Bell, Menu, X } from '@/components/icons';
+import { Search, Bell, Menu, X, Logout } from '@/components/icons';
 import { Logo } from '@/components/shared/Logo';
 import { Icon, type IconName } from '@/components/icons';
 import { CONSOLE_NAV } from '@/lib/constants';
+import { signOutAction } from '@/lib/actions/role';
 import type { Role } from '@/types';
 
 interface ConsoleTopbarProps {
@@ -68,12 +69,12 @@ export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProp
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Close"
-                className="grid h-9 w-9 place-items-center rounded-md text-white/70 hover:bg-white/[0.05] hover:text-white"
+                className="grid h-9 w-9 place-items-center rounded-md text-white/70 hover:bg-white/5 hover:text-white"
               >
                 <X size={18} />
               </button>
             </div>
-            <nav className="flex flex-col gap-0.5">
+            <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
               {CONSOLE_NAV.map((group) => {
                 const items = group.items.filter((it) => it.roles.includes(role));
                 if (items.length === 0) return null;
@@ -87,7 +88,7 @@ export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProp
                         key={item.href}
                         href={item.href}
                         onClick={() => setDrawerOpen(false)}
-                        className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/[0.04] hover:text-white"
+                        className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/4 hover:text-white"
                       >
                         <Icon name={item.icon as IconName} size={16} />
                         <span>{item.label}</span>
@@ -97,6 +98,16 @@ export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProp
                 );
               })}
             </nav>
+
+            <form action={signOutAction} className="mt-3 border-t border-white/8 pt-3">
+              <button
+                type="submit"
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/4 hover:text-white"
+              >
+                <Logout size={16} />
+                <span>Sign out</span>
+              </button>
+            </form>
           </aside>
         </div>
       )}
