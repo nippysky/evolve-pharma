@@ -1,12 +1,11 @@
 /**
  * ENVOLVE PHARMACEUTICALS — Server Actions
  *
- * These are placeholder server actions wired to the Zod schemas. When
- * the PHP backend ships, replace the body of each action with a fetch
- * call to the corresponding endpoint. The action signature stays
- * stable, so forms and components don't need to change.
+ * Placeholder server actions wired to validation. When the PHP backend
+ * ships, replace each body with a fetch to the matching endpoint — the
+ * signatures stay stable so forms/components don't change.
  *
- * All actions follow the same return shape:
+ * Return shape:
  *   { ok: true, data?: T } | { ok: false, message: string, fieldErrors?: Record<string, string[]> }
  */
 
@@ -15,7 +14,7 @@
 import { cookies } from 'next/headers';
 import {
   signInSchema,
-  customerSignUpSchema,
+  customerRegistrationSchema,
   agentOnboardSchema,
   contactSchema,
   updateProfileSchema,
@@ -40,9 +39,8 @@ function fail(err: unknown, fallback = 'Something went wrong'): ActionResult {
 
 /**
  * Establish the active session role (demo build). In production this is
- * replaced by the signed session cookie/JWT the PHP backend issues after
- * verifying credentials — the action signatures don't change. We mirror
- * the cookie options used by the role switcher so the two stay coherent.
+ * replaced by the signed session the PHP backend issues after verifying
+ * credentials. Cookie options mirror the role switcher's.
  */
 async function setSessionRole(role: Role): Promise<void> {
   const store = await cookies();
@@ -56,12 +54,9 @@ async function setSessionRole(role: Role): Promise<void> {
 
 // ---------- Auth actions -------------------------------------------------
 
-/**
- * Customer sign-in — the public entry point reached from the "Sign in"
- * button. Customers are always, and only, customers. Routes to /portal/*.
- */
+/** Customer sign-in — public door. Customers only. Routes to /portal/*. */
 export async function signInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
-  await sleep(900); // simulate network
+  await sleep(900);
   const parsed = signInSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
@@ -71,17 +66,9 @@ export async function signInAction(_prev: unknown, formData: FormData): Promise<
   return { ok: true };
 }
 
-/**
- * Staff sign-in — internal entry point for sales agents and admins,
- * served from /staff/sign-in and never linked from any public surface.
- *
- * In production the staff role is resolved server-side from the verified
- * account. In the demo build it's chosen at the door via the `role` field
- * (admin | sales_agent); anything unexpected falls back to admin, and
- * `customer` can never be reached through this action. Routes to /console/*.
- */
+/** Staff sign-in — internal door (admin / sales_agent). Routes to /console/*. */
 export async function staffSignInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
-  await sleep(900); // simulate network
+  await sleep(900);
   const parsed = signInSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
@@ -93,37 +80,83 @@ export async function staffSignInAction(_prev: unknown, formData: FormData): Pro
   return { ok: true, data: { role } };
 }
 
+// ---------- Customer registration ---------------------------------------
+
+/**
+ * Final step of the customer wizard. Email is verified in-flow before this
+ * runs. Accounts are created in PENDING status — the customer can't sign in
+ * until an admin approves them (B2B / pharmacy compliance requirement).
+ */
 export async function customerSignUpAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<ActionResult> {
   await sleep(1200);
+
+  if (formData.get('email_verified') !== 'true') {
+    return { ok: false, message: 'Please verify your email before completing registration.' };
+  }
+
   const file = formData.get('pcn_cert') as File | null;
-  // In real impl, upload file → CDN → set URL. Here we mock a URL.
-  const pcn_cert_url = file && file.name ? `https://cdn.envolvepharm.com.ng/pcn/${encodeURIComponent(file.name)}` : '';
-  const parsed = customerSignUpSchema.safeParse({
-    fname: formData.get('fname'),
-    lname: formData.get('lname'),
+  // Real impl: upload file → CDN → use returned URL.
+  const pcn_cert_url =
+    file && file.name ? `https://cdn.envolvepharm.com.ng/pcn/${encodeURIComponent(file.name)}` : '';
+
+  const parsed = customerRegistrationSchema.safeParse({
+    first_name: formData.get('first_name'),
+    middle_name: formData.get('middle_name') ?? '',
+    last_name: formData.get('last_name'),
+    company_name: formData.get('company_name'),
     email: formData.get('email'),
     phone: formData.get('phone'),
+    address: formData.get('address'),
+    city: formData.get('city'),
+    state: formData.get('state'),
+    country: formData.get('country'),
+    pcn_cert_url,
     password: formData.get('password'),
     confirm_password: formData.get('confirm_password'),
-    company_name: formData.get('company_name'),
-    company_address: formData.get('company_address'),
-    pcn_cert_url,
     accept_terms: formData.get('accept_terms') === 'on',
   });
   if (!parsed.success) return fail(parsed.error);
+
+  return { ok: true, data: { status: 'pending_approval' } };
+}
+
+/** Send a 6-digit verification code to the email (demo: simulated). */
+export async function requestEmailCode(email: string): Promise<ActionResult> {
+  await sleep(800);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { ok: false, message: 'Enter a valid email before requesting a code.' };
+  }
   return { ok: true };
 }
 
+/** Verify the emailed code (demo: accepts any 6 digits). */
+export async function verifyEmailCode(email: string, code: string): Promise<ActionResult> {
+  await sleep(700);
+  if (!/^\d{6}$/.test(code)) {
+    return { ok: false, message: 'Enter the 6-digit code.' };
+  }
+  return { ok: true };
+}
+
+// ---------- Agent (in-dashboard, admin-only) -----------------------------
+
+/**
+ * Admin/agent onboarding a CUSTOMER from inside the console. (There is no
+ * public staff signup — staff are created in the console and invited.)
+ */
 export async function agentOnboardCustomerAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<ActionResult> {
   await sleep(1100);
   const file = formData.get('pcn_cert') as File | null;
-  const pcn_cert_url = file && file.name ? `https://cdn.envolvepharm.com.ng/pcn/${encodeURIComponent(file.name)}` : 'https://cdn.envolvepharm.com.ng/pcn/placeholder.pdf';
+  const pcn_cert_url =
+    file && file.name
+      ? `https://cdn.envolvepharm.com.ng/pcn/${encodeURIComponent(file.name)}`
+      : 'https://cdn.envolvepharm.com.ng/pcn/placeholder.pdf';
   const parsed = agentOnboardSchema.safeParse({
     company_name: formData.get('company_name'),
     company_address: formData.get('company_address'),
@@ -135,31 +168,6 @@ export async function agentOnboardCustomerAction(
     send_invite: formData.get('send_invite') !== 'off',
   });
   if (!parsed.success) return fail(parsed.error);
-  return { ok: true };
-}
-
-/**
- * For sales agents signing themselves up via the public /sign-up/agent
- * page — light schema kept inline because it doesn't map 1:1 to the
- * backend (HR creates real agent records).
- */
-export async function agentSelfSignUpAction(
-  _prev: unknown,
-  formData: FormData,
-): Promise<ActionResult> {
-  await sleep(900);
-  const fname = String(formData.get('fname') ?? '').trim();
-  const lname = String(formData.get('lname') ?? '').trim();
-  const email = String(formData.get('email') ?? '').trim();
-  const phone = String(formData.get('phone') ?? '').trim();
-  const region = String(formData.get('region') ?? '').trim();
-  const errors: Record<string, string[]> = {};
-  if (fname.length < 1) errors.fname = ['First name is required'];
-  if (lname.length < 1) errors.lname = ['Last name is required'];
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.email = ['Enter a valid email'];
-  if (phone.length < 7) errors.phone = ['Enter a valid phone number'];
-  if (region.length < 2) errors.region = ['Select a region'];
-  if (Object.keys(errors).length) return { ok: false, message: 'Please review the form.', fieldErrors: errors };
   return { ok: true };
 }
 

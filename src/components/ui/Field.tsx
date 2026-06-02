@@ -112,7 +112,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
     return (
       <textarea
         ref={ref}
-        className={cn(inputBase, 'min-h-[88px] py-2.5 leading-relaxed', className)}
+        className={cn(inputBase, 'min-h-22 py-2.5 leading-relaxed', className)}
         {...rest}
       />
     );
@@ -129,7 +129,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
           ref={ref}
           className={cn(
             inputBase,
-            'h-10 pr-9 appearance-none bg-no-repeat bg-[right_0.75rem_center]',
+            'h-10 pr-9 appearance-none bg-no-repeat bg-position-[right_0.75rem_center]',
             className,
           )}
           {...rest}

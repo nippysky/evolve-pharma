@@ -38,30 +38,52 @@ export const signInSchema = z.object({
 export type SignInInput = z.infer<typeof signInSchema>;
 
 // ---------- Self-onboarding (Customer) -----------------------------------
+// Matches the client's customer import template (first_name … country)
+// plus the fields the signup wizard collects (PCN cert, password, terms).
 
-export const customerSignUpSchema = z
-  .object({
-    company_name: z.string().min(2, 'Company name must be at least 2 characters').max(120),
-    company_address: z.string().min(8, 'Enter the full company address').max(240),
-    fname: z.string().min(1, 'First name is required').max(60),
-    lname: z.string().min(1, 'Last name is required').max(60),
-    email: emailSchema,
-    phone: phoneSchema,
-    pcn_cert_url: z
-      .string()
-      .min(1, 'Upload your PCN certificate to continue')
-      .url('Must be a valid file URL'),
-    password: passwordSchema,
-    confirm_password: z.string().min(1, 'Please confirm your password'),
-    accept_terms: z
-      .boolean()
-      .refine((v) => v === true, { message: 'You must accept the terms to continue' }),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: 'Passwords do not match',
-    path: ['confirm_password'],
-  });
-export type CustomerSignUpInput = z.infer<typeof customerSignUpSchema>;
+const customerRegistrationFields = z.object({
+  first_name: z.string().trim().min(1, 'First name is required').max(60),
+  middle_name: z.string().trim().max(60).optional(),
+  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  company_name: z.string().trim().min(2, 'Pharmacy name must be at least 2 characters').max(120),
+  email: emailSchema,
+  phone: phoneSchema,
+  address: z.string().trim().min(3, 'Street address is required').max(240),
+  city: z.string().trim().min(2, 'City is required').max(80),
+  state: z.string().trim().min(2, 'State is required').max(80),
+  country: z.string().trim().min(2, 'Country is required').max(80),
+  pcn_cert_url: z
+    .string()
+    .min(1, 'Upload your PCN certificate to continue')
+    .url('Must be a valid file URL'),
+  password: passwordSchema,
+  confirm_password: z.string().min(1, 'Please confirm your password'),
+  accept_terms: z
+    .boolean()
+    .refine((v) => v === true, { message: 'You must accept the terms to continue' }),
+});
+
+/** Step 1 of the wizard — customer/business details only. */
+export const customerDetailsSchema = customerRegistrationFields.pick({
+  first_name: true,
+  middle_name: true,
+  last_name: true,
+  company_name: true,
+  email: true,
+  phone: true,
+  address: true,
+  city: true,
+  state: true,
+  country: true,
+});
+export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
+
+/** Full registration payload (final wizard submit). */
+export const customerRegistrationSchema = customerRegistrationFields.refine(
+  (data) => data.password === data.confirm_password,
+  { message: 'Passwords do not match', path: ['confirm_password'] },
+);
+export type CustomerRegistrationInput = z.infer<typeof customerRegistrationSchema>;
 
 // ---------- Agent-led onboarding -----------------------------------------
 
