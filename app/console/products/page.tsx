@@ -1,9 +1,6 @@
 /**
- * Console · Products (admin-only).
- *
- * Server component handles RBAC server-side; the interactive list
- * (search + category filter) lives in `ProductsList.tsx` as a client
- * component which imports its own data — keeping the boundary thin.
+ * Console · Products (admin-only). The catalog: what we sell and its
+ * commercial attributes. Stock lives on the Inventory page, not here.
  */
 
 import { redirect } from 'next/navigation';
@@ -12,6 +9,7 @@ import { PageHead } from '@/components/shared/PageHead';
 import { ButtonLink } from '@/components/ui/Button';
 import { Plus } from '@/components/icons';
 import { ProductsList } from './ProductList';
+import { ProductsImport } from './ProductsImport';
 
 
 export const metadata = {
@@ -27,11 +25,14 @@ export default async function ConsoleProductsPage() {
     <>
       <PageHead
         title="Products"
-        subtitle="Catalog SKUs available for order. Edit pricing, photos, and prescription flags."
+        subtitle="The catalog — pricing, photos, prescription flags, and lifecycle status."
         actions={
-          <ButtonLink href="/console/products/new" leadingIcon={<Plus size={14} />}>
-            New product
-          </ButtonLink>
+          <>
+            <ProductsImport />
+            <ButtonLink href="/console/products/new" leadingIcon={<Plus size={14} />}>
+              New product
+            </ButtonLink>
+          </>
         }
       />
       <ProductsList />

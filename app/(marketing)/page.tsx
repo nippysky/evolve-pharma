@@ -218,6 +218,7 @@ export default function HomePage() {
                               alt={product.name}
                               width={240}
                               height={240}
+                              priority
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                             />
                           </div>

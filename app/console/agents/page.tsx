@@ -1,22 +1,17 @@
 /**
  * Console · Sales agents (admin-only, server-rendered).
- *
- * Architecture:
- *   - `async` server component → zero JS shipped for the page logic itself.
- *   - Role guarded server-side (sales_agent can't reach this URL directly).
- *   - Data is fetched at request time on the server; the table is rendered
- *     to static HTML even though the Table primitives are client-marked —
- *     hydration only kicks in for interactive rows (there are none here).
+ * Table renders to static HTML; the create/import actions hydrate as an
+ * isolated client island in the header.
  */
 
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { PageHead } from '@/components/shared/PageHead';
-import { ButtonLink } from '@/components/ui/Button';
 import { Badge, Avatar, EmptyState } from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
-import { Plus, Users, Calendar, Mail } from '@/components/icons';
+import { Users, Calendar, Mail } from '@/components/icons';
+import { AgentsActions } from '@/components/console/AgentsActions';
 import { AGENTS, CUSTOMERS } from '@/lib/data/operational';
 import { formatDate, timeAgo } from '@/lib/utils';
 
@@ -25,12 +20,10 @@ export const metadata = {
 };
 
 export default async function ConsoleAgentsPage() {
-  // Server-side RBAC — admin only.
   const session = await getSession();
   if (!session) redirect('/sign-in');
   if (session.role !== 'admin') redirect('/console/overview');
 
-  // Enrich each agent with stats derived from CUSTOMERS.
   const rows = AGENTS.map((agent) => {
     const onboarded = CUSTOMERS.filter((c) => c.onboarded_by === agent.id);
     const lastActivity = onboarded
@@ -52,14 +45,9 @@ export default async function ConsoleAgentsPage() {
       <PageHead
         title="Sales agents"
         subtitle="Field reps onboarding pharmacies across Nigeria."
-        actions={
-          <ButtonLink href="/console/agents" leadingIcon={<Plus size={14} />}>
-            Invite agent
-          </ButtonLink>
-        }
+        actions={<AgentsActions />}
       />
 
-      {/* Stat strip */}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <StatCard label="Total agents" value={totals.agents} />
         <StatCard label="Active this month" value={totals.active} />
@@ -133,16 +121,10 @@ export default async function ConsoleAgentsPage() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Small local KPI card. Kept inline because it's specific to this page's
-// scale (3 simple stats); doesn't need to be a global primitive.
-// ---------------------------------------------------------------------------
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-line bg-white p-4">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-3">
-        {label}
-      </div>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-3">{label}</div>
       <div className="num mt-1 font-display text-2xl tracking-tight text-ink">{value}</div>
     </div>
   );

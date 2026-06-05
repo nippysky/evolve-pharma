@@ -36,7 +36,6 @@ export function Logo({
     <Image
       src="/images/Evolve_Pharm.png"
       alt="Envolve Pharmaceuticals"
-      loading='eager'
       width={w * 2}
       height={h * 2}
       priority

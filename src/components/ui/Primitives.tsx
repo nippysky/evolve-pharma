@@ -169,7 +169,7 @@ export function Avatar({
   return (
     <span
       className={cn(
-        'inline-grid place-items-center rounded-full bg-gradient-to-br from-brand-500 to-leaf-500 font-semibold text-white shrink-0',
+        'inline-grid place-items-center rounded-full bg-linear-to-br from-brand-500 to-leaf-500 font-semibold text-white shrink-0',
         className,
       )}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}

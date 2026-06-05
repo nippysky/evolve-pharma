@@ -1,9 +1,6 @@
 /**
  * ENVOLVE PHARMACEUTICALS — Zod Schemas
- *
- * Every user input — onboarding, login, checkout, product CRUD — passes
- * through a Zod schema. Same schemas validate on the client (form state)
- * AND the server (Server Actions / Route Handlers). One contract.
+ * Same schemas validate on the client AND the server. One contract.
  */
 
 import { z } from 'zod';
@@ -38,8 +35,6 @@ export const signInSchema = z.object({
 export type SignInInput = z.infer<typeof signInSchema>;
 
 // ---------- Self-onboarding (Customer) -----------------------------------
-// Matches the client's customer import template (first_name … country)
-// plus the fields the signup wizard collects (PCN cert, password, terms).
 
 const customerRegistrationFields = z.object({
   first_name: z.string().trim().min(1, 'First name is required').max(60),
@@ -52,18 +47,12 @@ const customerRegistrationFields = z.object({
   city: z.string().trim().min(2, 'City is required').max(80),
   state: z.string().trim().min(2, 'State is required').max(80),
   country: z.string().trim().min(2, 'Country is required').max(80),
-  pcn_cert_url: z
-    .string()
-    .min(1, 'Upload your PCN certificate to continue')
-    .url('Must be a valid file URL'),
+  pcn_cert_url: z.string().min(1, 'Upload your PCN certificate to continue').url('Must be a valid file URL'),
   password: passwordSchema,
   confirm_password: z.string().min(1, 'Please confirm your password'),
-  accept_terms: z
-    .boolean()
-    .refine((v) => v === true, { message: 'You must accept the terms to continue' }),
+  accept_terms: z.boolean().refine((v) => v === true, { message: 'You must accept the terms to continue' }),
 });
 
-/** Step 1 of the wizard — customer/business details only. */
 export const customerDetailsSchema = customerRegistrationFields.pick({
   first_name: true,
   middle_name: true,
@@ -78,14 +67,56 @@ export const customerDetailsSchema = customerRegistrationFields.pick({
 });
 export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
 
-/** Full registration payload (final wizard submit). */
 export const customerRegistrationSchema = customerRegistrationFields.refine(
   (data) => data.password === data.confirm_password,
   { message: 'Passwords do not match', path: ['confirm_password'] },
 );
 export type CustomerRegistrationInput = z.infer<typeof customerRegistrationSchema>;
 
-// ---------- Agent-led onboarding -----------------------------------------
+// ---------- Sales agent (admin invite + import) --------------------------
+
+export const agentInviteSchema = z.object({
+  first_name: z.string().trim().min(1, 'First name is required').max(60),
+  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  email: emailSchema,
+  phone: phoneSchema,
+  region: z.string().trim().max(80).optional(),
+});
+export type AgentInviteInput = z.infer<typeof agentInviteSchema>;
+export const agentImportRowSchema = agentInviteSchema;
+
+// ---------- Internal staff (admin invite + import) -----------------------
+
+export const staffInviteSchema = z.object({
+  first_name: z.string().trim().min(1, 'First name is required').max(60),
+  middle_name: z.string().trim().max(60).optional(),
+  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  email: emailSchema,
+  phone: phoneSchema,
+  department: z.string().trim().min(1, 'Department is required').max(80),
+  job_title: z.string().trim().min(1, 'Job title is required').max(80),
+});
+export type StaffInviteInput = z.infer<typeof staffInviteSchema>;
+export const staffImportRowSchema = staffInviteSchema;
+
+// ---------- Customer (admin / agent onboarding + import) -----------------
+
+export const customerOnboardSchema = z.object({
+  first_name: z.string().trim().min(1, 'First name is required').max(60),
+  middle_name: z.string().trim().max(60).optional(),
+  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  company_name: z.string().trim().min(2, 'Pharmacy name is required').max(120),
+  email: emailSchema,
+  phone: phoneSchema,
+  address: z.string().trim().min(3, 'Street address is required').max(240),
+  city: z.string().trim().min(2, 'City is required').max(80),
+  state: z.string().trim().min(2, 'State is required').max(80),
+  country: z.string().trim().min(2, 'Country is required').max(80),
+});
+export type CustomerOnboardInput = z.infer<typeof customerOnboardSchema>;
+export const customerImportRowSchema = customerOnboardSchema;
+
+// ---------- Agent-led onboarding (legacy form) ---------------------------
 
 export const agentOnboardSchema = z.object({
   company_name: z.string().min(2).max(120),
@@ -123,13 +154,44 @@ export const productSchema = z.object({
   category: z.string().min(1, 'Choose a category'),
   manufacturer: z.string().min(1).max(120),
   form: z.string().min(1).max(60),
-  strength: z.string().min(1).max(40),
-  pack_size: z.string().min(1).max(60),
+  strength: z.string().min(1, 'Strength is required (use "N/A" if not applicable)').max(40),
+  pack_size: z.string().min(1, 'Pack size is required').max(60),
   prescription_required: z.boolean().default(false),
-  image_url: z.string().url('Provide an image URL'),
+  image_url: z.string().url('Provide a valid image URL'),
   status: z.enum(['active', 'draft', 'discontinued']).default('draft'),
 });
 export type ProductInput = z.infer<typeof productSchema>;
+
+// Bulk-import variant: every cell arrives as a string, so coerce/normalize.
+const PRODUCT_STATUS_VALUES = ['active', 'draft', 'discontinued'];
+const TRUTHY = new Set(['true', 'yes', 'y', '1', 'rx', 'required']);
+
+export const productImportRowSchema = z.object({
+  name: z.string().trim().min(2, 'Name is required').max(160),
+  sku: z
+    .string()
+    .trim()
+    .min(3, 'SKU is required')
+    .max(40)
+    .regex(/^[A-Za-z0-9-]+$/, 'SKU: letters, numbers and dashes only'),
+  description: z.string().trim().min(1, 'Description is required').max(2000),
+  price: z.coerce.number().positive('Price must be positive').max(10_000_000),
+  category: z.string().trim().min(1, 'Category is required').max(80),
+  manufacturer: z.string().trim().min(1, 'Manufacturer is required').max(120),
+  form: z.string().trim().min(1, 'Form is required').max(60),
+  strength: z.string().trim().max(40).optional(),
+  pack_size: z.string().trim().max(60).optional(),
+  prescription_required: z.preprocess(
+    (v) => TRUTHY.has(String(v ?? '').trim().toLowerCase()),
+    z.boolean(),
+  ),
+  image_url: z.string().trim().optional(),
+  status: z.preprocess((v) => {
+    const s = String(v ?? '').trim().toLowerCase();
+    return PRODUCT_STATUS_VALUES.includes(s) ? s : 'draft';
+  }, z.enum(['active', 'draft', 'discontinued'])),
+});
+export type ProductImportRow = z.infer<typeof productImportRowSchema>;
 
 // ---------- Inventory (Admin) --------------------------------------------
 
@@ -144,6 +206,21 @@ export const inventoryBatchSchema = z.object({
     .refine((v) => new Date(v) > new Date(), 'Expiry must be in the future'),
 });
 export type InventoryBatchInput = z.infer<typeof inventoryBatchSchema>;
+
+// Receive stock (manual) + import (bulk) — keyed by SKU for human entry.
+export const batchReceiveSchema = z.object({
+  sku: z.string().trim().min(3, 'SKU is required').max(40),
+  batch_no: z.string().trim().min(1, 'Batch number is required').max(40),
+  quantity: z.coerce.number().int().positive('Quantity must be a positive whole number'),
+  expiry_date: z
+    .string()
+    .trim()
+    .min(1, 'Expiry date is required')
+    .refine((v) => !Number.isNaN(Date.parse(v)), 'Use a valid date (YYYY-MM-DD)')
+    .refine((v) => new Date(v) > new Date(), 'Expiry must be in the future'),
+});
+export type BatchReceiveInput = z.infer<typeof batchReceiveSchema>;
+export const batchImportRowSchema = batchReceiveSchema;
 
 // ---------- Basket / Order -----------------------------------------------
 
