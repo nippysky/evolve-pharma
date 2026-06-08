@@ -11,10 +11,43 @@
 
 export type UUID = string;
 export type ISODate = string;
-export type Money = number; // stored in NGN minor units... actually we use major units (₦) here for simplicity
+export type Money = number; // stored in NGN major units (₦)
 
-export type Role = 'admin' | 'sales_agent' | 'customer';
+export type Role = 'admin' | 'sales_agent' | 'driver' | 'customer';
 export type Status = 'active' | 'inactive' | 'pending' | 'suspended';
+
+// ---------- Staff Permissions (sales_agent / staff) -----------------------
+//
+// Admin can grant/revoke individual permissions per staff member.
+// Presets (sales_rep, product_manager, operations_lead, senior_staff) are
+// convenience bundles — they map to these exact permission keys.
+
+export type StaffPermissionKey =
+  | 'onboard_customers'   // create & approve customer accounts
+  | 'manage_products'     // add / edit / archive products
+  | 'manage_inventory'    // receive stock, adjust batches
+  | 'assign_drivers'      // assign drivers to deliveries
+  | 'view_reports';       // access reports page
+
+export type StaffPermissionPreset =
+  | 'sales_rep'         // onboard_customers + view_reports
+  | 'product_manager'   // manage_products + manage_inventory
+  | 'operations_lead'   // assign_drivers + manage_inventory + view_reports
+  | 'senior_staff';     // all permissions
+
+export const STAFF_PRESET_PERMISSIONS: Record<StaffPermissionPreset, StaffPermissionKey[]> = {
+  sales_rep:        ['onboard_customers', 'view_reports'],
+  product_manager:  ['manage_products', 'manage_inventory'],
+  operations_lead:  ['assign_drivers', 'manage_inventory', 'view_reports'],
+  senior_staff:     ['onboard_customers', 'manage_products', 'manage_inventory', 'assign_drivers', 'view_reports'],
+};
+
+export const STAFF_PRESET_LABELS: Record<StaffPermissionPreset, string> = {
+  sales_rep:       'Sales Rep',
+  product_manager: 'Product Manager',
+  operations_lead: 'Operations Lead',
+  senior_staff:    'Senior Staff',
+};
 
 // ---------- User ----------------------------------------------------------
 
@@ -31,6 +64,10 @@ export interface User {
   status: Status;
   created_at: ISODate;
   updated_at: ISODate;
+  /** Only for sales_agent role — which capabilities they have */
+  permissions?: StaffPermissionKey[];
+  /** Convenience preset label (derived from permissions on backend) */
+  permission_preset?: StaffPermissionPreset | null;
 }
 
 // ---------- Customer Profile ----------------------------------------------
@@ -69,9 +106,9 @@ export interface Product {
   price: Money;
   category: string;
   manufacturer: string;
-  form: string; // tablet, capsule, syrup, injection, etc.
-  strength: string; // e.g. "500mg"
-  pack_size: string; // e.g. "30 tabs/pack"
+  form: string;
+  strength: string;
+  pack_size: string;
   prescription_required: boolean;
   image_url: string;
   gallery?: string[];
@@ -121,8 +158,8 @@ export interface OrderItem {
   order_id: number;
   product_id: number;
   product_name: string; // snapshot
-  product_sku: string; // snapshot
-  product_image?: string; // snapshot
+  product_sku: string;  // snapshot
+  product_image?: string;
   quantity: number;
   price: Money; // unit price snapshot
   subtotal: Money;
@@ -132,7 +169,7 @@ export interface OrderItem {
 export interface Order {
   id: number;
   uuid: UUID;
-  order_number: string; // human-friendly e.g. EVP-2025-00148
+  order_number: string;
   customer_id: number;
   customer_company?: string;
   total_amount: Money;
@@ -164,9 +201,10 @@ export interface Payment {
 // ---------- Delivery ------------------------------------------------------
 
 export type DeliveryStatus =
-  | 'awaiting_dispatch'
-  | 'in_transit'
-  | 'out_for_delivery'
+  | 'awaiting_dispatch'  // admin assigned a driver; driver hasn't acknowledged yet
+  | 'assigned'           // driver acknowledged — visible on admin dashboard
+  | 'in_transit'         // driver has started the journey
+  | 'out_for_delivery'   // last-mile (optional granularity)
   | 'delivered'
   | 'failed'
   | 'returned';
@@ -184,11 +222,32 @@ export interface Delivery {
   order_id: number;
   tracking_code: string;
   status: DeliveryStatus;
+  driver_id?: number | null;    // references Driver.id
   driver_name?: string;
   driver_phone?: string;
   vehicle_plate?: string;
   estimated_arrival?: ISODate;
   events: DeliveryEvent[];
+  acknowledged_at?: ISODate | null; // driver acknowledged the assignment
+  created_at: ISODate;
+  updated_at: ISODate;
+}
+
+// ---------- Driver --------------------------------------------------------
+
+export type DriverStatus = 'available' | 'on_delivery' | 'off_duty' | 'suspended';
+
+export interface Driver {
+  id: number;
+  uuid: UUID;
+  user_id: number; // references User with role=driver
+  vehicle_plate: string;
+  vehicle_type: string;
+  region: string;
+  driver_status: DriverStatus;
+  total_deliveries: number;
+  rating?: number | null;
+  user: User;
   created_at: ISODate;
   updated_at: ISODate;
 }
@@ -256,4 +315,27 @@ export interface SessionUser {
   full_name: string;
   company_name?: string;
   avatar_url?: string;
+  /** For sales_agent role — what they can do */
+  permissions?: StaffPermissionKey[];
+  permission_preset?: StaffPermissionPreset | null;
+  /** For driver role */
+  driver_id?: number | null;
+  /**
+   * For customer role — PCN certificate gate.
+   * pcn_uploaded: customer has submitted a PCN cert (triggers redirect if false on login).
+   * pcn_verified: admin has approved the cert (customer can access the catalog).
+   */
+  pcn_uploaded?: boolean;
+  pcn_verified?: boolean;
+}
+
+// ---------- Permission helpers --------------------------------------------
+
+export function hasPermission(
+  session: SessionUser | null,
+  key: StaffPermissionKey,
+): boolean {
+  if (!session) return false;
+  if (session.role === 'admin') return true;
+  return session.permissions?.includes(key) ?? false;
 }

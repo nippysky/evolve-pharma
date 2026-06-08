@@ -47,6 +47,7 @@ const customerRegistrationFields = z.object({
   city: z.string().trim().min(2, 'City is required').max(80),
   state: z.string().trim().min(2, 'State is required').max(80),
   country: z.string().trim().min(2, 'Country is required').max(80),
+  referral_code: z.string().trim().max(30).optional(),
   pcn_cert_url: z.string().min(1, 'Upload your PCN certificate to continue').url('Must be a valid file URL'),
   password: passwordSchema,
   confirm_password: z.string().min(1, 'Please confirm your password'),
@@ -64,6 +65,7 @@ export const customerDetailsSchema = customerRegistrationFields.pick({
   city: true,
   state: true,
   country: true,
+  referral_code: true,
 });
 export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
 

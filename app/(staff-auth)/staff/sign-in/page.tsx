@@ -6,7 +6,7 @@ import { useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, AlertTriangle, Shield, Users } from '@/components/icons';
+import { ArrowRight, AlertTriangle, Shield, Users, Truck } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { staffSignInAction } from '@/lib/actions';
 import type { ActionResult } from '@/lib/actions';
@@ -14,11 +14,12 @@ import { cn } from '@/lib/utils';
 
 const initial: ActionResult = { ok: false, message: '' };
 
-type StaffRole = 'admin' | 'sales_agent';
+type StaffRole = 'admin' | 'sales_agent' | 'driver';
 
 const ROLE_OPTIONS: { value: StaffRole; label: string; sub: string; Icon: typeof Shield }[] = [
-  { value: 'admin', label: 'Admin', sub: 'Full access', Icon: Shield },
-  { value: 'sales_agent', label: 'Sales agent', sub: 'Scoped access', Icon: Users },
+  { value: 'admin',       label: 'Admin',  sub: 'Full access',    Icon: Shield },
+  { value: 'sales_agent', label: 'Staff',  sub: 'Scoped access',  Icon: Users },
+  { value: 'driver',      label: 'Driver', sub: 'My assignments', Icon: Truck },
 ];
 
 export default function StaffSignInPage() {
@@ -30,7 +31,9 @@ export default function StaffSignInPage() {
     const r = await staffSignInAction(prev, fd);
     if (r.ok) {
       toast.show({ tone: 'success', title: 'Signed in', description: 'Opening the console…' });
-      setTimeout(() => router.push('/console/overview'), 500);
+      // Drivers land on their assignments page
+      const target = role === 'driver' ? '/console/driver' : '/console/overview';
+      setTimeout(() => router.push(target), 500);
     }
     return r;
   }, initial);
@@ -47,7 +50,7 @@ export default function StaffSignInPage() {
         Operations console.
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
-        Sign in with your Envolve staff credentials. Access is scoped to your role.
+        Sign in with your Envolve credentials. Access is scoped to your role.
       </p>
 
       <div className="mt-8">
@@ -60,7 +63,7 @@ export default function StaffSignInPage() {
 
         <div className="mb-5">
           <span className="mb-1.5 block text-sm font-medium text-ink">Sign in as</span>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {ROLE_OPTIONS.map(({ value, label, sub, Icon }) => {
               const active = role === value;
               return (
@@ -94,8 +97,7 @@ export default function StaffSignInPage() {
           </div>
           <input type="hidden" name="role" value={role} />
           <p className="mt-2 text-xs text-ink-4">
-            Demo only — real staff sign-in resolves your role automatically. You can switch between
-            Admin and Sales Agent inside the console.
+            Demo only — real sign-in resolves your role from the backend automatically.
           </p>
         </div>
 

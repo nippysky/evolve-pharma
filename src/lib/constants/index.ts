@@ -35,8 +35,11 @@ export const PORTAL_NAV = [
   { label: 'Profile', href: '/portal/profile', icon: 'User' as const },
 ] as const;
 
-// ---------- Console navigation (admin + sales agent) --------------------
-// Items are gated by `roles` — RBAC at the navigation layer.
+// ---------- Console navigation (admin + staff + driver) -----------------
+//
+// `roles` gates which top-level roles see the item.
+// `permission` (optional) gates sales_agent items by StaffPermissionKey.
+// Items with no `permission` are visible to all roles listed.
 
 export const CONSOLE_NAV = [
   {
@@ -53,6 +56,7 @@ export const CONSOLE_NAV = [
         href: '/console/customers',
         icon: 'Building' as const,
         roles: ['admin', 'sales_agent'] as Role[],
+        permission: 'onboard_customers' as const,
       },
       {
         label: 'Orders',
@@ -65,6 +69,7 @@ export const CONSOLE_NAV = [
         href: '/console/deliveries',
         icon: 'Truck' as const,
         roles: ['admin', 'sales_agent'] as Role[],
+        permission: 'assign_drivers' as const,
       },
     ],
   },
@@ -75,13 +80,15 @@ export const CONSOLE_NAV = [
         label: 'Products',
         href: '/console/products',
         icon: 'Pill' as const,
-        roles: ['admin'] as Role[],
+        roles: ['admin', 'sales_agent'] as Role[],
+        permission: 'manage_products' as const,
       },
       {
         label: 'Inventory',
         href: '/console/inventory',
         icon: 'Boxes' as const,
-        roles: ['admin'] as Role[],
+        roles: ['admin', 'sales_agent'] as Role[],
+        permission: 'manage_inventory' as const,
       },
     ],
   },
@@ -89,23 +96,40 @@ export const CONSOLE_NAV = [
     section: 'Team',
     items: [
       {
-        label: 'Sales Agents',
-        href: '/console/agents',
+        label: 'Staff',
+        href: '/console/staff',
         icon: 'Users' as const,
         roles: ['admin'] as Role[],
       },
       {
-        label: 'Staff',
-        href: '/console/staff',
+        label: 'Drivers',
+        href: '/console/drivers',
+        icon: 'Truck' as const,
+        roles: ['admin'] as Role[],
+      },
+      {
+        label: 'Roles',
+        href: '/console/roles',
         icon: 'Shield' as const,
         roles: ['admin'] as Role[],
       },
+    ],
+  },
+  {
+    section: 'Analytics',
+    items: [
       {
         label: 'Reports',
         href: '/console/reports',
         icon: 'Chart' as const,
-        roles: ['admin'] as Role[],
+        roles: ['admin', 'sales_agent'] as Role[],
+        permission: 'view_reports' as const,
       },
+    ],
+  },
+  {
+    section: 'System',
+    items: [
       {
         label: 'Settings',
         href: '/console/settings',
@@ -116,49 +140,72 @@ export const CONSOLE_NAV = [
   },
 ] as const;
 
+// ---------- Driver navigation (driver role only) -------------------------
+
+export const DRIVER_NAV = [
+  {
+    section: 'Deliveries',
+    items: [
+      { label: 'My Assignments', href: '/console/driver', icon: 'Box' as const },
+      { label: 'History', href: '/console/driver/history', icon: 'Truck' as const },
+    ],
+  },
+] as const;
+
 // ---------- Status maps --------------------------------------------------
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
+  pending:    'Pending',
+  confirmed:  'Confirmed',
   processing: 'Processing',
   dispatched: 'Dispatched',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
+  delivered:  'Delivered',
+  cancelled:  'Cancelled',
 };
 
 export const ORDER_STATUS_TONE: Record<OrderStatus, 'neutral' | 'info' | 'success' | 'warning' | 'danger'> = {
-  pending: 'warning',
-  confirmed: 'info',
+  pending:    'warning',
+  confirmed:  'info',
   processing: 'info',
   dispatched: 'info',
-  delivered: 'success',
-  cancelled: 'danger',
+  delivered:  'success',
+  cancelled:  'danger',
 };
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
-  unpaid: 'Unpaid',
-  partial: 'Partially paid',
-  paid: 'Paid',
+  unpaid:   'Unpaid',
+  partial:  'Partially paid',
+  paid:     'Paid',
   refunded: 'Refunded',
-  failed: 'Failed',
+  failed:   'Failed',
 };
 
 export const PAYMENT_STATUS_TONE: Record<PaymentStatus, 'neutral' | 'info' | 'success' | 'warning' | 'danger'> = {
-  unpaid: 'warning',
-  partial: 'warning',
-  paid: 'success',
+  unpaid:   'warning',
+  partial:  'warning',
+  paid:     'success',
   refunded: 'neutral',
-  failed: 'danger',
+  failed:   'danger',
 };
 
 export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, string> = {
   awaiting_dispatch: 'Awaiting dispatch',
-  in_transit: 'In transit',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  failed: 'Failed',
-  returned: 'Returned',
+  assigned:          'Assigned',
+  in_transit:        'In transit',
+  out_for_delivery:  'Out for delivery',
+  delivered:         'Delivered',
+  failed:            'Failed',
+  returned:          'Returned',
+};
+
+export const DELIVERY_STATUS_TONE: Record<DeliveryStatus, 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand'> = {
+  awaiting_dispatch: 'neutral',
+  assigned:          'brand',
+  in_transit:        'info',
+  out_for_delivery:  'info',
+  delivered:         'success',
+  failed:            'danger',
+  returned:          'warning',
 };
 
 // ---------- Categories --------------------------------------------------

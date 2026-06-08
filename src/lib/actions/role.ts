@@ -27,7 +27,8 @@ export async function setDemoRole(role: Role) {
 export async function signOutAction() {
   const store = await cookies();
   const role = store.get(ROLE_COOKIE_NAME)?.value;
-  const target = role === 'admin' || role === 'sales_agent' ? '/staff/sign-in' : '/sign-in';
+  const staffRoles = ['admin', 'sales_agent', 'driver'];
+  const target = staffRoles.includes(role ?? '') ? '/staff/sign-in' : '/sign-in';
   store.delete(ROLE_COOKIE_NAME);
   redirect(target);
 }

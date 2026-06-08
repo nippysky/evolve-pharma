@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/shared/Logo';
-import { Icon, type IconName, Logout, Shield, Users as UsersIcon } from '@/components/icons';
-import { CONSOLE_NAV } from '@/lib/constants';
+import { Icon, type IconName, Logout, Shield, Users as UsersIcon, Truck } from '@/components/icons';
+import { CONSOLE_NAV, DRIVER_NAV } from '@/lib/constants';
 import { signOutAction } from '@/lib/actions/role';
 import { cn } from '@/lib/utils';
 import type { SessionUser } from '@/types';
@@ -13,15 +13,43 @@ interface ConsoleSidebarProps {
   session: SessionUser;
 }
 
+const ROLE_LABEL: Record<string, string> = {
+  admin:       'Admin',
+  sales_agent: 'Staff',
+  driver:      'Driver',
+};
+
+const ROLE_ICON: Record<string, typeof Shield> = {
+  admin:       Shield,
+  sales_agent: UsersIcon,
+  driver:      Truck,
+};
+
 export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
   const pathname = usePathname();
-  const RoleIcon = session.role === 'admin' ? Shield : UsersIcon;
-  const roleLabel = session.role === 'admin' ? 'Admin' : 'Sales Agent';
+  const RoleIcon = ROLE_ICON[session.role] ?? UsersIcon;
+  const roleLabel = ROLE_LABEL[session.role] ?? session.role;
   const initials = session.full_name
     .split(' ')
     .map((p) => p[0])
     .slice(0, 2)
     .join('');
+
+  // Driver gets a completely different, minimal nav
+  const navGroups = session.role === 'driver' ? DRIVER_NAV : CONSOLE_NAV;
+
+  const isVisible = (item: Record<string, unknown>) => {
+    // Driver nav items have no role/permission gate — always visible in driver nav
+    if (!('roles' in item)) return true;
+    const roles = item.roles as readonly string[] | undefined;
+    if (!roles?.includes(session.role)) return false;
+    // If item needs a permission, check it (admin bypasses)
+    const permission = item.permission as string | undefined;
+    if (permission && session.role !== 'admin') {
+      return session.permissions?.includes(permission as never) ?? false;
+    }
+    return true;
+  };
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-sidebar shrink-0 flex-col bg-ink-bg px-4 pb-4 pt-5 text-white/85 lg:flex">
@@ -30,12 +58,15 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
         <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-300">
           <RoleIcon size={11} />
           {roleLabel}
+          {session.permission_preset && (
+            <span className="text-brand-400/70">· {session.permission_preset.replace('_', ' ')}</span>
+          )}
         </span>
       </div>
 
       <nav className="mt-4 flex flex-1 flex-col gap-0.5">
-        {CONSOLE_NAV.map((group) => {
-          const visibleItems = group.items.filter((it) => it.roles.includes(session.role));
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter((it) => isVisible(it));
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.section}>

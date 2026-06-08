@@ -66,7 +66,7 @@ export async function signInAction(_prev: unknown, formData: FormData): Promise<
   return { ok: true };
 }
 
-/** Staff sign-in — internal door (admin / sales_agent). Routes to /console/*. */
+/** Staff sign-in — internal door (admin / sales_agent / driver). Routes to /console/*. */
 export async function staffSignInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
   await sleep(900);
   const parsed = signInSchema.safeParse({
@@ -75,9 +75,85 @@ export async function staffSignInAction(_prev: unknown, formData: FormData): Pro
   });
   if (!parsed.success) return fail(parsed.error);
   const requested = String(formData.get('role') ?? 'admin');
-  const role: Role = requested === 'sales_agent' ? 'sales_agent' : 'admin';
+  let role: Role = 'admin';
+  if (requested === 'sales_agent') role = 'sales_agent';
+  else if (requested === 'driver') role = 'driver';
   await setSessionRole(role);
   return { ok: true, data: { role } };
+}
+
+/** Update a staff member's permission preset (admin only). */
+export async function updateStaffPermissionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<ActionResult> {
+  await sleep(600);
+  const staffId = Number(formData.get('staff_id'));
+  const preset = String(formData.get('preset'));
+  if (!staffId || !preset) return { ok: false, message: 'Invalid request.' };
+  // Real impl: PATCH /api/staff/:id { permission_preset: preset }
+  return { ok: true, data: { staff_id: staffId, preset } };
+}
+
+/** Assign a driver to a delivery (admin / operations_lead). */
+export async function assignDriverAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<ActionResult> {
+  await sleep(700);
+  const deliveryId = Number(formData.get('delivery_id'));
+  const driverId = Number(formData.get('driver_id'));
+  if (!deliveryId || !driverId) return { ok: false, message: 'Select a driver to assign.' };
+  // Real impl: PATCH /api/deliveries/:id { driver_id: driverId }
+  return { ok: true, data: { delivery_id: deliveryId, driver_id: driverId } };
+}
+
+/** Driver acknowledges their delivery assignment — transitions status to 'assigned'. */
+export async function acknowledgeAssignmentAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<ActionResult> {
+  await sleep(500);
+  const deliveryId = Number(formData.get('delivery_id'));
+  if (!deliveryId) return { ok: false, message: 'Invalid delivery.' };
+  // Real impl: POST /api/deliveries/:id/acknowledge  → status: 'assigned'
+  return { ok: true, data: { delivery_id: deliveryId, status: 'assigned' } };
+}
+
+/** Driver marks delivery as completed / out for delivery / etc. */
+export async function updateDeliveryStatusAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<ActionResult> {
+  await sleep(600);
+  const deliveryId = Number(formData.get('delivery_id'));
+  const status = String(formData.get('status'));
+  if (!deliveryId || !status) return { ok: false, message: 'Invalid request.' };
+  // Real impl: PATCH /api/deliveries/:id/status
+  return { ok: true, data: { delivery_id: deliveryId, status } };
+}
+
+// ---------- PCN certificate upload (post-login gate) -------------------
+
+/**
+ * Called from the /upload-pcn gate page for customers who were bulk-imported
+ * or who abandoned the sign-up before uploading their certificate.
+ * Real impl: uploads file to CDN → PATCH /api/customers/me { pcn_cert_url }
+ */
+export async function uploadPcnCertAction(formData: FormData): Promise<ActionResult> {
+  await sleep(1000);
+  const file = formData.get('pcn_cert') as File | null;
+  if (!file || !file.name) {
+    return { ok: false, message: 'Please select a file before submitting.' };
+  }
+  const MAX_BYTES = 8 * 1024 * 1024;
+  if (file.size > MAX_BYTES) {
+    return { ok: false, message: 'File is too large. Maximum size is 8 MB.' };
+  }
+  // Real impl: stream file to CDN, set pcn_cert_url on the customer record,
+  // set pcn_uploaded = true, then invalidate the session so the portal layout
+  // gate passes on the next request.
+  return { ok: true };
 }
 
 // ---------- Customer registration ---------------------------------------

@@ -14,54 +14,16 @@ import type {
   SessionUser,
 } from '@/types';
 import { PRODUCTS } from './products';
+import { STAFF_MEMBERS } from './staff';
 
 const now = new Date();
 const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000).toISOString();
 const daysAhead = (n: number) => new Date(now.getTime() + n * 86_400_000).toISOString();
 
-// ---------- Sales Agents -------------------------------------------------
+// ---------- Sales Agents (Staff) -----------------------------------------
+// Re-exported from staff.ts for backward compat across the codebase.
 
-export const AGENTS: User[] = [
-  {
-    id: 11,
-    uuid: 'u-agent-01',
-    role: 'sales_agent',
-    email: 'amaka.eze@envolvepharm.com.ng',
-    fname: 'Amaka',
-    lname: 'Eze',
-    phone: '+234 803 456 7890',
-    is_verified: true,
-    status: 'active',
-    created_at: daysAgo(220),
-    updated_at: daysAgo(2),
-  },
-  {
-    id: 12,
-    uuid: 'u-agent-02',
-    role: 'sales_agent',
-    email: 'tobi.adeyemi@envolvepharm.com.ng',
-    fname: 'Tobi',
-    lname: 'Adeyemi',
-    phone: '+234 802 998 1010',
-    is_verified: true,
-    status: 'active',
-    created_at: daysAgo(160),
-    updated_at: daysAgo(5),
-  },
-  {
-    id: 13,
-    uuid: 'u-agent-03',
-    role: 'sales_agent',
-    email: 'fatima.bello@envolvepharm.com.ng',
-    fname: 'Fatima',
-    lname: 'Bello',
-    phone: '+234 805 234 1122',
-    is_verified: true,
-    status: 'active',
-    created_at: daysAgo(95),
-    updated_at: daysAgo(1),
-  },
-];
+export const AGENTS: User[] = STAFF_MEMBERS;
 
 // ---------- Customers (Businesses) ---------------------------------------
 
@@ -275,10 +237,12 @@ export const DELIVERIES: Delivery[] = [
     order_id: 156,
     tracking_code: 'EVL-NG-561284',
     status: 'in_transit',
+    driver_id: 1,
     driver_name: 'Musa Bello',
     driver_phone: '+234 803 222 1148',
     vehicle_plate: 'ABJ-148-XK',
     estimated_arrival: daysAhead(1),
+    acknowledged_at: daysAgo(2),
     events: [
       {
         status: 'awaiting_dispatch',
@@ -295,6 +259,112 @@ export const DELIVERIES: Delivery[] = [
     ],
     created_at: daysAgo(3),
     updated_at: daysAgo(1),
+  },
+  {
+    // Assigned — driver acknowledged, not yet started
+    id: 2,
+    uuid: 'd-002',
+    order_id: 159,
+    tracking_code: 'EVL-NG-591820',
+    status: 'assigned',
+    driver_id: 3,
+    driver_name: 'Kola Adesanya',
+    driver_phone: '+234 809 112 5560',
+    vehicle_plate: 'LAS-554-QB',
+    estimated_arrival: daysAhead(2),
+    acknowledged_at: daysAgo(0.5),
+    events: [
+      {
+        status: 'awaiting_dispatch',
+        description: 'Order packed and ready for dispatch',
+        location: 'Abuja DC',
+        occurred_at: daysAgo(1),
+      },
+      {
+        status: 'assigned',
+        description: 'Driver acknowledged assignment',
+        location: 'Lagos Mainland',
+        occurred_at: daysAgo(0.5),
+      },
+    ],
+    created_at: daysAgo(1),
+    updated_at: daysAgo(0.5),
+  },
+  {
+    id: 3,
+    uuid: 'd-003',
+    order_id: 148,
+    tracking_code: 'EVL-NG-480122',
+    status: 'delivered',
+    driver_id: 2,
+    driver_name: 'Emeka Osei',
+    driver_phone: '+234 806 344 2290',
+    vehicle_plate: 'LAS-320-KA',
+    estimated_arrival: daysAgo(10),
+    acknowledged_at: daysAgo(12),
+    events: [
+      {
+        status: 'awaiting_dispatch',
+        description: 'Order packed at Lagos warehouse',
+        location: 'Lagos DC',
+        occurred_at: daysAgo(14),
+      },
+      {
+        status: 'in_transit',
+        description: 'Picked up by driver',
+        location: 'Lagos',
+        occurred_at: daysAgo(13),
+      },
+      {
+        status: 'out_for_delivery',
+        description: 'Out for last-mile delivery',
+        location: 'Wuse 2, Abuja',
+        occurred_at: daysAgo(10),
+      },
+      {
+        status: 'delivered',
+        description: 'Delivered and signed for',
+        location: '12 Lagos Street, Wuse 2, Abuja',
+        occurred_at: daysAgo(10),
+      },
+    ],
+    created_at: daysAgo(14),
+    updated_at: daysAgo(10),
+  },
+  {
+    id: 4,
+    uuid: 'd-004',
+    order_id: 151,
+    tracking_code: 'EVL-NG-510044',
+    status: 'delivered',
+    driver_id: 2,
+    driver_name: 'Emeka Osei',
+    driver_phone: '+234 806 344 2290',
+    vehicle_plate: 'LAS-320-KA',
+    estimated_arrival: daysAgo(8),
+    acknowledged_at: daysAgo(11),
+    events: [
+      {
+        status: 'awaiting_dispatch',
+        description: 'Ready for dispatch',
+        location: 'Lagos DC',
+        occurred_at: daysAgo(12),
+      },
+      {
+        status: 'in_transit',
+        description: 'Picked up',
+        location: 'Lagos',
+        occurred_at: daysAgo(11),
+      },
+      {
+        status: 'delivered',
+        description: 'Delivered successfully',
+        location: '88 Allen Avenue, Ikeja, Lagos',
+        occurred_at: daysAgo(8),
+      },
+    ],
+    created_at: daysAgo(12),
+    updated_at: daysAgo(8),
   },
 ];
 
@@ -432,6 +502,20 @@ export const MOCK_SESSION: SessionUser = {
   email: 'orders@greenleaf.ng',
   full_name: 'Chinedu Okafor',
   company_name: 'Greenleaf Pharmacy Ltd.',
+  pcn_uploaded: true,
+  pcn_verified: true,
+};
+
+/** Demo session for a customer who registered but hasn't uploaded their PCN cert yet. */
+export const MOCK_SESSION_PENDING_PCN: SessionUser = {
+  id: 1009,
+  uuid: 'u-1009',
+  role: 'customer',
+  email: 'newpharm@example.ng',
+  full_name: 'Tayo Adeyemi',
+  company_name: 'NewPharm Stores',
+  pcn_uploaded: false,
+  pcn_verified: false,
 };
 
 export const MOCK_ADMIN_SESSION: SessionUser = {
@@ -448,4 +532,15 @@ export const MOCK_AGENT_SESSION: SessionUser = {
   role: 'sales_agent',
   email: 'amaka.eze@envolvepharm.com.ng',
   full_name: 'Amaka Eze',
+  permissions: ['onboard_customers', 'manage_products', 'manage_inventory', 'assign_drivers', 'view_reports'],
+  permission_preset: 'senior_staff',
+};
+
+export const MOCK_DRIVER_SESSION: SessionUser = {
+  id: 21,
+  uuid: 'u-driver-01',
+  role: 'driver',
+  email: 'musa.bello@envolvepharm.com.ng',
+  full_name: 'Musa Bello',
+  driver_id: 1,
 };

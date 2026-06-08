@@ -19,16 +19,16 @@ import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
 
 const STATUS_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'pending', label: 'Pending' },
+  { value: 'all',        label: 'All' },
+  { value: 'pending',    label: 'Pending' },
   { value: 'processing', label: 'Processing' },
-  { value: 'dispatched', label: 'Dispatched' },
-  { value: 'delivered', label: 'Delivered' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'dispatched', label: 'Dispatch' },
+  { value: 'delivered',  label: 'Delivered' },
+  { value: 'cancelled',  label: 'Cancelled' },
 ] as const;
 
 export default function ConsoleOrdersPage() {
-  const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]['value']>('all');
+  const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]['value']>('processing');
   const [query, setQuery] = useState('');
   const toast = useToast();
 

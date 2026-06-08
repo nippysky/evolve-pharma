@@ -9,7 +9,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSession } from '@/lib/auth';
+import { getSession, hasPermission } from '@/lib/auth';
 import {
   agentInviteSchema,
   agentImportRowSchema,
@@ -64,14 +64,14 @@ export async function inviteAgentAction(formData: FormData): Promise<ActionResul
     region: formData.get('region') || undefined,
   });
   if (!parsed.success) return fail(parsed.error);
-  revalidatePath('/console/agents');
+  revalidatePath('/console/staff');
   return { ok: true };
 }
 
 export async function importAgentsAction(rows: unknown[]): Promise<ActionResult> {
   if (!(await guard(['admin']))) return NOT_AUTHORIZED;
   await sleep(1000);
-  revalidatePath('/console/agents');
+  revalidatePath('/console/staff');
   return { ok: true, data: summarize(rows, agentImportRowSchema) };
 }
 
@@ -161,7 +161,8 @@ function parseProductForm(formData: FormData) {
 }
 
 export async function createProductAction(formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  const session = await guard(['admin', 'sales_agent']);
+  if (!session || !hasPermission(session, 'manage_products')) return NOT_AUTHORIZED;
   await sleep(900);
   const parsed = parseProductForm(formData);
   if (!parsed.success) return fail(parsed.error);
@@ -170,7 +171,8 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
 }
 
 export async function updateProductAction(id: number, formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  const session = await guard(['admin', 'sales_agent']);
+  if (!session || !hasPermission(session, 'manage_products')) return NOT_AUTHORIZED;
   await sleep(900);
   if (!Number.isFinite(id)) return { ok: false, message: 'Invalid product.' };
   const parsed = parseProductForm(formData);
@@ -180,7 +182,8 @@ export async function updateProductAction(id: number, formData: FormData): Promi
 }
 
 export async function importProductsAction(rows: unknown[]): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  const session = await guard(['admin', 'sales_agent']);
+  if (!session || !hasPermission(session, 'manage_products')) return NOT_AUTHORIZED;
   await sleep(1000);
   revalidatePath('/console/products');
   return { ok: true, data: summarize(rows, productImportRowSchema) };
@@ -189,7 +192,8 @@ export async function importProductsAction(rows: unknown[]): Promise<ActionResul
 // ---------- Inventory (stock) --------------------------------------------
 
 export async function receiveStockAction(formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  const session = await guard(['admin', 'sales_agent']);
+  if (!session || !hasPermission(session, 'manage_inventory')) return NOT_AUTHORIZED;
   await sleep(800);
   const parsed = batchReceiveSchema.safeParse({
     sku: formData.get('sku'),
@@ -204,7 +208,8 @@ export async function receiveStockAction(formData: FormData): Promise<ActionResu
 }
 
 export async function importBatchesAction(rows: unknown[]): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  const session = await guard(['admin', 'sales_agent']);
+  if (!session || !hasPermission(session, 'manage_inventory')) return NOT_AUTHORIZED;
   await sleep(1000);
   revalidatePath('/console/inventory');
   return { ok: true, data: summarize(rows, batchImportRowSchema) };

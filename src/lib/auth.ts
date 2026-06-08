@@ -11,8 +11,9 @@ import {
   MOCK_SESSION,
   MOCK_ADMIN_SESSION,
   MOCK_AGENT_SESSION,
+  MOCK_DRIVER_SESSION,
 } from '@/lib/data/operational';
-import type { Role, SessionUser } from '@/types';
+import type { Role, SessionUser, StaffPermissionKey } from '@/types';
 
 const ROLE_COOKIE = 'envolve_demo_role';
 
@@ -29,6 +30,8 @@ export async function getSession(): Promise<SessionUser | null> {
       return MOCK_ADMIN_SESSION;
     case 'sales_agent':
       return MOCK_AGENT_SESSION;
+    case 'driver':
+      return MOCK_DRIVER_SESSION;
     case 'customer':
     default:
       return MOCK_SESSION;
@@ -52,3 +55,13 @@ export async function requireRole(roles: Role[]): Promise<SessionUser> {
 }
 
 export const ROLE_COOKIE_NAME = ROLE_COOKIE;
+
+/**
+ * Server-side permission check. Admin always passes; sales_agent needs
+ * the specific permission key in their session.permissions array.
+ */
+export function hasPermission(session: SessionUser | null, key: StaffPermissionKey): boolean {
+  if (!session) return false;
+  if (session.role === 'admin') return true;
+  return session.permissions?.includes(key) ?? false;
+}

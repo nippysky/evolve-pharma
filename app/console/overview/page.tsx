@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { ORDERS, CUSTOMERS, DELIVERIES, INVENTORY } from '@/lib/data/operational';
 import { getAllProducts } from '@/lib/data/products';
@@ -21,6 +22,8 @@ import { cn } from '@/lib/utils';
 
 export default async function ConsoleOverviewPage() {
   const session = await getSession();
+  // Drivers have their own dashboard — send them there immediately
+  if (session?.role === 'driver') redirect('/console/driver');
   const isAdmin = session?.role === 'admin';
 
   const totalRevenue = ORDERS

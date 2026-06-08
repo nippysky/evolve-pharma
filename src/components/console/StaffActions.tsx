@@ -5,38 +5,27 @@ import { Button } from '@/components/ui/Button';
 import { Plus, Upload } from '@/components/icons';
 import { CreateEntityModal, type EntityField } from './CreateEntityModal';
 import { SheetImporter } from './SheetImporter';
-import { staffInviteSchema, staffImportRowSchema, type StaffInviteInput } from '@/lib/schemas';
-import { inviteStaffAction, importStaffAction } from '@/lib/actions/console';
-import { DEPARTMENTS } from '@/lib/data/staff';
+import { agentInviteSchema, agentImportRowSchema, type AgentInviteInput } from '@/lib/schemas';
+import { inviteAgentAction, importAgentsAction } from '@/lib/actions/console';
 
 const FIELDS: EntityField[] = [
   { name: 'first_name', label: 'First name', required: true, placeholder: 'Ngozi' },
-  { name: 'middle_name', label: 'Middle name', placeholder: 'Optional' },
-  { name: 'last_name', label: 'Last name', required: true, placeholder: 'Umeh' },
+  { name: 'last_name',  label: 'Last name',  required: true, placeholder: 'Umeh' },
   { name: 'email', label: 'Work email', type: 'email', required: true, placeholder: 'name@envolvepharm.com.ng', full: true },
-  { name: 'phone', label: 'Phone', type: 'tel', required: true, placeholder: '+234 800 000 0000' },
-  {
-    name: 'department',
-    label: 'Department',
-    type: 'select',
-    required: true,
-    options: DEPARTMENTS.map((d) => ({ value: d, label: d })),
-  },
-  { name: 'job_title', label: 'Job title', required: true, placeholder: 'Procurement Lead', full: true },
+  { name: 'phone',  label: 'Phone',  type: 'tel', required: true, placeholder: '+234 800 000 0000' },
+  { name: 'region', label: 'Region', placeholder: 'Abuja FCT', full: true },
 ];
 
 const COLUMNS = [
   { key: 'first_name', label: 'First name', required: true },
-  { key: 'middle_name', label: 'Middle name' },
-  { key: 'last_name', label: 'Last name', required: true },
-  { key: 'email', label: 'Email', required: true },
-  { key: 'phone', label: 'Phone', required: true },
-  { key: 'department', label: 'Department', required: true },
-  { key: 'job_title', label: 'Job title', required: true },
+  { key: 'last_name',  label: 'Last name',  required: true },
+  { key: 'email',      label: 'Email',      required: true },
+  { key: 'phone',      label: 'Phone',      required: true },
+  { key: 'region',     label: 'Region' },
 ];
 
 export function StaffActions() {
-  const [invite, setInvite] = useState(false);
+  const [invite,    setInvite]    = useState(false);
   const [importing, setImporting] = useState(false);
 
   return (
@@ -51,23 +40,23 @@ export function StaffActions() {
       <CreateEntityModal
         open={invite}
         onClose={() => setInvite(false)}
-        title="Add a staff member"
-        description="They'll get an email invite to set their own password and access the console."
+        title="Invite a staff member"
+        description="They'll get an email invite to set their password. Role defaults to Sales Rep — you can change it after they join."
         fields={FIELDS}
-        schema={staffInviteSchema}
-        action={inviteStaffAction}
+        schema={agentInviteSchema}
+        action={inviteAgentAction}
         submitLabel="Send invite"
         successTitle="Staff invited"
-        size="xl"
+        size="lg"
       />
 
-      <SheetImporter<StaffInviteInput>
+      <SheetImporter<AgentInviteInput>
         open={importing}
         onClose={() => setImporting(false)}
         title="Import staff"
         columns={COLUMNS}
-        schema={staffImportRowSchema}
-        action={importStaffAction}
+        schema={agentImportRowSchema}
+        action={importAgentsAction}
         templateName="staff_template.xlsx"
       />
     </>

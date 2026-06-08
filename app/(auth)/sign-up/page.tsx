@@ -35,6 +35,7 @@ const emptyDetails = {
   city: '',
   state: '',
   country: 'Nigeria',
+  referral_code: '',
 };
 
 export default function SignUpPage() {
@@ -147,7 +148,7 @@ export default function SignUpPage() {
     setSubmitting(true);
     setServerError('');
     const fd = new FormData();
-    Object.entries(details).forEach(([k, v]) => fd.set(k, v));
+    Object.entries(details).forEach(([k, v]) => { if (v) fd.set(k, v); });
     if (certFile) fd.set('pcn_cert', certFile);
     fd.set('email_verified', 'true');
     fd.set('password', password);
@@ -290,6 +291,22 @@ export default function SignUpPage() {
                 <Input id="country" name="country" value={details.country} onChange={set('country')} autoComplete="country-name" placeholder="Nigeria" />
               </Field>
             </div>
+
+            <Field
+              label="Referral code"
+              htmlFor="referral_code"
+              hint="Optional — if someone referred you"
+              error={errors.referral_code}
+            >
+              <Input
+                id="referral_code"
+                name="referral_code"
+                value={details.referral_code}
+                onChange={set('referral_code')}
+                placeholder="e.g. PHARMA2025"
+                autoComplete="off"
+              />
+            </Field>
 
             <Button type="button" fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={next1}>
               Continue

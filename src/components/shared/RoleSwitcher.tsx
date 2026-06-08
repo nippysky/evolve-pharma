@@ -1,12 +1,7 @@
 /**
  * RoleSwitcher — demo widget that flips the active session role.
- *
- * Now scoped to STAFF roles only (Admin ⇄ Sales Agent). Customers don't
- * get a switcher — they're just customers — so this is rendered solely in
- * the console shell. To re-enter a customer demo session, sign in at
- * /sign-in; to re-enter staff, sign in at /staff/sign-in.
- *
- * In production, this is removed (just delete its render in the layout).
+ * Allows previewing Admin, Staff, Driver, and Customer experiences.
+ * Remove this component in production (just delete its render in the layout).
  */
 
 'use client';
@@ -14,28 +9,25 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { setDemoRole } from '@/lib/actions/role';
-import { User, Users, Shield, ChevronUp } from '@/components/icons';
+import { User, Users, Shield, Truck, ChevronUp } from '@/components/icons';
 import type { Role } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface RoleSwitcherProps {
   current: Role;
-  /**
-   * Which roles this switcher may flip between. Defaults to staff roles —
-   * customer is intentionally excluded.
-   */
   roles?: Role[];
 }
 
-const STAFF_ROLES: Role[] = ['admin', 'sales_agent'];
+const ALL_ROLES: Role[] = ['admin', 'sales_agent', 'driver', 'customer'];
 
-const OPTIONS: { value: Role; label: string; sub: string; Icon: typeof User }[] = [
-  { value: 'admin', label: 'Admin', sub: 'Full access — products, agents, reports', Icon: Shield },
-  { value: 'sales_agent', label: 'Sales Agent', sub: 'Onboard customers, track orders', Icon: Users },
-  { value: 'customer', label: 'Customer (Pharmacy)', sub: 'Browse catalog, place orders', Icon: User },
+const OPTIONS: { value: Role; label: string; sub: string; Icon: typeof User; href: string }[] = [
+  { value: 'admin',       label: 'Admin',             sub: 'Full access — everything',            Icon: Shield, href: '/console/overview' },
+  { value: 'sales_agent', label: 'Staff',             sub: 'Scoped by permission preset',          Icon: Users,  href: '/console/overview' },
+  { value: 'driver',      label: 'Driver',            sub: 'My assignments & history',             Icon: Truck,  href: '/console/driver'   },
+  { value: 'customer',    label: 'Customer (Pharmacy)', sub: 'Browse catalog, place orders',       Icon: User,   href: '/portal/catalog'   },
 ];
 
-export function RoleSwitcher({ current, roles = STAFF_ROLES }: RoleSwitcherProps) {
+export function RoleSwitcher({ current, roles = ALL_ROLES }: RoleSwitcherProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -52,11 +44,11 @@ export function RoleSwitcher({ current, roles = STAFF_ROLES }: RoleSwitcherProps
 
   const options = OPTIONS.filter((o) => roles.includes(o.value));
 
-  const select = (role: Role) => {
+  const select = (opt: (typeof OPTIONS)[number]) => {
     startTransition(async () => {
-      await setDemoRole(role);
+      await setDemoRole(opt.value);
       setOpen(false);
-      router.push(role === 'customer' ? '/portal/catalog' : '/console/overview');
+      router.push(opt.href);
       router.refresh();
     });
   };
@@ -68,12 +60,13 @@ export function RoleSwitcher({ current, roles = STAFF_ROLES }: RoleSwitcherProps
       {open && (
         <div
           role="menu"
-          className="absolute bottom-full right-0 mb-2 w-72 origin-bottom-right rounded-xl border border-line bg-white p-2 shadow-xl animate-fade-in-up"
+          className="absolute bottom-full right-0 mb-2 w-76 origin-bottom-right rounded-xl border border-line bg-white p-2 shadow-xl animate-fade-in-up"
         >
           <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3">
             Demo · view as
           </div>
-          {options.map(({ value, label, sub, Icon }) => {
+          {options.map((opt) => {
+            const { value, label, sub, Icon } = opt;
             const active = current === value;
             return (
               <button
@@ -82,7 +75,7 @@ export function RoleSwitcher({ current, roles = STAFF_ROLES }: RoleSwitcherProps
                 role="menuitemradio"
                 aria-checked={active}
                 disabled={pending}
-                onClick={() => select(value)}
+                onClick={() => select(opt)}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors',
                   active ? 'bg-brand-50 text-ink' : 'text-ink hover:bg-bg-subtle',
@@ -100,11 +93,14 @@ export function RoleSwitcher({ current, roles = STAFF_ROLES }: RoleSwitcherProps
                   <span className="block truncate text-sm font-medium">{label}</span>
                   <span className="block truncate text-xs text-ink-3">{sub}</span>
                 </span>
+                {active && (
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+                )}
               </button>
             );
           })}
           <p className="mt-2 border-t border-line-subtle px-3 py-2 text-xs leading-relaxed text-ink-3">
-            Staff demo switcher — flip between Admin and Sales Agent. Real auth uses signed sessions.
+            Demo mode — switch between all roles. Remove in production.
           </p>
         </div>
       )}
