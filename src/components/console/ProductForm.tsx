@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Field, Input, Textarea, Select, Checkbox } from '@/components/ui/Field';
+import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { CheckCircle, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
@@ -58,10 +58,17 @@ export function ProductForm({ product, mode }: ProductFormProps) {
       )}
       <h2 className="mb-6 text-base font-medium tracking-tight text-ink">Product details</h2>
 
-      <Field label="Name" htmlFor="name" required error={fieldErrors?.name?.[0]}>
-        <Input id="name" name="name" defaultValue={product?.name} placeholder="Paracetamol 500mg" />
-      </Field>
+      {/* Names */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Brand / trade name" htmlFor="name" required error={fieldErrors?.name?.[0]}>
+          <Input id="name" name="name" defaultValue={product?.name} placeholder="Paracetamol 500mg" />
+        </Field>
+        <Field label="Generic / INN name" htmlFor="generic_name" required error={fieldErrors?.generic_name?.[0]}>
+          <Input id="generic_name" name="generic_name" defaultValue={product?.generic_name} placeholder="Paracetamol" />
+        </Field>
+      </div>
 
+      {/* Identity */}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="SKU" htmlFor="sku" required error={fieldErrors?.sku?.[0]}>
           <Input id="sku" name="sku" defaultValue={product?.sku} placeholder="PARA-500-100" />
@@ -71,10 +78,7 @@ export function ProductForm({ product, mode }: ProductFormProps) {
         </Field>
       </div>
 
-      <Field label="Description" htmlFor="description" required error={fieldErrors?.description?.[0]}>
-        <Textarea id="description" name="description" rows={3} defaultValue={product?.description} placeholder="Short product description for the catalog…" />
-      </Field>
-
+      {/* Image */}
       <Field
         label="Image URL"
         htmlFor="image_url"
@@ -85,6 +89,7 @@ export function ProductForm({ product, mode }: ProductFormProps) {
         <Input id="image_url" name="image_url" type="url" defaultValue={product?.image_url} placeholder="https://…/product.jpg" />
       </Field>
 
+      {/* Category + Form */}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Category" htmlFor="category" required error={fieldErrors?.category?.[0]}>
           <Select id="category" name="category" defaultValue={product?.category ?? PRODUCT_CATEGORIES[0]}>
@@ -102,18 +107,46 @@ export function ProductForm({ product, mode }: ProductFormProps) {
         </Field>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* Strength + Pack size */}
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Strength" htmlFor="strength" required error={fieldErrors?.strength?.[0]}>
           <Input id="strength" name="strength" defaultValue={product?.strength} placeholder="500mg" />
         </Field>
-        <Field label="Pack size" htmlFor="pack_size" required error={fieldErrors?.pack_size?.[0]}>
-          <Input id="pack_size" name="pack_size" defaultValue={product?.pack_size} placeholder="100 tablets" />
-        </Field>
-        <Field label="Price (₦)" htmlFor="price" required error={fieldErrors?.price?.[0]}>
-          <Input id="price" name="price" type="number" step="1" min="0" defaultValue={product ? String(product.price) : ''} placeholder="1200" />
+        <Field
+          label="Pack size"
+          htmlFor="pack_size"
+          required
+          hint='Format: cases × packs × units, e.g. "1 x 6 x 25"'
+          error={fieldErrors?.pack_size?.[0]}
+        >
+          <Input id="pack_size" name="pack_size" defaultValue={product?.pack_size} placeholder="1 x 6 x 25" />
         </Field>
       </div>
 
+      {/* Pricing */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Cost price (₦)" htmlFor="cost_price" required hint="Internal — not shown to customers" error={fieldErrors?.cost_price?.[0]}>
+          <Input id="cost_price" name="cost_price" type="number" step="1" min="0" defaultValue={product ? String(product.cost_price) : ''} placeholder="3800" />
+        </Field>
+        <Field label="Selling price (₦)" htmlFor="selling_price" required hint="Shown to customers" error={fieldErrors?.selling_price?.[0]}>
+          <Input id="selling_price" name="selling_price" type="number" step="1" min="0" defaultValue={product ? String(product.selling_price) : ''} placeholder="4800" />
+        </Field>
+      </div>
+
+      {/* Warehouse */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Shelf location" htmlFor="shelf_location" hint="e.g. AB001" error={fieldErrors?.shelf_location?.[0]}>
+          <Input id="shelf_location" name="shelf_location" defaultValue={product?.shelf_location ?? ''} placeholder="AB001" />
+        </Field>
+        <Field label="Min. stock level" htmlFor="min_stock_level" hint="Low-stock threshold" error={fieldErrors?.min_stock_level?.[0]}>
+          <Input id="min_stock_level" name="min_stock_level" type="number" step="1" min="0" defaultValue={product?.min_stock_level != null ? String(product.min_stock_level) : ''} placeholder="50" />
+        </Field>
+        <Field label="Reorder qty" htmlFor="reorder_qty" hint="Suggested reorder quantity" error={fieldErrors?.reorder_qty?.[0]}>
+          <Input id="reorder_qty" name="reorder_qty" type="number" step="1" min="0" defaultValue={product?.reorder_qty != null ? String(product.reorder_qty) : ''} placeholder="500" />
+        </Field>
+      </div>
+
+      {/* Status + Rx */}
       <div className="grid items-end gap-3 sm:grid-cols-2">
         <Field label="Status" htmlFor="status" required>
           <Select id="status" name="status" defaultValue={product?.status ?? 'draft'}>

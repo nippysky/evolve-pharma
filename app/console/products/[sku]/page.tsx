@@ -81,16 +81,20 @@ export default async function EditProductPage({
             </h3>
             <dl className="mt-3 flex flex-col gap-2 text-sm">
               <div className="flex justify-between gap-2">
-                <dt className="text-ink-2">Single pack</dt>
-                <dd className="num font-medium text-ink">{formatNaira(product.price)}</dd>
+                <dt className="text-ink-2">Cost price</dt>
+                <dd className="num font-medium text-ink">{formatNaira(product.cost_price)}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-ink-2">Bulk (10+)</dt>
-                <dd className="num font-medium text-ink">{formatNaira(Math.round(product.price * 0.92))}</dd>
+                <dt className="text-ink-2">Selling price</dt>
+                <dd className="num font-medium text-ink">{formatNaira(product.selling_price)}</dd>
               </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-ink-2">Bulk (50+)</dt>
-                <dd className="num font-medium text-ink">{formatNaira(Math.round(product.price * 0.85))}</dd>
+              <div className="flex justify-between gap-2 border-t border-line-subtle pt-2">
+                <dt className="text-ink-2">Margin</dt>
+                <dd className="num font-medium text-leaf-700">
+                  {product.selling_price > 0
+                    ? `${Math.round(((product.selling_price - product.cost_price) / product.selling_price) * 100)}%`
+                    : '—'}
+                </dd>
               </div>
             </dl>
           </div>

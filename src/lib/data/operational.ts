@@ -196,8 +196,8 @@ const buildOrder = (
       product_sku: p.sku,
       product_image: p.image_url,
       quantity: qty,
-      price: p.price,
-      subtotal: p.price * qty,
+      price: p.selling_price,
+      subtotal: p.selling_price * qty,
       created_at: daysAgo(daysOld),
     };
   });

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Field, Input, Checkbox } from '@/components/ui/Field';
+import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { OtpInput } from '@/components/ui/OtpInput';
 import {
@@ -16,12 +16,15 @@ import {
   Mail,
 } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-import { customerSignUpAction, requestEmailCode, verifyEmailCode } from '@/lib/actions';
+import {
+  useRegisterCustomer,
+  useVerifyOtp,
+  useResendOtp,
+} from '@/hooks/auth/useCustomerAuth';
 import { customerDetailsSchema, passwordSchema } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 
 type Step = 1 | 2 | 3 | 4;
-
 const STEPS = ['Details', 'Certificate', 'Verify', 'Password'];
 
 const emptyDetails = {
@@ -34,7 +37,7 @@ const emptyDetails = {
   address: '',
   city: '',
   state: '',
-  country: 'Nigeria',
+  gender: '',
   referral_code: '',
 };
 
@@ -42,93 +45,131 @@ export default function SignUpPage() {
   const router = useRouter();
   const toast = useToast();
 
+  // ── State ────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>(1);
   const [details, setDetails] = useState(emptyDetails);
   const [certFile, setCertFile] = useState<File | null>(null);
   const [code, setCode] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
   const [resendIn, setResendIn] = useState(0);
-  const [verifying, setVerifying] = useState(false);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  /** Token returned by verify-OTP — required for the create-password call. */
+  const [otpToken, setOtpToken] = useState('');
 
-  const set = (k: keyof typeof details) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setDetails((d) => ({ ...d, [k]: e.target.value }));
+  // ── API hooks ────────────────────────────────────────────────────────────
+  const registerMutation = useRegisterCustomer();
+  const verifyOtpMutation = useVerifyOtp();
+  const resendOtpMutation = useResendOtp();
 
+  // ── Resend countdown ─────────────────────────────────────────────────────
   useEffect(() => {
     if (resendIn <= 0) return;
     const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  const sendCode = async () => {
-    setResendIn(30);
-    setCodeSent(true);
-    const r = await requestEmailCode(details.email);
-    if (r.ok) {
-      toast.show({
-        tone: 'info',
-        title: 'Code sent',
-        description: `We sent a 6-digit code to ${details.email}.`,
-      });
-    } else {
-      setResendIn(0);
-      toast.show({ tone: 'error', title: 'Could not send code', description: r.message });
-    }
-  };
+  const set = (k: keyof typeof details) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setDetails((d) => ({ ...d, [k]: e.target.value }));
 
-  // ---- step transitions -------------------------------------------------
-
-  const validateDetails = () => {
-    const r = customerDetailsSchema.safeParse(details);
-    if (r.success) {
-      setErrors({});
-      return true;
-    }
-    const fe = r.error.flatten().fieldErrors;
-    const e: Record<string, string> = {};
-    Object.entries(fe).forEach(([k, msgs]) => {
-      if (msgs?.[0]) e[k] = msgs[0];
-    });
-    setErrors(e);
-    return false;
-  };
-
+  // ── Step 1 → 2 ───────────────────────────────────────────────────────────
   const next1 = () => {
-    if (validateDetails()) setStep(2);
+    const r = customerDetailsSchema.safeParse(details);
+    if (!r.success) {
+      const fe = r.error.flatten().fieldErrors;
+      const e: Record<string, string> = {};
+      Object.entries(fe).forEach(([k, msgs]) => { if (msgs?.[0]) e[k] = msgs[0]; });
+      setErrors(e);
+      return;
+    }
+    setErrors({});
+    setStep(2);
   };
 
-  const next2 = async () => {
+  // ── Step 2 → 3 (calls real register API) ────────────────────────────────
+  const next2 = () => {
     if (!certFile) {
       setErrors({ pcn_cert: 'Please upload your PCN certificate' });
       return;
     }
     setErrors({});
-    setStep(3);
-    if (!codeSent) await sendCode();
+    setServerError('');
+
+    registerMutation.mutate(
+      {
+        first_name: details.first_name,
+        middle_name: details.middle_name || undefined,
+        last_name: details.last_name,
+        company_name: details.company_name,
+        email: details.email,
+        phone: details.phone,
+        address: details.address,
+        city: details.city,
+        state: details.state,
+        gender: details.gender || undefined,
+        referral_code: details.referral_code || undefined,
+        pcn_certificate: certFile,
+      },
+      {
+        onSuccess: () => {
+          setResendIn(30);
+          toast.show({
+            tone: 'info',
+            title: 'Registration submitted',
+            description: `A 6-digit code was sent to ${details.email}.`,
+          });
+          setStep(3);
+        },
+        onError: (err: Error & { fieldErrors?: Record<string, string[]> }) => {
+          setServerError(err.message ?? 'Registration failed. Please try again.');
+          if (err.fieldErrors) {
+            const mapped: Record<string, string> = {};
+            Object.entries(err.fieldErrors).forEach(([k, msgs]) => {
+              if (msgs?.[0]) mapped[k] = msgs[0];
+            });
+            setErrors(mapped);
+          }
+        },
+      },
+    );
   };
 
-  const verifyStep = async () => {
+  // ── Resend OTP ───────────────────────────────────────────────────────────
+  const handleResend = () => {
+    setResendIn(30);
+    resendOtpMutation.mutate(details.email, {
+      onSuccess: () => toast.show({ tone: 'info', title: 'Code resent', description: `Sent to ${details.email}` }),
+      onError: () => {
+        setResendIn(0);
+        toast.show({ tone: 'error', title: 'Could not resend', description: 'Please try again.' });
+      },
+    });
+  };
+
+  // ── Step 3 — verify OTP ──────────────────────────────────────────────────
+  const verifyStep = () => {
     if (code.length !== 6) {
       setErrors({ code: 'Enter all 6 digits' });
       return;
     }
-    setVerifying(true);
     setErrors({});
-    const r = await verifyEmailCode(details.email, code);
-    setVerifying(false);
-    if (r.ok) {
-      toast.show({ tone: 'success', title: 'Email verified' });
-      setStep(4);
-    } else {
-      setErrors({ code: r.message });
-    }
+    verifyOtpMutation.mutate(
+      { email: details.email, otp_code: code },
+      {
+        onSuccess: (data) => {
+          // Capture the token — it's required for the create-password step
+          setOtpToken(data.token);
+          toast.show({ tone: 'success', title: 'Email verified' });
+          setStep(4);
+        },
+        onError: (err: Error) => setErrors({ code: err.message }),
+      },
+    );
   };
 
+  // ── Step 4 — create password ─────────────────────────────────────────────
   const pwReqs = [
     { ok: password.length >= 8 && password.length <= 72, label: '8–72 characters' },
     { ok: /[A-Z]/.test(password) && /[a-z]/.test(password), label: 'Upper and lowercase letters' },
@@ -136,7 +177,7 @@ export default function SignUpPage() {
     { ok: password.length > 0 && password === confirm, label: 'Passwords match' },
   ];
 
-  const completeRegistration = async () => {
+  const completeRegistration = () => {
     const e: Record<string, string> = {};
     const pw = passwordSchema.safeParse(password);
     if (!pw.success) e.password = pw.error.issues[0]?.message ?? 'Invalid password';
@@ -145,54 +186,38 @@ export default function SignUpPage() {
     setErrors(e);
     if (Object.keys(e).length) return;
 
-    setSubmitting(true);
-    setServerError('');
-    const fd = new FormData();
-    Object.entries(details).forEach(([k, v]) => { if (v) fd.set(k, v); });
-    if (certFile) fd.set('pcn_cert', certFile);
-    fd.set('email_verified', 'true');
-    fd.set('password', password);
-    fd.set('confirm_password', confirm);
-    fd.set('accept_terms', acceptTerms ? 'on' : 'off');
-
-    const r = await customerSignUpAction(null, fd);
-    setSubmitting(false);
-    if (r.ok) {
-      toast.show({
-        tone: 'success',
-        title: 'Registration submitted',
-        description: 'Your account is pending review.',
-      });
-      setTimeout(() => router.push('/sign-up/pending'), 400);
-    } else {
-      setServerError(r.message);
-      if (r.fieldErrors) {
-        const mapped: Record<string, string> = {};
-        Object.entries(r.fieldErrors).forEach(([k, msgs]) => {
-          if (msgs?.[0]) mapped[k] = msgs[0];
+    import('@/lib/api/services/auth.service').then(({ createPassword }) => {
+      setServerError('');
+      // token captured from the verify-OTP response is required here
+      createPassword({ password, token: otpToken })
+        .then(() => {
+          toast.show({
+            tone: 'success',
+            title: 'Account created!',
+            description: 'Your account is pending review by our team.',
+          });
+          setTimeout(() => router.push('/sign-up/pending'), 400);
+        })
+        .catch((err: Error) => {
+          setServerError(err.message ?? 'Could not set password. Please try again.');
         });
-        setErrors((prev) => ({ ...prev, ...mapped }));
-      }
-    }
+    });
   };
 
-  const title =
-    step === 1
-      ? 'Create your account.'
-      : step === 2
-        ? 'Verify your pharmacy.'
-        : step === 3
-          ? 'Confirm your email.'
-          : 'Secure your account.';
+  // ── Titles per step ──────────────────────────────────────────────────────
+  const title = step === 1 ? 'Create your account.'
+    : step === 2 ? 'Verify your pharmacy.'
+    : step === 3 ? 'Confirm your email.'
+    : 'Secure your account.';
+  const subtitle = step === 1 ? 'Tell us about you and your pharmacy.'
+    : step === 2 ? 'Upload your PCN certificate so our compliance team can verify you.'
+    : step === 3 ? `Enter the 6-digit code we sent to ${details.email}.`
+    : 'Set a password to finish your registration.';
 
-  const subtitle =
-    step === 1
-      ? 'Tell us about you and your pharmacy.'
-      : step === 2
-        ? 'Upload your PCN certificate so our compliance team can verify you.'
-        : step === 3
-          ? `Enter the 6-digit code we sent to ${details.email}.`
-          : 'Set a password to finish your registration.';
+  const isLoading =
+    registerMutation.isPending ||
+    verifyOtpMutation.isPending ||
+    resendOtpMutation.isPending;
 
   return (
     <form noValidate onSubmit={(e) => e.preventDefault()} className="w-full max-w-136">
@@ -204,24 +229,15 @@ export default function SignUpPage() {
           const active = n === step;
           return (
             <li key={label} className="flex flex-1 items-center gap-2 last:flex-none">
-              <span
-                className={cn(
-                  'grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-semibold transition-colors',
-                  active
-                    ? 'border-brand-600 bg-brand-600 text-white'
-                    : done
-                      ? 'border-brand-600 bg-brand-50 text-brand-700'
-                      : 'border-line bg-white text-ink-3',
-                )}
-              >
+              <span className={cn(
+                'grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-semibold transition-colors',
+                active ? 'border-brand-600 bg-brand-600 text-white'
+                  : done ? 'border-brand-600 bg-brand-50 text-brand-700'
+                  : 'border-line bg-white text-ink-3',
+              )}>
                 {n}
               </span>
-              <span
-                className={cn(
-                  'hidden text-xs font-medium sm:block',
-                  active ? 'text-ink' : 'text-ink-3',
-                )}
-              >
+              <span className={cn('hidden text-xs font-medium sm:block', active ? 'text-ink' : 'text-ink-3')}>
                 {label}
               </span>
               {n < STEPS.length && (
@@ -242,9 +258,16 @@ export default function SignUpPage() {
 
       <div className="mt-7">
         {serverError && (
-          <div className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
-            <AlertTriangle size={14} className="mt-0.5" />
-            <span>{serverError}</span>
+          <div className="mb-4 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>{serverError}</span>
+            </div>
+            {serverError.toLowerCase().includes('network error') || serverError.toLowerCase().includes('cors') ? (
+              <p className="mt-2 pl-5 text-xs text-red-600">
+                Tip: open <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd> → Console to see the exact browser error. Common causes: the backend hasn&apos;t allowed this origin (CORS), or the server is unreachable.
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -277,35 +300,32 @@ export default function SignUpPage() {
             </div>
 
             <Field label="Street address" htmlFor="address" required error={errors.address}>
-              <Input id="address" name="address" value={details.address} onChange={set('address')} autoComplete="street-address" placeholder="12 Lagos St., Wuse 2" />
+              <Input id="address" name="address" value={details.address} onChange={set('address')} autoComplete="street-address" placeholder="No 33, Ikeja" />
             </Field>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <Field label="City" htmlFor="city" required error={errors.city}>
-                <Input id="city" name="city" value={details.city} onChange={set('city')} autoComplete="address-level2" placeholder="Abuja" />
+                <Input id="city" name="city" value={details.city} onChange={set('city')} autoComplete="address-level2" placeholder="Lagos" />
               </Field>
               <Field label="State" htmlFor="state" required error={errors.state}>
-                <Input id="state" name="state" value={details.state} onChange={set('state')} autoComplete="address-level1" placeholder="FCT" />
+                <Input id="state" name="state" value={details.state} onChange={set('state')} autoComplete="address-level1" placeholder="Lagos" />
               </Field>
-              <Field label="Country" htmlFor="country" required error={errors.country}>
-                <Input id="country" name="country" value={details.country} onChange={set('country')} autoComplete="country-name" placeholder="Nigeria" />
+              <Field label="Gender" htmlFor="gender" error={errors.gender}>
+                <Select
+                  id="gender"
+                  name="gender"
+                  value={details.gender}
+                  onChange={(e) => setDetails((d) => ({ ...d, gender: e.target.value }))}
+                >
+                  <option value="">Prefer not to say</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </Select>
               </Field>
             </div>
 
-            <Field
-              label="Referral code"
-              htmlFor="referral_code"
-              hint="Optional — if someone referred you"
-              error={errors.referral_code}
-            >
-              <Input
-                id="referral_code"
-                name="referral_code"
-                value={details.referral_code}
-                onChange={set('referral_code')}
-                placeholder="e.g. PHARMA2025"
-                autoComplete="off"
-              />
+            <Field label="Referral code" htmlFor="referral_code" hint="Optional — if someone referred you" error={errors.referral_code}>
+              <Input id="referral_code" name="referral_code" value={details.referral_code} onChange={set('referral_code')} placeholder="e.g. PHARMA2025" autoComplete="off" />
             </Field>
 
             <Button type="button" fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={next1}>
@@ -314,14 +334,11 @@ export default function SignUpPage() {
           </>
         )}
 
-        {/* STEP 2 — certificate */}
+        {/* STEP 2 — PCN certificate */}
         {step === 2 && (
           <>
             <Field label="PCN certificate" htmlFor="pcn_cert" required hint="PDF, JPG or PNG. Max 8MB." error={errors.pcn_cert}>
-              <label
-                htmlFor="pcn_cert"
-                className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-line-strong bg-bg-subtle px-5 py-7 text-center transition-colors hover:border-brand-500 hover:bg-brand-50"
-              >
+              <label htmlFor="pcn_cert" className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-line-strong bg-bg-subtle px-5 py-7 text-center transition-colors hover:border-brand-500 hover:bg-brand-50">
                 <span className="grid h-10 w-10 place-items-center rounded-full border border-line bg-white text-brand-600">
                   {certFile ? <CheckCircle size={18} /> : <Upload size={18} />}
                 </span>
@@ -336,28 +353,22 @@ export default function SignUpPage() {
                   </span>
                 )}
               </label>
-              <input
-                id="pcn_cert"
-                name="pcn_cert"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="hidden"
-                onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
-              />
+              <input id="pcn_cert" name="pcn_cert" type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                onChange={(e) => { setCertFile(e.target.files?.[0] ?? null); setErrors({}); }} />
             </Field>
 
             <div className="mt-2 flex gap-2">
-              <Button type="button" variant="ghost" leadingIcon={<ArrowLeft size={16} />} onClick={() => { setErrors({}); setStep(1); }}>
+              <Button type="button" variant="ghost" leadingIcon={<ArrowLeft size={16} />} onClick={() => { setErrors({}); setServerError(''); setStep(1); }}>
                 Back
               </Button>
-              <Button type="button" fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={next2}>
+              <Button type="button" fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} loading={registerMutation.isPending} onClick={next2}>
                 Continue
               </Button>
             </div>
           </>
         )}
 
-        {/* STEP 3 — verify email */}
+        {/* STEP 3 — verify OTP */}
         {step === 3 && (
           <>
             <div className="mb-5 inline-flex items-center gap-2 rounded-md bg-info-soft px-3 py-2 text-xs text-cyan-800">
@@ -368,13 +379,11 @@ export default function SignUpPage() {
             <OtpInput value={code} onChange={setCode} autoFocus />
             {errors.code && <p className="mt-2 text-xs text-danger">{errors.code}</p>}
 
-            <p className="mt-3 text-xs text-ink-4">Demo: any 6 digits will verify.</p>
-
             <div className="mt-5 flex gap-2">
               <Button type="button" variant="ghost" leadingIcon={<ArrowLeft size={16} />} onClick={() => { setErrors({}); setStep(2); }}>
                 Back
               </Button>
-              <Button type="button" loading={verifying} fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={verifyStep}>
+              <Button type="button" loading={verifyOtpMutation.isPending} fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={verifyStep}>
                 Verify and continue
               </Button>
             </div>
@@ -384,7 +393,7 @@ export default function SignUpPage() {
               {resendIn > 0 ? (
                 <span className="text-ink-3">Resend in {resendIn}s</span>
               ) : (
-                <button type="button" onClick={sendCode} className="font-medium text-brand-600 hover:underline hover:underline-offset-2">
+                <button type="button" onClick={handleResend} disabled={resendOtpMutation.isPending} className="font-medium text-brand-600 hover:underline hover:underline-offset-2 disabled:opacity-50">
                   Resend code
                 </button>
               )}
@@ -416,14 +425,9 @@ export default function SignUpPage() {
             <div className="mb-4">
               <Checkbox name="accept_terms" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}>
                 I confirm I represent a licensed Nigerian pharmacy and accept the{' '}
-                <Link href="/legal" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2">
-                  Terms
-                </Link>{' '}
-                and{' '}
-                <Link href="/legal" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2">
-                  Privacy Policy
-                </Link>
-                .
+                <Link href="/legal" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2">Terms</Link>
+                {' '}and{' '}
+                <Link href="/legal" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2">Privacy Policy</Link>.
               </Checkbox>
               {errors.accept_terms && <p className="mt-1.5 text-xs text-danger">{errors.accept_terms}</p>}
             </div>
@@ -432,7 +436,7 @@ export default function SignUpPage() {
               <Button type="button" variant="ghost" leadingIcon={<ArrowLeft size={16} />} onClick={() => { setErrors({}); setStep(3); }}>
                 Back
               </Button>
-              <Button type="button" loading={submitting} fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={completeRegistration}>
+              <Button type="button" loading={isLoading} fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={completeRegistration}>
                 Complete registration
               </Button>
             </div>

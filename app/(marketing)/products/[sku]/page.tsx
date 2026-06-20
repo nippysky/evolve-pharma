@@ -18,7 +18,7 @@ export async function generateMetadata({
   const { sku } = await params;
   const product = getProductBySku(sku);
   return product
-    ? { title: product.name, description: product.description }
+    ? { title: product.name, description: `${product.generic_name} — ${product.form} ${product.strength}` }
     : { title: 'Product not found' };
 }
 
@@ -79,7 +79,9 @@ export default async function MarketingProductDetail({
               </Badge>
             </div>
 
-            <p className="mt-5 text-sm leading-relaxed text-ink-2">{product.description}</p>
+            <p className="mt-5 text-sm leading-relaxed text-ink-2">
+              Generic name: <span className="font-medium text-ink">{product.generic_name}</span>
+            </p>
 
             <dl className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-line bg-bg-subtle p-5">
               <div>
@@ -110,7 +112,7 @@ export default async function MarketingProductDetail({
 
             <div className="mt-6 flex items-baseline gap-2">
               <span className="font-display text-4xl tracking-tight text-ink num">
-                {formatNaira(product.price)}
+                {formatNaira(product.selling_price)}
               </span>
               <span className="text-sm text-ink-3">/ pack · ex VAT</span>
             </div>

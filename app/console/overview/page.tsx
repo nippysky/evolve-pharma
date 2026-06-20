@@ -42,7 +42,7 @@ export default async function ConsoleOverviewPage() {
       const units = ORDERS.flatMap((o) => o.items)
         .filter((i) => i.product_id === p.id)
         .reduce((acc, i) => acc + i.quantity, 0);
-      return { ...p, units, revenue: units * p.price };
+      return { ...p, units, revenue: units * p.selling_price };
     })
     .filter((p) => p.units > 0)
     .sort((a, b) => b.revenue - a.revenue)

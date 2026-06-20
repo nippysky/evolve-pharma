@@ -45,6 +45,7 @@ export function ProductsList() {
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
+        p.generic_name.toLowerCase().includes(q) ||
         p.sku.toLowerCase().includes(q) ||
         p.manufacturer.toLowerCase().includes(q)
       );
@@ -162,7 +163,7 @@ export function ProductsList() {
                       </div>
                     </Td>
                     <Td right num>
-                      {formatNaira(p.price)}
+                      {formatNaira(p.selling_price)}
                     </Td>
                   </Tr>
                 );

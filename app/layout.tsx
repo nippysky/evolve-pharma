@@ -12,6 +12,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { QueryProvider } from '@/providers/QueryProvider';
 import { SITE } from '@/lib/constants';
 import './globals.css';
 
@@ -129,7 +130,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
-        <ToastProvider>{children}</ToastProvider>
+        <QueryProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -58,7 +58,7 @@ export const useBasket = create<BasketState>()(
             product_id: product.id,
             sku: product.sku,
             name: product.name,
-            price: product.price,
+            price: product.selling_price,
             image: product.image_url,
             quantity,
             pack_size: product.pack_size,

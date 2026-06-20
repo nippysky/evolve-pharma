@@ -194,7 +194,7 @@ export default function HomePage() {
                           </h2>
                           <div className="mt-4 flex items-center justify-between gap-4">
                             <span className="num font-display text-2xl tracking-[-0.04em]">
-                              {formatNaira(primaryProduct.price)}
+                              {formatNaira(primaryProduct.selling_price)}
                             </span>
                             <span className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-ink transition-transform duration-200 group-hover:translate-x-0.5">
                               View
@@ -231,7 +231,7 @@ export default function HomePage() {
                               {product.name}
                             </h3>
                             <p className="num mt-2 font-display text-base tracking-[-0.03em] text-ink">
-                              {formatNaira(product.price)}
+                              {formatNaira(product.selling_price)}
                             </p>
                           </div>
                         </Link>

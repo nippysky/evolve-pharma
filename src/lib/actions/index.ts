@@ -82,6 +82,27 @@ export async function staffSignInAction(_prev: unknown, formData: FormData): Pro
   return { ok: true, data: { role } };
 }
 
+/**
+ * Called by the staff sign-in page AFTER the real API login succeeds.
+ * Maps the backend role string to our internal Role type and sets the
+ * session cookie so the server-rendered console layout knows who's logged in.
+ *
+ * Backend role → internal role:
+ *   "ADMIN"  → "admin"
+ *   "STAFF"  → "sales_agent"
+ *   "DRIVER" → "driver"
+ */
+export async function setStaffSessionAction(
+  backendRole: string,
+): Promise<ActionResult<{ role: Role }>> {
+  let role: Role = 'admin';
+  const r = backendRole.toUpperCase();
+  if (r === 'STAFF')  role = 'sales_agent';
+  if (r === 'DRIVER') role = 'driver';
+  await setSessionRole(role);
+  return { ok: true, data: { role } };
+}
+
 /** Update a staff member's permission preset (admin only). */
 export async function updateStaffPermissionAction(
   _prev: unknown,

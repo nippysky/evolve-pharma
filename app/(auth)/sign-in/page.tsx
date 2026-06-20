@@ -1,38 +1,69 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-import { signInAction } from '@/lib/actions';
-import type { ActionResult } from '@/lib/actions';
-
-const initial: ActionResult = { ok: false, message: '' };
+import { useLoginCustomer } from '@/hooks/auth/useCustomerAuth';
 
 export default function SignInPage() {
   const router = useRouter();
   const toast = useToast();
-  const [state, action, pending] = useActionState(async (prev: ActionResult, fd: FormData) => {
-    const r = await signInAction(prev, fd);
-    if (r.ok) {
-      toast.show({
-        tone: 'success',
-        title: 'Welcome back',
-        description: 'Routing you to your portal…',
-      });
-      setTimeout(() => router.push('/portal/catalog'), 500);
-    }
-    return r;
-  }, initial);
 
-  const fieldErrors = !state.ok ? state.fieldErrors : undefined;
-  const error = !state.ok && !fieldErrors ? state.message : '';
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [serverError, setServerError] = useState('');
+
+  const loginMutation = useLoginCustomer();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setServerError('');
+
+    loginMutation.mutate(
+      { email, password },
+      {
+        onSuccess: (data) => {
+          const customer = data.customer;
+
+          // Account not yet approved — send to the pending page
+          if (customer.status !== 'APPROVED') {
+            toast.show({
+              tone: 'info',
+              title: 'Account pending review',
+              description: 'Our team will approve your account shortly.',
+            });
+            router.push('/sign-up/pending');
+            return;
+          }
+
+          toast.show({
+            tone: 'success',
+            title: `Welcome back, ${customer.first_name}`,
+            description: 'Routing you to your portal…',
+          });
+
+          router.push('/portal/catalog');
+        },
+        onError: (err: Error) => {
+          // Backend returns this message when the account is PENDING_REVIEW
+          if (err.message?.toLowerCase().includes('under review') ||
+              err.message?.toLowerCase().includes('pending')) {
+            router.push('/sign-up/pending');
+            return;
+          }
+          setServerError(err.message ?? 'Sign in failed. Please check your credentials.');
+        },
+      },
+    );
+  };
 
   return (
-    <form action={action} className="w-full max-w-104" noValidate>
+    <form onSubmit={handleSubmit} className="w-full max-w-104" noValidate>
       <span className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
         Sign in
       </span>
@@ -44,21 +75,29 @@ export default function SignInPage() {
       </p>
 
       <div className="mt-8">
-        {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
-            <AlertTriangle size={14} className="mt-0.5" />
-            <span>{error}</span>
+        {serverError && (
+          <div className="mb-4 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>{serverError}</span>
+            </div>
+            {(serverError.toLowerCase().includes('network error') || serverError.toLowerCase().includes('cors')) && (
+              <p className="mt-2 pl-5 text-xs text-red-600">
+                Tip: open <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd> → Console for the exact browser error.
+              </p>
+            )}
           </div>
         )}
 
-        <Field label="Work email" htmlFor="email" required error={fieldErrors?.email?.[0]}>
+        <Field label="Work email" htmlFor="email" required>
           <Input
             id="email"
             name="email"
             type="email"
             placeholder="you@pharmacy.ng"
             autoComplete="email"
-            defaultValue="amaka@greenleaf.ng"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </Field>
@@ -72,21 +111,22 @@ export default function SignInPage() {
           </Link>
         </div>
 
-        <Field label="Password" htmlFor="password" required error={fieldErrors?.password?.[0]}>
+        <Field label="Password" htmlFor="password" required>
           <Input
             id="password"
             name="password"
             type="password"
             placeholder="••••••••"
             autoComplete="current-password"
-            defaultValue="demoPass123"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </Field>
 
         <Button
           type="submit"
-          loading={pending}
+          loading={loginMutation.isPending}
           fullWidth
           size="lg"
           trailingIcon={<ArrowRight size={16} />}

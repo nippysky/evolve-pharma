@@ -90,7 +90,7 @@ export function ProductCard({ product, href, action }: ProductCardProps) {
               Price
             </p>
             <span className="num mt-1 block font-display text-[1.35rem] leading-none tracking-[-0.035em] text-ink">
-              {formatNaira(product.price)}
+              {formatNaira(product.selling_price)}
             </span>
           </div>
 

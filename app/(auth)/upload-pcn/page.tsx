@@ -6,7 +6,7 @@ import { Field } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Upload, FileText, CheckCircle, AlertTriangle, Shield } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-import { uploadPcnCertAction } from '@/lib/actions';
+import { useUploadPcn } from '@/hooks/auth/useCustomerAuth';
 import { cn } from '@/lib/utils';
 
 /**
@@ -25,36 +25,32 @@ export default function UploadPcnPage() {
   const toast = useToast();
 
   const [certFile, setCertFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
   const [fileError, setFileError] = useState('');
 
-  const handleSubmit = async () => {
+  const uploadMutation = useUploadPcn();
+
+  const handleSubmit = () => {
     if (!certFile) {
       setFileError('Please upload your PCN certificate to continue.');
       return;
     }
     setFileError('');
     setServerError('');
-    setSubmitting(true);
 
-    const fd = new FormData();
-    fd.set('pcn_cert', certFile);
-
-    const r = await uploadPcnCertAction(fd);
-    setSubmitting(false);
-
-    if (r.ok) {
-      toast.show({
-        tone: 'success',
-        title: 'Certificate uploaded',
-        description: 'Our team will verify it within 24 hours.',
-      });
-      // Give the toast a moment then redirect to the portal
-      setTimeout(() => router.push('/portal/catalog'), 500);
-    } else {
-      setServerError(r.message ?? 'Upload failed. Please try again.');
-    }
+    uploadMutation.mutate(certFile, {
+      onSuccess: () => {
+        toast.show({
+          tone: 'success',
+          title: 'Certificate uploaded',
+          description: 'Our team will verify it within 24 hours.',
+        });
+        setTimeout(() => router.push('/portal/catalog'), 500);
+      },
+      onError: (err: Error) => {
+        setServerError(err.message ?? 'Upload failed. Please try again.');
+      },
+    });
   };
 
   return (
@@ -153,7 +149,7 @@ export default function UploadPcnPage() {
           type="button"
           fullWidth
           size="lg"
-          loading={submitting}
+          loading={uploadMutation.isPending}
           onClick={handleSubmit}
         >
           Submit certificate

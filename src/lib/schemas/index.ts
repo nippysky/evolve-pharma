@@ -46,7 +46,7 @@ const customerRegistrationFields = z.object({
   address: z.string().trim().min(3, 'Street address is required').max(240),
   city: z.string().trim().min(2, 'City is required').max(80),
   state: z.string().trim().min(2, 'State is required').max(80),
-  country: z.string().trim().min(2, 'Country is required').max(80),
+  gender: z.string().trim().max(20).optional(),
   referral_code: z.string().trim().max(30).optional(),
   pcn_cert_url: z.string().min(1, 'Upload your PCN certificate to continue').url('Must be a valid file URL'),
   password: passwordSchema,
@@ -64,7 +64,7 @@ export const customerDetailsSchema = customerRegistrationFields.pick({
   address: true,
   city: true,
   state: true,
-  country: true,
+  gender: true,
   referral_code: true,
 });
 export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
@@ -113,7 +113,6 @@ export const customerOnboardSchema = z.object({
   address: z.string().trim().min(3, 'Street address is required').max(240),
   city: z.string().trim().min(2, 'City is required').max(80),
   state: z.string().trim().min(2, 'State is required').max(80),
-  country: z.string().trim().min(2, 'Country is required').max(80),
 });
 export type CustomerOnboardInput = z.infer<typeof customerOnboardSchema>;
 export const customerImportRowSchema = customerOnboardSchema;
@@ -145,19 +144,24 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 // ---------- Product (Admin CRUD) -----------------------------------------
 
 export const productSchema = z.object({
-  name: z.string().min(2, 'Product name is required').max(160),
-  description: z.string().min(10, 'Add a meaningful description').max(2000),
+  name: z.string().min(2, 'Brand name is required').max(160),
+  generic_name: z.string().min(1, 'Generic/INN name is required').max(160),
   sku: z
     .string()
     .min(3)
     .max(40)
     .regex(/^[A-Z0-9-]+$/, 'SKU may contain only A-Z, 0-9 and dashes'),
-  price: z.coerce.number().positive('Price must be positive').max(10_000_000),
+  cost_price: z.coerce.number().nonnegative('Cost price must be 0 or more').max(10_000_000),
+  selling_price: z.coerce.number().positive('Selling price must be positive').max(10_000_000),
   category: z.string().min(1, 'Choose a category'),
   manufacturer: z.string().min(1).max(120),
   form: z.string().min(1).max(60),
   strength: z.string().min(1, 'Strength is required (use "N/A" if not applicable)').max(40),
-  pack_size: z.string().min(1, 'Pack size is required').max(60),
+  /** "1 x 6 x 25" format */
+  pack_size: z.string().min(1, 'Pack size is required (e.g. "1 x 6 x 25")').max(60),
+  shelf_location: z.string().trim().max(20).optional(),
+  min_stock_level: z.coerce.number().int().nonnegative().optional(),
+  reorder_qty: z.coerce.number().int().nonnegative().optional(),
   prescription_required: z.boolean().default(false),
   image_url: z.string().url('Provide a valid image URL'),
   status: z.enum(['active', 'draft', 'discontinued']).default('draft'),
@@ -170,19 +174,23 @@ const TRUTHY = new Set(['true', 'yes', 'y', '1', 'rx', 'required']);
 
 export const productImportRowSchema = z.object({
   name: z.string().trim().min(2, 'Name is required').max(160),
+  generic_name: z.string().trim().min(1, 'Generic name is required').max(160),
   sku: z
     .string()
     .trim()
     .min(3, 'SKU is required')
     .max(40)
     .regex(/^[A-Za-z0-9-]+$/, 'SKU: letters, numbers and dashes only'),
-  description: z.string().trim().min(1, 'Description is required').max(2000),
-  price: z.coerce.number().positive('Price must be positive').max(10_000_000),
+  cost_price: z.coerce.number().nonnegative('Cost price must be 0 or more').max(10_000_000),
+  selling_price: z.coerce.number().positive('Selling price must be positive').max(10_000_000),
   category: z.string().trim().min(1, 'Category is required').max(80),
   manufacturer: z.string().trim().min(1, 'Manufacturer is required').max(120),
   form: z.string().trim().min(1, 'Form is required').max(60),
   strength: z.string().trim().max(40).optional(),
   pack_size: z.string().trim().max(60).optional(),
+  shelf_location: z.string().trim().max(20).optional(),
+  min_stock_level: z.coerce.number().int().nonnegative().optional(),
+  reorder_qty: z.coerce.number().int().nonnegative().optional(),
   prescription_required: z.preprocess(
     (v) => TRUTHY.has(String(v ?? '').trim().toLowerCase()),
     z.boolean(),

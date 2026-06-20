@@ -97,21 +97,42 @@ export interface CustomerWithUser extends CustomerProfile {
 
 export type ProductStatus = 'active' | 'draft' | 'discontinued';
 
+/**
+ * Products are sold in packs / cartons, never in individual units.
+ * pack_size format: "1 x 6 x 25" (cases × packs × units per pack)
+ */
 export interface Product {
   id: number;
   uuid: UUID;
+  /** Brand / trade name */
   name: string;
-  description: string;
+  /** Generic / INN name */
+  generic_name: string;
   sku: string;
-  price: Money;
+  /** Cost price (internal, admin-only) */
+  cost_price: Money;
+  /** Selling price shown to customers */
+  selling_price: Money;
   category: string;
   manufacturer: string;
+  /** Dosage form: Tablet, Capsule, Syrup, Injection, etc. */
   form: string;
+  /** Product strength e.g. "125mg" */
   strength: string;
+  /**
+   * Pack size in "cases × packs × units" format, e.g. "1 x 6 x 25".
+   * All orders are placed in whole pack multiples.
+   */
   pack_size: string;
   prescription_required: boolean;
   image_url: string;
   gallery?: string[];
+  /** Shelf / bin location in the warehouse, e.g. "AB001" */
+  shelf_location?: string;
+  /** Minimum quantity before a low-stock alert is raised */
+  min_stock_level?: number;
+  /** Suggested reorder quantity */
+  reorder_qty?: number;
   status: ProductStatus;
   created_by: number;
   created_at: ISODate;

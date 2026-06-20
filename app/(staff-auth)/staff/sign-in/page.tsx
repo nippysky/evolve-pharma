@@ -2,113 +2,107 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, AlertTriangle, Shield, Users, Truck } from '@/components/icons';
+import { ArrowRight, AlertTriangle, Shield } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-import { staffSignInAction } from '@/lib/actions';
-import type { ActionResult } from '@/lib/actions';
-import { cn } from '@/lib/utils';
-
-const initial: ActionResult = { ok: false, message: '' };
-
-type StaffRole = 'admin' | 'sales_agent' | 'driver';
-
-const ROLE_OPTIONS: { value: StaffRole; label: string; sub: string; Icon: typeof Shield }[] = [
-  { value: 'admin',       label: 'Admin',  sub: 'Full access',    Icon: Shield },
-  { value: 'sales_agent', label: 'Staff',  sub: 'Scoped access',  Icon: Users },
-  { value: 'driver',      label: 'Driver', sub: 'My assignments', Icon: Truck },
-];
+import { useLoginStaff } from '@/hooks/staff/useStaff';
+import { setStaffSessionAction } from '@/lib/actions';
 
 export default function StaffSignInPage() {
   const router = useRouter();
   const toast = useToast();
-  const [role, setRole] = useState<StaffRole>('admin');
+  // Dev convenience — pre-filled with the seeded admin account.
+  // Clear the field to enter different credentials.
+  const [email, setEmail]       = useState('admin@gmail.com');
+  const [password, setPassword] = useState('admin');
+  const [serverError, setServerError] = useState('');
 
-  const [state, action, pending] = useActionState(async (prev: ActionResult, fd: FormData) => {
-    const r = await staffSignInAction(prev, fd);
-    if (r.ok) {
-      toast.show({ tone: 'success', title: 'Signed in', description: 'Opening the console…' });
-      // Drivers land on their assignments page
-      const target = role === 'driver' ? '/console/driver' : '/console/overview';
-      setTimeout(() => router.push(target), 500);
-    }
-    return r;
-  }, initial);
+  const loginMutation = useLoginStaff();
 
-  const fieldErrors = !state.ok ? state.fieldErrors : undefined;
-  const error = !state.ok && !fieldErrors ? state.message : '';
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setServerError('');
+
+    loginMutation.mutate(
+      { email, password },
+      {
+        onSuccess: async (data) => {
+          // Set the role cookie so the server-rendered console layout resolves
+          await setStaffSessionAction(data.role);
+
+          toast.show({
+            tone: 'success',
+            title: `Welcome back`,
+            description: 'Opening the console…',
+          });
+
+          // Route by role
+          const target =
+            data.role.toUpperCase() === 'DRIVER'
+              ? '/console/driver'
+              : '/console/overview';
+
+          router.push(target);
+        },
+        onError: (err: Error) => {
+          setServerError(err.message ?? 'Sign in failed. Please check your credentials.');
+        },
+      },
+    );
+  };
 
   return (
-    <form action={action} className="w-full max-w-104" noValidate>
-      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
+    <form onSubmit={handleSubmit} className="w-full max-w-104" noValidate>
+      {/* Header */}
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
+        <Shield size={12} />
         Staff access
       </span>
       <h1 className="display-serif mt-2 text-[clamp(1.875rem,4vw,2.5rem)] leading-[1.1] tracking-[-0.02em] text-ink">
         Operations console.
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
-        Sign in with your Envolve credentials. Access is scoped to your role.
+        Sign in with your Envolve staff credentials. Access is scoped to your
+        role automatically.
       </p>
 
       <div className="mt-8">
-        {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
-            <AlertTriangle size={14} className="mt-0.5" />
-            <span>{error}</span>
+        {serverError && (
+          <div className="mb-4 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>{serverError}</span>
+            </div>
+            {/* "Not found" usually means the backend CORS whitelist doesn't include
+                localhost for this endpoint yet — ask the backend dev to add it. */}
+            {(serverError.toLowerCase().includes('not found') ||
+              serverError.toLowerCase().includes('network') ||
+              serverError.toLowerCase().includes('cors')) && (
+              <p className="mt-2 pl-5 text-xs text-red-600">
+                Tip: open{' '}
+                <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd>{' '}
+                → Network tab, find the <code className="font-mono">auth/staff/login</code>{' '}
+                request and check its status + response headers. If you see a CORS error in
+                the Console tab, ask the backend dev to add{' '}
+                <code className="font-mono">localhost:3000</code> to the allowed origins for
+                staff routes.
+              </p>
+            )}
           </div>
         )}
 
-        <div className="mb-5">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Sign in as</span>
-          <div className="grid grid-cols-3 gap-2">
-            {ROLE_OPTIONS.map(({ value, label, sub, Icon }) => {
-              const active = role === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setRole(value)}
-                  className={cn(
-                    'flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors',
-                    active
-                      ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-100'
-                      : 'border-line bg-white hover:border-line-strong',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md',
-                      active ? 'bg-brand-100 text-brand-700' : 'bg-bg-muted text-ink-3',
-                    )}
-                  >
-                    <Icon size={14} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink">{label}</span>
-                    <span className="block text-xs text-ink-3">{sub}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <input type="hidden" name="role" value={role} />
-          <p className="mt-2 text-xs text-ink-4">
-            Demo only — real sign-in resolves your role from the backend automatically.
-          </p>
-        </div>
-
-        <Field label="Staff email" htmlFor="email" required error={fieldErrors?.email?.[0]}>
+        <Field label="Staff email" htmlFor="email" required>
           <Input
             id="email"
             name="email"
             type="email"
             placeholder="you@envolvepharm.com.ng"
             autoComplete="email"
-            defaultValue="ops@envolvepharm.com.ng"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </Field>
@@ -122,21 +116,22 @@ export default function StaffSignInPage() {
           </Link>
         </div>
 
-        <Field label="Password" htmlFor="password" required error={fieldErrors?.password?.[0]}>
+        <Field label="Password" htmlFor="password" required>
           <Input
             id="password"
             name="password"
             type="password"
             placeholder="••••••••"
             autoComplete="current-password"
-            defaultValue="demoPass123"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </Field>
 
         <Button
           type="submit"
-          loading={pending}
+          loading={loginMutation.isPending}
           fullWidth
           size="lg"
           trailingIcon={<ArrowRight size={16} />}

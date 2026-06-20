@@ -75,7 +75,7 @@ export default async function ReportsPage() {
       const units = ORDERS.flatMap((o) => o.items)
         .filter((i) => i.product_id === p.id)
         .reduce((s, i) => s + i.quantity, 0);
-      acc[p.category] = (acc[p.category] ?? 0) + units * p.price;
+      acc[p.category] = (acc[p.category] ?? 0) + units * p.selling_price;
       return acc;
     }, {}),
   )
@@ -86,7 +86,7 @@ export default async function ReportsPage() {
   const topProducts = products
     .map((p) => {
       const units   = ORDERS.flatMap((o) => o.items).filter((i) => i.product_id === p.id).reduce((s, i) => s + i.quantity, 0);
-      const revenue = units * p.price;
+      const revenue = units * p.selling_price;
       return { ...p, units, revenue };
     })
     .filter((p) => p.units > 0)
