@@ -1,64 +1,72 @@
 /**
- * ENVOLVE PHARMACEUTICALS — Mock Auth
+ * ENVOLVE PHARMACEUTICALS — Session Auth
  *
- * Stand-in for session resolution while the PHP backend is under
- * construction. The functions resolve a `SessionUser` from a (fake)
- * cookie. Replace with real JWT/session validation when ready.
+ * Role is stored in the `envolve_demo_role` cookie (set by setStaffSessionAction).
+ * Real user data (email, full_name) is stored in the `envolve_user` cookie
+ * set at staff login. Customer pcn fields are also stored there when available.
+ *
+ * All real user data comes from auth/me via UserContext — the session is only
+ * used for server-side routing guards.
  */
 
 import { cookies } from 'next/headers';
-import {
-  MOCK_SESSION,
-  MOCK_ADMIN_SESSION,
-  MOCK_AGENT_SESSION,
-  MOCK_DRIVER_SESSION,
-} from '@/lib/data/operational';
 import type { Role, SessionUser, StaffPermissionKey } from '@/types';
 
-const ROLE_COOKIE = 'envolve_demo_role';
+export const ROLE_COOKIE_NAME = 'envolve_demo_role';
+export const USER_COOKIE_NAME = 'envolve_user';
+
+interface StoredUser {
+  email?: string;
+  full_name?: string;
+  pcn_uploaded?: boolean;
+  pcn_verified?: boolean;
+}
 
 /**
- * Read the current session.
- * In dev, role is selected via the `envolve_demo_role` cookie which can be
- * toggled by the role switcher widget. Defaults to `customer`.
+ * Read the current session from cookies.
+ * Defaults to 'customer' when no role cookie is set (preserves portal access
+ * for customers who logged in before the cookie was introduced).
  */
 export async function getSession(): Promise<SessionUser | null> {
   const store = await cookies();
-  const role = (store.get(ROLE_COOKIE)?.value ?? 'customer') as Role;
-  switch (role) {
-    case 'admin':
-      return MOCK_ADMIN_SESSION;
-    case 'sales_agent':
-      return MOCK_AGENT_SESSION;
-    case 'driver':
-      return MOCK_DRIVER_SESSION;
-    case 'customer':
-    default:
-      return MOCK_SESSION;
+  const role = (store.get(ROLE_COOKIE_NAME)?.value ?? 'customer') as Role;
+
+  let email = '';
+  let full_name = '';
+  let pcn_uploaded: boolean | undefined;
+  let pcn_verified: boolean | undefined;
+
+  try {
+    const raw = store.get(USER_COOKIE_NAME)?.value;
+    if (raw) {
+      const stored: StoredUser = JSON.parse(raw);
+      email      = stored.email     ?? '';
+      full_name  = stored.full_name ?? '';
+      if (typeof stored.pcn_uploaded === 'boolean') pcn_uploaded = stored.pcn_uploaded;
+      if (typeof stored.pcn_verified === 'boolean') pcn_verified = stored.pcn_verified;
+    }
+  } catch {
+    // Malformed cookie — ignore
   }
+
+  return { role, email, full_name, pcn_uploaded, pcn_verified };
 }
 
 export async function requireSession(): Promise<SessionUser> {
   const session = await getSession();
-  if (!session) {
-    throw new Error('Not authenticated');
-  }
+  if (!session) throw new Error('Not authenticated');
   return session;
 }
 
 export async function requireRole(roles: Role[]): Promise<SessionUser> {
   const session = await requireSession();
-  if (!roles.includes(session.role)) {
-    throw new Error('Forbidden');
-  }
+  if (!roles.includes(session.role)) throw new Error('Forbidden');
   return session;
 }
 
-export const ROLE_COOKIE_NAME = ROLE_COOKIE;
-
 /**
- * Server-side permission check. Admin always passes; sales_agent needs
- * the specific permission key in their session.permissions array.
+ * Server-side permission check.
+ * Admin always passes; sales_agent needs the specific key in session.permissions.
  */
 export function hasPermission(session: SessionUser | null, key: StaffPermissionKey): boolean {
   if (!session) return false;

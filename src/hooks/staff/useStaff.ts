@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, useQueries } from '@tanstack/react-query';
 import {
   loginStaff,
   registerStaff,
@@ -22,7 +22,7 @@ import {
   reviewCustomer,
   bulkUploadCustomers,
 } from '@/lib/api/services/console.service';
-import type { LoginStaffPayload, RegisterStaffPayload } from '@/lib/api/types';
+import type { LoginStaffPayload, RegisterStaffPayload, CustomerAdminRecord, StaffRecord } from '@/lib/api/types';
 
 // ---------- Query keys -----------------------------------------------------
 
@@ -73,6 +73,14 @@ export function useBulkUploadStaff() {
   });
 }
 
+// ---------- Staff types for unified view -----------------------------------
+
+export type StaffStatus = 'VERIFIED' | 'UNVERIFIED';
+
+export interface TaggedStaffRecord extends StaffRecord {
+  _status: StaffStatus;
+}
+
 // ---------- Staff lists ----------------------------------------------------
 
 export function useVerifiedStaff() {
@@ -91,9 +99,49 @@ export function useUnverifiedStaff() {
   });
 }
 
+/**
+ * Fetches both staff lists in parallel and merges them into a single
+ * flat list tagged with `_status`. Enables one unified table with
+ * client-side filtering — no network round-trip when switching views.
+ */
+export function useAllStaff() {
+  const verifiedQ   = useVerifiedStaff();
+  const unverifiedQ = useUnverifiedStaff();
+
+  const isLoading = (verifiedQ.isLoading && !verifiedQ.data) || (unverifiedQ.isLoading && !unverifiedQ.data);
+  const errors    = [verifiedQ.error, unverifiedQ.error].filter((e): e is Error => e != null);
+
+  const allRecords: TaggedStaffRecord[] = [
+    ...(verifiedQ.data?.records   ?? []).map((r) => ({ ...r, _status: 'VERIFIED'   as const })),
+    ...(unverifiedQ.data?.records ?? []).map((r) => ({ ...r, _status: 'UNVERIFIED' as const })),
+  ];
+
+  const counts: Record<StaffStatus, number> = {
+    VERIFIED:   verifiedQ.data?.records?.length   ?? 0,
+    UNVERIFIED: unverifiedQ.data?.records?.length ?? 0,
+  };
+
+  const refetchAll = () => {
+    void verifiedQ.refetch();
+    void unverifiedQ.refetch();
+  };
+
+  return { allRecords, counts, isLoading, errors, refetchAll };
+}
+
 // ---------- Customer admin lists -------------------------------------------
 
-type CustomerStage = 'registered' | 'unverified' | 'verified' | 'pending';
+export type CustomerStage = 'pending' | 'registered' | 'unverified' | 'verified' | 'approved' | 'rejected';
+
+/** A customer record tagged with which lifecycle stage endpoint it came from. */
+export interface TaggedCustomerRecord extends CustomerAdminRecord {
+  _stage: CustomerStage;
+}
+
+/** All 6 stages in lifecycle order. */
+export const ALL_CUSTOMER_STAGES: CustomerStage[] = [
+  'registered', 'unverified', 'verified', 'pending', 'approved', 'rejected',
+];
 
 export function useCustomerAdminList(stage: CustomerStage) {
   return useQuery({
@@ -103,6 +151,42 @@ export function useCustomerAdminList(stage: CustomerStage) {
   });
 }
 
+/**
+ * Fetches ALL 6 stage endpoints in parallel and merges them into a single
+ * flat list. Each record is tagged with `_stage` so the UI can filter
+ * client-side without additional network round-trips.
+ */
+export function useAllCustomers() {
+  const results = useQueries({
+    queries: ALL_CUSTOMER_STAGES.map((stage) => ({
+      queryKey: CUSTOMER_ADMIN_KEYS.list(stage),
+      queryFn: (): ReturnType<typeof listCustomersByStage> => listCustomersByStage(stage),
+      staleTime: 60_000,
+    })),
+  });
+
+  // Loading = at least one stage has no data yet
+  const isLoading = results.some((r) => r.isLoading && !r.data);
+  const isFetching = results.some((r) => r.isFetching);
+  const errors     = results.map((r) => r.error).filter((e): e is Error => e != null);
+
+  const allRecords: TaggedCustomerRecord[] = ALL_CUSTOMER_STAGES.flatMap((stage, i) =>
+    (results[i]?.data?.records ?? []).map((rec) => ({ ...rec, _stage: stage })),
+  );
+
+  const counts = ALL_CUSTOMER_STAGES.reduce<Record<CustomerStage, number>>(
+    (acc, stage, i) => {
+      acc[stage] = results[i]?.data?.records?.length ?? 0;
+      return acc;
+    },
+    {} as Record<CustomerStage, number>,
+  );
+
+  const refetchAll = () => { results.forEach((r) => void r.refetch()); };
+
+  return { allRecords, counts, isLoading, isFetching, errors, refetchAll };
+}
+
 // ---------- Review customer ------------------------------------------------
 
 export function useReviewCustomer() {
@@ -110,15 +194,15 @@ export function useReviewCustomer() {
   return useMutation({
     mutationFn: ({
       id,
-      action,
+      decision,
       review_notes,
     }: {
       id: number | string;
-      action: 'approve' | 'reject';
-      review_notes?: string;
-    }) => reviewCustomer(id, action, review_notes),
+      decision: 'APPROVE' | 'REJECTED';
+      review_notes: string;
+    }) => reviewCustomer(id, decision, review_notes),
     onSuccess: () => {
-      // After review, pending list shrinks; refresh all customer lists
+      // Invalidate all customer tabs so counts + lists stay in sync
       queryClient.invalidateQueries({ queryKey: ['customers-admin'] });
     },
   });

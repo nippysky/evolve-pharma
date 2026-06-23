@@ -22,12 +22,17 @@ const geistSans = Geist({
   subsets: ['latin'],
   variable: '--font-geist-sans',
   display: 'swap',
+  // preload: false prevents the "preloaded but not used" browser warning that
+  // fires on heavily client-rendered pages (like the console) where fonts
+  // aren't consumed within the browser's 3-second preload window.
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
   display: 'swap',
+  preload: false,
 });
 
 // ---------- Metadata -----------------------------------------------------

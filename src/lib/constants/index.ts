@@ -131,6 +131,12 @@ export const CONSOLE_NAV = [
     section: 'System',
     items: [
       {
+        label: 'Audit Logs',
+        href: '/console/audit-logs',
+        icon: 'ClipboardList' as const,
+        roles: ['admin'] as Role[],
+      },
+      {
         label: 'Settings',
         href: '/console/settings',
         icon: 'Settings' as const,

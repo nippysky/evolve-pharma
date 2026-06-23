@@ -6,8 +6,8 @@ import { ProductCard } from '@/components/shared/ProductCard';
 import { PageHead } from '@/components/shared/PageHead';
 import { EmptyState } from '@/components/ui/Primitives';
 import { Search, Plus, Check, Pill } from '@/components/icons';
-import { getAllProducts } from '@/lib/data/products';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
+import type { Product } from '@/types';
 import { useBasket } from '@/lib/hooks/useBasket';
 import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,8 @@ export default function PortalCatalogPage() {
   const initialQuery = params.get('q') ?? '';
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<string>(ALL);
-  const products = getAllProducts();
+  // TODO: replace with real products API (GET products)
+  const products: Product[] = [];
   const add = useBasket((s) => s.add);
   const has = useBasket((s) => s.hasItem);
   const toast = useToast();

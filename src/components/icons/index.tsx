@@ -77,6 +77,7 @@ import {
   Leaf as LRLeaf,
   TrendingUp as LRTrendingUp,
   TrendingDown as LRTrendingDown,
+  ClipboardList as LRClipboardList,
   type LucideProps,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -163,6 +164,7 @@ export const HelpCircle = wrap(LRHelpCircle);
 export const Leaf = wrap(LRLeaf);
 export const TrendingUp = wrap(LRTrendingUp);
 export const TrendingDown = wrap(LRTrendingDown);
+export const ClipboardList = wrap(LRClipboardList);
 
 // ---------- Registry / dispatcher --------------------------------------
 
@@ -225,6 +227,7 @@ export const Icons = {
   Leaf,
   TrendingUp,
   TrendingDown,
+  ClipboardList,
 } as const;
 
 export type IconName = keyof typeof Icons;

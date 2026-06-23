@@ -161,16 +161,28 @@ export interface CreatePasswordResponse {
   status: 'PENDING_REVIEW' | string;
 }
 
+/** GET auth/me — profile for any authenticated user (customer or staff) */
 export interface MeResponse {
-  id: number;
+  id: string | number;
   uuid?: string;
-  email: string;
   first_name: string;
+  middle_name?: string;
   last_name: string;
+  email: string;
+  phone?: string;
+  role: string;          // "CUSTOMER" | "ADMIN" | "STAFF" | "DRIVER"
+  status: string;
+  // Customer-only fields
   company_name?: string;
-  role: string;
   pcn_uploaded?: boolean;
   pcn_verified?: boolean;
+  referral_code?: string;
+  // Staff-only fields
+  department?: string;
+  job_title?: string;
+  employee_code?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ---------- Staff auth ------------------------------------------------------
@@ -184,14 +196,16 @@ export interface LoginStaffPayload {
 /**
  * Staff Login → 200
  * { "status":"success", "message":"Login Successful",
- *   "data":{ "user_id":"151", "email":"admin@gmail.com", "role":"ADMIN", "status":"ACTIVE" } }
+ *   "data":{ "id":"151", "email":"admin@gmail.com", "role":"ADMIN", "status":"ACTIVE", "employee_code":null } }
  * role: "ADMIN" | "STAFF" | "DRIVER"
  */
 export interface LoginStaffResponse {
-  user_id: string | number;
+  id: string | number;
   email: string;
   role: 'ADMIN' | 'STAFF' | 'DRIVER' | string;
+  /** "ACTIVE" | "INACTIVE" | other status strings */
   status: string;
+  employee_code?: string | null;
 }
 
 /** POST auth/staff/register */
@@ -254,12 +268,13 @@ export interface BulkUploadStaffSuccess {
 
 export interface CustomerAdminRecord {
   id: string | number;
+  uuid?: string;
   first_name: string;
   middle_name?: string;
   last_name: string;
   company_name?: string;
   email: string;
-  phone: string;
+  phone?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -272,6 +287,7 @@ export interface CustomerAdminRecord {
   verification_status?: string;
   reviewed_by?: string | number | null;
   reviewed_at?: string | null;
+  review_note?: string | null;   // returned on approved/rejected records
   email_verified_at?: string | null;
   created_at: string;
 }
@@ -281,11 +297,11 @@ export interface CustomerAdminListResponse {
   records: CustomerAdminRecord[];
 }
 
-/** POST customers/{id}/approval */
+/** POST customers/{id}/approval — body the backend actually expects */
 export interface ReviewCustomerPayload {
-  /** "approve" to approve, "reject" to reject */
-  action: 'approve' | 'reject';
-  review_notes?: string;
+  /** "APPROVE" or "REJECTED" — exact strings the backend accepts */
+  decision: 'APPROVE' | 'REJECTED';
+  review_notes: string;          // required for both approve and reject
 }
 
 export interface ReviewCustomerResponse {
@@ -309,6 +325,62 @@ export interface BulkUploadCustomerResponse {
   successful: number;
   failed: number;
   failed_records: BulkUploadFailedRecord[];
+}
+
+// ---------- Pagination meta ------------------------------------------------
+
+export interface PaginationMeta {
+  current_page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+}
+
+// ---------- Login history (admin) ------------------------------------------
+
+/** One entry from GET admin/login-history */
+export interface LoginHistoryRecord {
+  id: string;
+  user_id: string;
+  user_type: string;           // "ADMIN" | "CUSTOMER" | "STAFF"
+  ip_address: string;
+  device_name: string;
+  browser: string;
+  operating_system: string;
+  country: string;
+  city: string;
+  event: string;               // "LOGIN_SUCCESS" | "LOGIN_FAILED" etc.
+  created_at: string;
+  user_name: string | null;
+  email: string | null;
+}
+
+export interface LoginHistoryResponse {
+  pagination: PaginationMeta;
+  records: LoginHistoryRecord[];
+}
+
+// ---------- Audit logs (admin) ---------------------------------------------
+
+/** One entry from GET admin/logs */
+export interface AuditLogRecord {
+  id: string;
+  user_id: string;
+  user_type: string;
+  action: string;              // "LOGIN" | "CREATE_STAFF" | "APPROVE_ACCOUNT" etc.
+  entity_type: string;         // "Admin" | "Customer" | "Staff"
+  entity_id: string;
+  description: string;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+  user_name: string | null;
+  email: string | null;
+}
+
+export interface AuditLogsResponse {
+  pagination: PaginationMeta;
+  records: AuditLogRecord[];
 }
 
 // ---------- Helpers ---------------------------------------------------------

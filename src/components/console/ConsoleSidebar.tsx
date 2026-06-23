@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/shared/Logo';
-import { Icon, type IconName, Logout, Shield, Users as UsersIcon, Truck } from '@/components/icons';
+import { Icon, type IconName, Shield, Users as UsersIcon, Truck } from '@/components/icons';
 import { CONSOLE_NAV, DRIVER_NAV } from '@/lib/constants';
-import { signOutAction } from '@/lib/actions/role';
+import { LogoutButton } from '@/components/console/LogoutButton';
+import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 import type { SessionUser } from '@/types';
 
@@ -27,10 +28,20 @@ const ROLE_ICON: Record<string, typeof Shield> = {
 
 export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
   const pathname = usePathname();
+  const { user } = useUser();
+
   const RoleIcon = ROLE_ICON[session.role] ?? UsersIcon;
   const roleLabel = ROLE_LABEL[session.role] ?? session.role;
-  const initials = session.full_name
+
+  // Use real data from auth/me; fall back to cookie values until it resolves
+  const displayName = user
+    ? `${user.first_name}${user.last_name ? ` ${user.last_name}` : ''}`
+    : session.full_name;
+  const displayEmail = user?.email ?? session.email;
+
+  const initials = displayName
     .split(' ')
+    .filter(Boolean)
     .map((p) => p[0])
     .slice(0, 2)
     .join('');
@@ -39,15 +50,11 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
   const navGroups = session.role === 'driver' ? DRIVER_NAV : CONSOLE_NAV;
 
   const isVisible = (item: Record<string, unknown>) => {
-    // Driver nav items have no role/permission gate — always visible in driver nav
     if (!('roles' in item)) return true;
     const roles = item.roles as readonly string[] | undefined;
     if (!roles?.includes(session.role)) return false;
-    // If item needs a permission, check it (admin bypasses)
-    const permission = item.permission as string | undefined;
-    if (permission && session.role !== 'admin') {
-      return session.permissions?.includes(permission as never) ?? false;
-    }
+    // Admin sees everything; staff/driver see items matching their role.
+    // Fine-grained permission filtering will be wired once the backend ships.
     return true;
   };
 
@@ -58,9 +65,6 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
         <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-300">
           <RoleIcon size={11} />
           {roleLabel}
-          {session.permission_preset && (
-            <span className="text-brand-400/70">· {session.permission_preset.replace('_', ' ')}</span>
-          )}
         </span>
       </div>
 
@@ -97,25 +101,24 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
 
         <div className="flex-1" />
 
-        <div className="mt-3 flex items-center gap-2.5 rounded-md border border-white/8 bg-white/3 px-3 py-2.5">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-500/20 text-xs font-semibold text-brand-300">
-            {initials}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium tracking-tight text-white">
-              {session.full_name}
+        {/* User card + logout */}
+        <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-white/6 to-white/3">
+          <div className="flex items-center gap-3 px-3 py-3">
+            {/* Avatar */}
+            <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-[13px] font-bold text-white shadow-[0_0_0_2px_rgba(0,166,212,0.25)]">
+              {initials}
+              <span className="absolute -bottom-px -right-px h-2.5 w-2.5 rounded-full border-2 border-ink-bg bg-green-400" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-semibold tracking-[-0.01em] text-white">
+                {displayName || displayEmail}
+              </div>
+              <div className="mt-0.5 truncate text-[11px] text-white/45">
+                {displayEmail}
+              </div>
             </div>
-            <div className="truncate text-xs text-white/50">{session.email}</div>
+            <LogoutButton />
           </div>
-          <form action={signOutAction} className="contents">
-            <button
-              type="submit"
-              className="grid h-7 w-7 place-items-center rounded text-white/55 transition-colors hover:bg-white/5 hover:text-white"
-              aria-label="Sign out"
-            >
-              <Logout size={14} />
-            </button>
-          </form>
         </div>
       </nav>
     </aside>

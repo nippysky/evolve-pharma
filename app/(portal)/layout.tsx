@@ -3,27 +3,22 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { PortalSidebar } from '@/components/portal/PortalSidebar';
 import { PortalTopbar } from '@/components/portal/PortalTopbar';
-import { NOTIFICATIONS } from '@/lib/data/operational';
-
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect('/sign-in');
   if (session.role !== 'customer') redirect('/console/overview');
 
   /**
-   * PCN sticky gate — if the customer hasn't uploaded their certificate yet,
-   * send them to the upload page regardless of where they tried to go.
-   * This covers:
-   *  - Bulk-imported customers who haven't gone through the PCN step yet
-   *  - Customers who abandoned the sign-up wizard before uploading
-   * Once pcn_uploaded = true we let them through (even if pcn_verified is
-   * still pending — they see a "pending review" banner inside the portal).
+   * PCN sticky gate — redirect if pcn_uploaded is explicitly false.
+   * Undefined means data unavailable (customer logged in without cookie),
+   * so we let them through (they uploaded during sign-up).
    */
   if (session.pcn_uploaded === false) {
     redirect('/upload-pcn');
   }
 
-  const unread = NOTIFICATIONS.filter((n) => n.user_id === session.id && !n.is_read).length;
+  // TODO: fetch real unread notification count from notifications API
+  const unread = 0;
 
   return (
     <div className="flex min-h-dvh bg-bg-subtle">

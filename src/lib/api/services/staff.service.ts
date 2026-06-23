@@ -8,7 +8,7 @@
  */
 
 import { adminApiClient } from '@/lib/api/client';
-import { AUTH, STAFF_ADMIN } from '@/lib/api/endpoints';
+import { API_BASE_URL, AUTH, STAFF_ADMIN } from '@/lib/api/endpoints';
 import type {
   LoginStaffPayload,
   LoginStaffResponse,
@@ -73,19 +73,34 @@ export async function registerStaff(
 /**
  * POST staff/bulk-upload (multipart/form-data, key = "staff")
  * Success: { total_record_inserted, existing_emails, total_existing_record }
- * Full-failure (400): normalised by interceptor into a thrown Error with existing_emails
+ *
+ * WHY native fetch instead of Axios:
+ * The Axios instance has a default Content-Type: application/json which
+ * leaks through even for FormData requests, preventing the browser from
+ * setting the correct multipart boundary → backend returns 400.
+ * Native fetch with credentials:"include" handles FormData correctly.
  */
 export async function bulkUploadStaff(
   file: File,
 ): Promise<BulkUploadStaffSuccess> {
   const fd = new FormData();
-  fd.set('staff', file);
-  const { data } = await adminApiClient.post<ApiResponse<BulkUploadStaffSuccess>>(
-    STAFF_ADMIN.BULK_UPLOAD,
-    fd,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
-  );
-  return unwrap(data);
+  fd.set('staff', file); // backend expects key = "staff"
+
+  const res = await fetch(`${API_BASE_URL}${STAFF_ADMIN.BULK_UPLOAD}`, {
+    method:      'POST',
+    credentials: 'include',
+    body:        fd,
+    // No Content-Type — browser sets multipart/form-data; boundary=XXX automatically
+  });
+
+  const json = (await res.json()) as ApiResponse<BulkUploadStaffSuccess>;
+
+  if (!res.ok && json.status !== 'success') {
+    const msg = (json as ApiError).message ?? `Upload failed (${res.status})`;
+    throw new Error(msg);
+  }
+
+  return unwrap(json);
 }
 
 // ---------- Staff lists -----------------------------------------------------

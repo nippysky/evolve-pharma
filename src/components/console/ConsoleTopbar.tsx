@@ -12,7 +12,6 @@ import type { Role } from '@/types';
 interface ConsoleTopbarProps {
   notificationCount?: number;
   role: Role;
-  permissions?: string[];
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -21,20 +20,16 @@ const ROLE_LABEL: Record<string, string> = {
   driver:      'Driver',
 };
 
-export function ConsoleTopbar({ notificationCount = 0, role, permissions = [] }: ConsoleTopbarProps) {
+export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Build the nav groups visible to the current user (mirrors ConsoleSidebar logic)
   const navGroups = role === 'driver' ? DRIVER_NAV : CONSOLE_NAV;
 
   const isItemVisible = (item: Record<string, unknown>): boolean => {
-    if (!('roles' in item)) return true; // driver nav items — always show
+    if (!('roles' in item)) return true;
     const roles = item.roles as readonly string[];
     if (!roles.includes(role)) return false;
-    const permission = item.permission as string | undefined;
-    if (permission && role !== 'admin') {
-      return permissions.includes(permission);
-    }
+    // Admin sees everything; staff see items matching their role (permissions from backend TBD)
     return true;
   };
 

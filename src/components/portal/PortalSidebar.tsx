@@ -61,7 +61,7 @@ export function PortalSidebar({ session, notificationCount = 0 }: PortalSidebarP
               {session.full_name}
             </div>
             <div className="truncate text-xs text-ink-3">
-              {session.company_name ?? session.email}
+              {session.email}
             </div>
           </div>
           <Link

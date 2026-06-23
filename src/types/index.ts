@@ -329,23 +329,13 @@ export interface Basket {
 // ---------- Session -------------------------------------------------------
 
 export interface SessionUser {
-  id: number;
-  uuid: UUID;
   role: Role;
   email: string;
   full_name: string;
-  company_name?: string;
-  avatar_url?: string;
-  /** For sales_agent role — what they can do */
+  /** sales_agent permissions — populated when backend ships a permissions endpoint */
   permissions?: StaffPermissionKey[];
   permission_preset?: StaffPermissionPreset | null;
-  /** For driver role */
-  driver_id?: number | null;
-  /**
-   * For customer role — PCN certificate gate.
-   * pcn_uploaded: customer has submitted a PCN cert (triggers redirect if false on login).
-   * pcn_verified: admin has approved the cert (customer can access the catalog).
-   */
+  /** Customer PCN gate fields — stored in cookie at customer login */
   pcn_uploaded?: boolean;
   pcn_verified?: boolean;
 }

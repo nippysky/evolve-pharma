@@ -105,7 +105,7 @@ export async function serverFetch<T = unknown, TBody = unknown>(
   let response: Response;
   try {
     response = await fetch(url, init);
-  } catch (networkError) {
+  } catch {
     return {
       data: null,
       error: 'Network error — could not reach the server.',

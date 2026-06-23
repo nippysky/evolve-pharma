@@ -21,7 +21,7 @@ import {
   checkoutSchema,
   productSchema,
 } from '@/lib/schemas';
-import { ROLE_COOKIE_NAME } from '@/lib/auth';
+import { ROLE_COOKIE_NAME, USER_COOKIE_NAME } from '@/lib/auth';
 import { sleep } from '@/lib/utils';
 import type { Role } from '@/types';
 
@@ -85,7 +85,8 @@ export async function staffSignInAction(_prev: unknown, formData: FormData): Pro
 /**
  * Called by the staff sign-in page AFTER the real API login succeeds.
  * Maps the backend role string to our internal Role type and sets the
- * session cookie so the server-rendered console layout knows who's logged in.
+ * role cookie. Also persists real user data (email, full_name) so the
+ * sidebar always shows the actual logged-in user — never dummy data.
  *
  * Backend role → internal role:
  *   "ADMIN"  → "admin"
@@ -94,12 +95,25 @@ export async function staffSignInAction(_prev: unknown, formData: FormData): Pro
  */
 export async function setStaffSessionAction(
   backendRole: string,
+  userInfo?: { email?: string; full_name?: string },
 ): Promise<ActionResult<{ role: Role }>> {
   let role: Role = 'admin';
   const r = backendRole.toUpperCase();
   if (r === 'STAFF')  role = 'sales_agent';
   if (r === 'DRIVER') role = 'driver';
   await setSessionRole(role);
+
+  // Persist real user data to override mock session values
+  if (userInfo && (userInfo.email || userInfo.full_name)) {
+    const store = await cookies();
+    store.set(USER_COOKIE_NAME, JSON.stringify(userInfo), {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+
   return { ok: true, data: { role } };
 }
 

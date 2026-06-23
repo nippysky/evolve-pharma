@@ -17,7 +17,6 @@ import {
   type StaffPermissionPreset,
   type StaffPermissionKey,
 } from '@/types';
-import { STAFF_MEMBERS } from '@/lib/data/staff';
 
 export const metadata = { title: 'Roles & Permissions' };
 
@@ -65,10 +64,8 @@ export default async function ConsoleRolesPage() {
   if (!session) redirect('/sign-in');
   if (session.role !== 'admin') redirect('/console/overview');
 
-  const staffByPreset = PRESETS.reduce<Record<string, number>>((acc, p) => {
-    acc[p] = STAFF_MEMBERS.filter((s) => s.permission_preset === p).length;
-    return acc;
-  }, {});
+  // Staff counts will populate via API when integrated
+  const staffByPreset: Record<string, number> = {};
 
   return (
     <>

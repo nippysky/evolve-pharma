@@ -127,7 +127,10 @@ export default function SignUpPage() {
           if (err.fieldErrors) {
             const mapped: Record<string, string> = {};
             Object.entries(err.fieldErrors).forEach(([k, msgs]) => {
-              if (msgs?.[0]) mapped[k] = msgs[0];
+              if (!msgs?.[0]) return;
+              // Normalise backend key variants → frontend field names
+              const key = k === 'pcn_certificate' ? 'pcn_cert' : k;
+              mapped[key] = msgs[0];
             });
             setErrors(mapped);
           }
@@ -263,6 +266,16 @@ export default function SignUpPage() {
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <span>{serverError}</span>
             </div>
+            {/* Show all field-level errors from the backend so you can see exactly what failed */}
+            {Object.keys(errors).length > 0 && (
+              <ul className="mt-2 pl-5 space-y-0.5">
+                {Object.entries(errors).map(([k, msg]) => (
+                  <li key={k} className="text-xs text-red-700">
+                    <span className="font-medium">{k.replace(/_/g, ' ')}:</span> {msg}
+                  </li>
+                ))}
+              </ul>
+            )}
             {serverError.toLowerCase().includes('network error') || serverError.toLowerCase().includes('cors') ? (
               <p className="mt-2 pl-5 text-xs text-red-600">
                 Tip: open <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd> → Console to see the exact browser error. Common causes: the backend hasn&apos;t allowed this origin (CORS), or the server is unreachable.

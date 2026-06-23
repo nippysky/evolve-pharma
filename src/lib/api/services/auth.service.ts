@@ -68,6 +68,11 @@ export async function registerCustomer(
   if (payload.referral_code) fd.set('referral_code', payload.referral_code);
   fd.set('pcn_certificate', payload.pcn_certificate);
 
+  // Explicitly override Content-Type to multipart/form-data.
+  // Our apiClient defaults to application/json — that must be replaced here
+  // so the browser can set the correct multipart boundary for the file upload.
+  // Axios v1 then removes this header and lets the browser set it with the
+  // boundary, which is the correct behaviour for FormData.
   const { data } = await apiClient.post<ApiResponse<RegisterCustomerResponse>>(
     AUTH.REGISTER_CUSTOMER,
     fd,

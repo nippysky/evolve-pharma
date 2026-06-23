@@ -7,7 +7,6 @@ import { Badge, EmptyState } from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { ButtonLink } from '@/components/ui/Button';
 import { PageHead } from '@/components/shared/PageHead';
-import { ORDERS } from '@/lib/data/operational';
 import {
   ORDER_STATUS_LABEL,
   ORDER_STATUS_TONE,
@@ -15,7 +14,7 @@ import {
   PAYMENT_STATUS_TONE,
 } from '@/lib/constants';
 import { formatNaira, formatDate } from '@/lib/utils';
-import type { OrderStatus } from '@/types';
+import type { Order, OrderStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
 type Tab = 'all' | 'pending' | 'processing' | 'dispatch' | 'delivered' | 'cancelled';
@@ -40,7 +39,8 @@ const TAB_STATUSES: Partial<Record<Tab, OrderStatus[]>> = {
 export default function PortalOrdersPage() {
   const [tab, setTab] = useState<Tab>('processing');
   const [query, setQuery] = useState('');
-  const myOrders = ORDERS.filter((o) => o.customer_id === 101);
+  // TODO: replace with real orders API (GET orders)
+  const myOrders: Order[] = [];
 
   const filtered = useMemo(() => {
     const statuses = TAB_STATUSES[tab];

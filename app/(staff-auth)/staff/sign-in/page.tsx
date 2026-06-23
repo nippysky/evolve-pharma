@@ -9,6 +9,7 @@ import { ArrowRight, AlertTriangle, Shield } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { useLoginStaff } from '@/hooks/staff/useStaff';
 import { setStaffSessionAction } from '@/lib/actions';
+import { getMe } from '@/lib/api/services/auth.service';
 
 export default function StaffSignInPage() {
   const router = useRouter();
@@ -30,16 +31,36 @@ export default function StaffSignInPage() {
       { email, password },
       {
         onSuccess: async (data) => {
-          // Set the role cookie so the server-rendered console layout resolves
-          await setStaffSessionAction(data.role);
+          // Block inactive accounts before setting any cookie
+          if (data.status && data.status.toUpperCase() !== 'ACTIVE') {
+            setServerError(
+              `Your account is ${data.status.toLowerCase()}. Contact your administrator.`,
+            );
+            return;
+          }
+
+          // Fetch auth/me immediately while the JWT cookie is freshly set.
+          // Store the result so the sidebar shows the real name on every page
+          // load — even if the background auth/me call in UserContext fails.
+          let fullName = '';
+          try {
+            const me = await getMe();
+            fullName = [me.first_name, me.last_name].filter(Boolean).join(' ');
+          } catch {
+            // auth/me failed — name will still appear once UserContext resolves
+          }
+
+          await setStaffSessionAction(data.role, {
+            email: data.email,
+            ...(fullName ? { full_name: fullName } : {}),
+          });
 
           toast.show({
             tone: 'success',
-            title: `Welcome back`,
+            title: 'Welcome back',
             description: 'Opening the console…',
           });
 
-          // Route by role
           const target =
             data.role.toUpperCase() === 'DRIVER'
               ? '/console/driver'

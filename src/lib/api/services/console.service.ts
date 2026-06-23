@@ -8,7 +8,7 @@
  */
 
 import { adminApiClient } from '@/lib/api/client';
-import { CUSTOMERS_ADMIN } from '@/lib/api/endpoints';
+import { API_BASE_URL, CUSTOMERS_ADMIN } from '@/lib/api/endpoints';
 import type {
   CustomerAdminListResponse,
   ReviewCustomerPayload,
@@ -33,21 +33,31 @@ function unwrap<T>(res: ApiResponse<T>): T {
 
 // ---------- Customer list by stage -----------------------------------------
 
-type CustomerStage = 'registered' | 'unverified' | 'verified' | 'pending';
+export type CustomerStage =
+  | 'pending'
+  | 'registered'
+  | 'unverified'
+  | 'verified'
+  | 'approved'
+  | 'rejected';
 
 const STAGE_ENDPOINT: Record<CustomerStage, string> = {
+  pending:    CUSTOMERS_ADMIN.PENDING_REVIEW,
   registered: CUSTOMERS_ADMIN.REGISTERED,
   unverified: CUSTOMERS_ADMIN.UNVERIFIED,
   verified:   CUSTOMERS_ADMIN.VERIFIED,
-  pending:    CUSTOMERS_ADMIN.PENDING_REVIEW,
+  approved:   CUSTOMERS_ADMIN.APPROVED,
+  rejected:   CUSTOMERS_ADMIN.REJECTED,
 };
 
 /**
  * Fetch customers filtered by their registration stage.
- *  - registered : REGISTERED  (email not yet verified)
- *  - unverified : PCN_CERT_UPLOADED + UNVERIFIED
- *  - verified   : OTP_CONFIRMED / EMAIL_VERIFIED_PASSWORD_CREATED
- *  - pending    : PENDING_REVIEW (awaiting admin approval)
+ *   pending    → GET customer/pending-review
+ *   registered → GET customer/registered
+ *   unverified → GET customer/unverified
+ *   verified   → GET customer/verified
+ *   approved   → GET customer/approved
+ *   rejected   → GET customer/rejected
  */
 export async function listCustomersByStage(
   stage: CustomerStage,
@@ -62,17 +72,14 @@ export async function listCustomersByStage(
 
 /**
  * POST customers/{id}/approval
- * { action: "approve" | "reject", review_notes?: string }
- * Returns the updated customer status.
+ * Body: { decision: "APPROVE" | "REJECTED", review_notes: string }
  */
 export async function reviewCustomer(
   customerId: number | string,
-  action: 'approve' | 'reject',
-  review_notes?: string,
+  decision: 'APPROVE' | 'REJECTED',
+  review_notes: string,
 ): Promise<ReviewCustomerResponse> {
-  const payload: ReviewCustomerPayload = { action };
-  if (review_notes) payload.review_notes = review_notes;
-
+  const payload: ReviewCustomerPayload = { decision, review_notes };
   const { data } = await adminApiClient.post<ApiResponse<ReviewCustomerResponse>>(
     CUSTOMERS_ADMIN.REVIEW(customerId),
     payload,
@@ -84,17 +91,34 @@ export async function reviewCustomer(
 
 /**
  * POST customers/bulk-upload (multipart/form-data, key = "customer")
- * Returns 200 even on partial failures — check `failed` and `failed_records`.
+ * Returns status:"success" even on partial failures — check `failed` and `failed_records`.
+ *
+ * WHY native fetch instead of Axios:
+ * The Axios instance has a default Content-Type: application/json.
+ * Even when passing FormData, that default leaks through in some Axios versions
+ * and reaches the server without the multipart boundary → 400 Bad Request.
+ * Using native fetch with credentials:"include" (same as withCredentials:true)
+ * lets the browser set Content-Type: multipart/form-data; boundary=XXX correctly.
  */
 export async function bulkUploadCustomers(
   file: File,
 ): Promise<BulkUploadCustomerResponse> {
   const fd = new FormData();
-  fd.set('customer', file);
-  const { data } = await adminApiClient.post<ApiResponse<BulkUploadCustomerResponse>>(
-    CUSTOMERS_ADMIN.BULK_UPLOAD,
-    fd,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
-  );
-  return unwrap(data);
+  fd.set('customer', file); // backend expects key = "customer"
+
+  const res = await fetch(`${API_BASE_URL}${CUSTOMERS_ADMIN.BULK_UPLOAD}`, {
+    method:      'POST',
+    credentials: 'include', // send JWT cookies (same as Axios withCredentials:true)
+    body:        fd,
+    // No Content-Type header — browser sets multipart/form-data; boundary=XXX automatically
+  });
+
+  const json = (await res.json()) as ApiResponse<BulkUploadCustomerResponse>;
+
+  if (!res.ok && json.status !== 'success') {
+    const msg = (json as ApiError).message ?? `Upload failed (${res.status})`;
+    throw new Error(msg);
+  }
+
+  return unwrap(json);
 }

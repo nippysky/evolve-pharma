@@ -4,12 +4,16 @@
  * Single client for ALL endpoints — customer AND staff/admin.
  * Base URL: https://envolvepharm.com.ng/erp/api/v1/public/
  *
- * Auth is entirely cookie-based (HttpOnly JWT). `withCredentials: true`
- * tells the browser to include session cookies on every cross-origin
- * request automatically — no manual Authorization headers needed.
+ * Auth is JWT via HttpOnly cookies. `withCredentials: true` tells the
+ * browser to include session cookies on every cross-origin request.
+ * No manual Authorization headers — the backend handles everything.
  *
- * The response interceptor handles token expiry: on a 401 it fires
- * POST auth/refresh once, queues concurrent requests, and retries.
+ * Token lifecycle (per backend engineer):
+ *  - Access token expires every 15 minutes.
+ *  - The interceptor catches 401s, calls POST public/auth/refresh to silently
+ *    get a new access token, then retries the original request.
+ *  - On refresh failure the promise is rejected — the calling component
+ *    surfaces the error. NO automatic redirects from the HTTP layer.
  */
 
 import axios, {
@@ -18,7 +22,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 
-import { API_BASE_URL } from './endpoints';
+import { API_BASE_URL, AUTH } from './endpoints';
 
 // ---------- Shared Axios instance ------------------------------------------
 
@@ -34,16 +38,28 @@ const apiClient = axios.create({
 // adminApiClient is an alias — all endpoints share the same base URL
 export const adminApiClient = apiClient;
 
-// ---------- Token-refresh queue -------------------------------------------
+// ---------- Token-refresh queue (backend engineer pattern) -----------------
+//
+// Multiple requests can 401 simultaneously while a refresh is in flight.
+// We queue them here and replay all once the new access token is ready.
 
 let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: () => void;
-  reject: (err: unknown) => void;
-}> = [];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let failedQueue: Array<{ resolve: (value?: any) => void; reject: (reason?: unknown) => void }> = [];
 
+/**
+ * Drain the queue.
+ * - error = null  → resolve all (trigger retry via .then(() => apiClient(original)))
+ * - error = Error → reject all with the refresh error
+ */
 const processQueue = (error: unknown = null) => {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve()));
+  failedQueue.forEach((p) => {
+    if (error) {
+      p.reject(error);
+    } else {
+      p.resolve();
+    }
+  });
   failedQueue = [];
 };
 
@@ -128,50 +144,61 @@ function normalizeError(
   return new Error(error.message ?? 'An unexpected error occurred. Please try again.');
 }
 
-// ---------- Response interceptor ------------------------------------------
+// ---------- Response interceptor (matches backend engineer's spec) ----------
+//
+// Pattern from "Axios Intercept.docx" provided by the backend engineer:
+//  1. Catch 401 on any request (except auth/refresh itself).
+//  2. If a refresh is already in flight, queue the request.
+//  3. Otherwise call auth/refresh once, drain the queue, retry original.
+//  4. On refresh failure: drain queue with the error, reject — NO redirect.
 
 apiClient.interceptors.response.use(
+  // 2xx — pass through unchanged
   (response: AxiosResponse) => response,
 
   async (error: AxiosError) => {
-    const original = error.config as InternalAxiosRequestConfig & {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
 
-    // Intercept 401s (session expired): refresh once then retry.
-    // Skip the refresh endpoint itself to avoid an infinite loop.
+    // Guard: don't intercept 401s that came FROM auth/refresh itself —
+    // that would cause an infinite refresh loop. Check both the relative
+    // path (normal case) and any full-URL form (edge case in some Axios builds).
+    const requestUrl = originalRequest.url ?? '';
+    const isRefreshCall = requestUrl === AUTH.REFRESH || requestUrl.endsWith('/' + AUTH.REFRESH);
+
     if (
       error.response?.status === 401 &&
-      !original._retry &&
-      original.url !== 'auth/refresh'
+      !originalRequest._retry &&
+      !isRefreshCall
     ) {
-      original._retry = true;
+      originalRequest._retry = true;
 
       if (isRefreshing) {
+        // Another refresh already in flight — queue this request.
+        // When the refresh resolves, .then() retries it.
         return new Promise<AxiosResponse>((resolve, reject) => {
-          failedQueue.push({
-            resolve: () => resolve(apiClient(original)),
-            reject,
-          });
-        });
+          failedQueue.push({ resolve, reject });
+        }).then(() => apiClient(originalRequest));
       }
 
       isRefreshing = true;
       try {
+        // Silently get a new access token
         await apiClient.post('auth/refresh');
-        processQueue();
-        return apiClient(original);
+        processQueue();           // unblock all queued requests
+        return apiClient(originalRequest); // retry the original
       } catch (refreshError) {
-        processQueue(refreshError);
-        if (typeof window !== 'undefined') {
-          window.location.href = '/sign-in';
-        }
+        processQueue(refreshError); // reject all queued requests
+        // Do NOT redirect — let the component handle the error.
         return Promise.reject(normalizeError(refreshError as AxiosError));
       } finally {
         isRefreshing = false;
       }
     }
 
+    // All non-401 errors (and 401s that skip the refresh path) —
+    // normalize into a readable message before rejecting.
     return Promise.reject(normalizeError(error));
   },
 );

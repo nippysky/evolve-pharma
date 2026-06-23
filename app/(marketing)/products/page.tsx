@@ -15,8 +15,8 @@ import {
   Shield,
   Truck,
 } from '@/components/icons';
-import { getAllProducts } from '@/lib/data/products';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
+import type { Product } from '@/types';
 import { cn } from '@/lib/utils';
 
 const ALL = 'All';
@@ -43,7 +43,8 @@ export default function MarketingProductsPage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>(ALL);
 
-  const products = useMemo(() => getAllProducts(), []);
+  // TODO: replace with real products API (GET products)
+  const products = useMemo((): Product[] => [], []);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

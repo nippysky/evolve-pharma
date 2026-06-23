@@ -29,8 +29,8 @@ import {
   Basket,
 } from '@/components/icons';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
-import { getAllProducts } from '@/lib/data/products';
 import { formatNaira } from '@/lib/utils';
+import type { Product } from '@/types';
 
 const TRUST_FEATURES = [
   {
@@ -75,11 +75,11 @@ const HERO_STATS = [
 ];
 
 export default function HomePage() {
-  const products = getAllProducts();
-  const featured = products.slice(0, 4);
-  const heroPreview = products.slice(0, 4);
+  // TODO: replace with real products API (GET products) when backend ships
+  const featured: Product[] = [];
+  const heroPreview: Product[] = [];
   const categories = PRODUCT_CATEGORIES.slice(0, 8);
-  const primaryProduct = heroPreview[0];
+  const primaryProduct = heroPreview.at(0);
 
   return (
     <>
@@ -376,6 +376,7 @@ export default function HomePage() {
                   alt="Pharmacy fulfillment"
                   width={1200}
                   height={900}
+                  priority
                   className="aspect-4/3 h-full w-full object-cover"
                 />
               </div>
