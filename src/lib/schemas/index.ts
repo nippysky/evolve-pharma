@@ -24,13 +24,9 @@ export const phoneSchema = z
   .string()
   .trim()
   .min(1, 'Phone number is required')
-  .regex(/^[+]?[0-9\s-]+$/, 'Phone number can only contain digits, spaces, + and -')
-  .refine((v) => {
-    // Strip all non-digit characters then check length
-    const digits = v.replace(/\D/g, '');
-    // Accept: local 10–11 digits (08012345678), or international 12–13 with country code (2348012345678 / +2348012345678)
-    return digits.length >= 10 && digits.length <= 13;
-  }, 'Enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678)');
+  .regex(/^[0-9]+$/, 'Phone number must contain digits only')
+  .min(10, 'Phone number must be at least 10 digits')
+  .max(11, 'Phone number cannot exceed 11 digits');
 
 // ---------- Auth ----------------------------------------------------------
 

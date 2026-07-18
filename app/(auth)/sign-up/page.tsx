@@ -325,8 +325,22 @@ export default function SignUpPage() {
               <Field label="Work email" htmlFor="email" required error={errors.email}>
                 <Input id="email" name="email" type="email" value={details.email} onChange={set('email')} autoComplete="email" placeholder="you@pharmacy.ng" maxLength={254} />
               </Field>
-              <Field label="Phone" htmlFor="phone" required hint="e.g. 08012345678" error={errors.phone}>
-                <Input id="phone" name="phone" type="tel" value={details.phone} onChange={set('phone')} autoComplete="tel" placeholder="08012345678" maxLength={15} />
+              <Field label="Phone" htmlFor="phone" required hint="11-digit number e.g. 08012345678" error={errors.phone}>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={details.phone}
+                  onChange={(e) => {
+                    // Strip all non-digit characters and cap at 11
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setDetails((d) => ({ ...d, phone: digits }));
+                  }}
+                  autoComplete="tel"
+                  placeholder="08012345678"
+                  maxLength={11}
+                />
               </Field>
             </div>
 
@@ -348,7 +362,7 @@ export default function SignUpPage() {
                   value={details.gender}
                   onChange={(e) => setDetails((d) => ({ ...d, gender: e.target.value }))}
                 >
-                  <option value="">Prefer not to say</option>
+                  <option value="">Select</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </Select>
