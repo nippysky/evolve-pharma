@@ -22,8 +22,15 @@ export const passwordSchema = z
 
 export const phoneSchema = z
   .string()
-  .min(10, 'Enter a valid phone number')
-  .regex(/^[+]?[0-9\s-]+$/, 'Phone number can only contain digits, spaces, + and -');
+  .trim()
+  .min(1, 'Phone number is required')
+  .regex(/^[+]?[0-9\s-]+$/, 'Phone number can only contain digits, spaces, + and -')
+  .refine((v) => {
+    // Strip all non-digit characters then check length
+    const digits = v.replace(/\D/g, '');
+    // Accept: local 10–11 digits (08012345678), or international 12–13 with country code (2348012345678 / +2348012345678)
+    return digits.length >= 10 && digits.length <= 13;
+  }, 'Enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678)');
 
 // ---------- Auth ----------------------------------------------------------
 
@@ -36,18 +43,27 @@ export type SignInInput = z.infer<typeof signInSchema>;
 
 // ---------- Self-onboarding (Customer) -----------------------------------
 
+const nameField = (label: string) =>
+  z.string().trim()
+    .min(1, `${label} is required`)
+    .max(60, `${label} is too long`)
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, `${label} should only contain letters`);
+
 const customerRegistrationFields = z.object({
-  first_name: z.string().trim().min(1, 'First name is required').max(60),
-  middle_name: z.string().trim().max(60).optional(),
-  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  first_name: nameField('First name'),
+  middle_name: z.string().trim().max(60).regex(/^[a-zA-ZÀ-ÿ\s'-]*$/, 'Middle name should only contain letters').optional(),
+  last_name: nameField('Last name'),
   company_name: z.string().trim().min(2, 'Pharmacy name must be at least 2 characters').max(120),
   email: emailSchema,
   phone: phoneSchema,
-  address: z.string().trim().min(3, 'Street address is required').max(240),
-  city: z.string().trim().min(2, 'City is required').max(80),
-  state: z.string().trim().min(2, 'State is required').max(80),
+  address: z.string().trim().min(5, 'Enter your full street address').max(240),
+  city: z.string().trim().min(2, 'City is required').max(80)
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'City should only contain letters'),
+  state: z.string().trim().min(2, 'State is required').max(80)
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'State should only contain letters'),
   gender: z.string().trim().max(20).optional(),
-  referral_code: z.string().trim().max(30).optional(),
+  referral_code: z.string().trim().max(30)
+    .regex(/^[a-zA-Z0-9]*$/, 'Referral code should only contain letters and numbers').optional(),
   pcn_cert_url: z.string().min(1, 'Upload your PCN certificate to continue').url('Must be a valid file URL'),
   password: passwordSchema,
   confirm_password: z.string().min(1, 'Please confirm your password'),
@@ -78,8 +94,8 @@ export type CustomerRegistrationInput = z.infer<typeof customerRegistrationSchem
 // ---------- Sales agent (admin invite + import) --------------------------
 
 export const agentInviteSchema = z.object({
-  first_name: z.string().trim().min(1, 'First name is required').max(60),
-  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  first_name: nameField('First name'),
+  last_name: nameField('Last name'),
   email: emailSchema,
   phone: phoneSchema,
   region: z.string().trim().max(80).optional(),
@@ -90,9 +106,9 @@ export const agentImportRowSchema = agentInviteSchema;
 // ---------- Internal staff (admin invite + import) -----------------------
 
 export const staffInviteSchema = z.object({
-  first_name: z.string().trim().min(1, 'First name is required').max(60),
-  middle_name: z.string().trim().max(60).optional(),
-  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  first_name: nameField('First name'),
+  middle_name: z.string().trim().max(60).regex(/^[a-zA-ZÀ-ÿ\s'-]*$/, 'Middle name should only contain letters').optional(),
+  last_name: nameField('Last name'),
   email: emailSchema,
   phone: phoneSchema,
   department: z.string().trim().min(1, 'Department is required').max(80),
@@ -104,15 +120,17 @@ export const staffImportRowSchema = staffInviteSchema;
 // ---------- Customer (admin / agent onboarding + import) -----------------
 
 export const customerOnboardSchema = z.object({
-  first_name: z.string().trim().min(1, 'First name is required').max(60),
-  middle_name: z.string().trim().max(60).optional(),
-  last_name: z.string().trim().min(1, 'Last name is required').max(60),
+  first_name: nameField('First name'),
+  middle_name: z.string().trim().max(60).regex(/^[a-zA-ZÀ-ÿ\s'-]*$/, 'Middle name should only contain letters').optional(),
+  last_name: nameField('Last name'),
   company_name: z.string().trim().min(2, 'Pharmacy name is required').max(120),
   email: emailSchema,
   phone: phoneSchema,
-  address: z.string().trim().min(3, 'Street address is required').max(240),
-  city: z.string().trim().min(2, 'City is required').max(80),
-  state: z.string().trim().min(2, 'State is required').max(80),
+  address: z.string().trim().min(5, 'Enter your full street address').max(240),
+  city: z.string().trim().min(2, 'City is required').max(80)
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'City should only contain letters'),
+  state: z.string().trim().min(2, 'State is required').max(80)
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'State should only contain letters'),
 });
 export type CustomerOnboardInput = z.infer<typeof customerOnboardSchema>;
 export const customerImportRowSchema = customerOnboardSchema;

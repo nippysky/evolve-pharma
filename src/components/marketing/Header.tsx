@@ -336,7 +336,7 @@ export function Header() {
                 </div>
 
                 <p className="mt-4 text-center text-xs leading-relaxed text-ink-3">
-                  Envolve Pharmaceuticals · Lagos, Nigeria
+                  EnvolveCare Express · Lagos, Nigeria
                 </p>
               </div>
             </div>

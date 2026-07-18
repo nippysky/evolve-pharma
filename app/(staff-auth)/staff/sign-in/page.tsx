@@ -69,7 +69,27 @@ export default function StaffSignInPage() {
           router.push(target);
         },
         onError: (err: Error) => {
-          setServerError(err.message ?? 'Sign in failed. Please check your credentials.');
+          const msg = err.message?.toLowerCase() ?? '';
+
+          if (msg.includes('incorrect') || msg.includes('invalid') || msg.includes('wrong') ||
+              msg.includes('password') || msg.includes('credential') ||
+              (err as Error & { status?: number }).status === 401) {
+            setServerError('Incorrect email or password. Please double-check and try again.');
+            return;
+          }
+
+          if (msg.includes('couldn\'t connect') || msg.includes('network') ||
+              msg.includes('reach') || msg.includes('internet')) {
+            setServerError('We couldn\'t connect to our servers. Please check your internet connection and try again.');
+            return;
+          }
+
+          if (msg.includes('too many') || msg.includes('429')) {
+            setServerError('Too many sign-in attempts. Please wait a few minutes and try again.');
+            return;
+          }
+
+          setServerError(err.message ?? 'Sign in failed. Please check your details and try again.');
         },
       },
     );
@@ -86,32 +106,17 @@ export default function StaffSignInPage() {
         Operations console.
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
-        Sign in with your Envolve staff credentials. Access is scoped to your
+        Sign in with your EnvolveCare Express staff credentials. Access is scoped to your
         role automatically.
       </p>
 
       <div className="mt-8">
         {serverError && (
-          <div className="mb-4 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
-            <div className="flex items-start gap-2">
-              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-              <span>{serverError}</span>
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-500" />
+              <p className="text-sm leading-relaxed text-red-800">{serverError}</p>
             </div>
-            {/* "Not found" usually means the backend CORS whitelist doesn't include
-                localhost for this endpoint yet — ask the backend dev to add it. */}
-            {(serverError.toLowerCase().includes('not found') ||
-              serverError.toLowerCase().includes('network') ||
-              serverError.toLowerCase().includes('cors')) && (
-              <p className="mt-2 pl-5 text-xs text-red-600">
-                Tip: open{' '}
-                <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd>{' '}
-                → Network tab, find the <code className="font-mono">auth/staff/login</code>{' '}
-                request and check its status + response headers. If you see a CORS error in
-                the Console tab, ask the backend dev to add{' '}
-                <code className="font-mono">localhost:3000</code> to the allowed origins for
-                staff routes.
-              </p>
-            )}
           </div>
         )}
 
@@ -120,7 +125,7 @@ export default function StaffSignInPage() {
             id="email"
             name="email"
             type="email"
-            placeholder="you@envolvepharm.com.ng"
+            placeholder="you@ece.envolvepharm.com.ng"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

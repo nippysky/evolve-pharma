@@ -1197,7 +1197,7 @@ export function CustomersView({ role }: { role: Role }) {
       {/* ── Page header ── */}
       <PageHead
         title="Customers"
-        subtitle="Pharmacies registered with Envolve Pharmaceuticals."
+        subtitle="Pharmacies registered with EnvolveCare Express."
         actions={
           <>
             <Button

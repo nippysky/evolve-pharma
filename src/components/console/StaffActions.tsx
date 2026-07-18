@@ -85,7 +85,7 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
             <Input id="sf-mid" value={form.middle_name} onChange={(e) => set('middle_name', e.target.value)} placeholder="Optional" />
           </Field>
           <Field label="Work email" htmlFor="sf-email" required error={firstErr('email')}>
-            <Input id="sf-email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="name@envolvepharm.com.ng" required />
+            <Input id="sf-email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="name@ece.envolvepharm.com.ng" required />
           </Field>
           <Field label="Phone" htmlFor="sf-phone" required error={firstErr('phone')}>
             <Input id="sf-phone" type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+234 800 000 0000" required />

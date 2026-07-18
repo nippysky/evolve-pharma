@@ -53,11 +53,11 @@ export function StaffAuthVisual() {
 
       <div className="relative max-w-md rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
         <p className="text-sm leading-relaxed text-white/85">
-          This portal is for Envolve staff only. If you reached it by mistake, head to the customer
+          This portal is for EnvolveCare Express staff only. If you reached it by mistake, head to the customer
           sign-in.
         </p>
         <footer className="mt-4 text-xs text-white/55">
-          Authorized personnel · Envolve Pharmaceuticals
+          Authorized personnel · EnvolveCare Express
         </footer>
       </div>
     </aside>

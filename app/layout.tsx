@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     'pharmaceutical wholesaler Nigeria',
     'B2B pharmacy supply',
     'NAFDAC verified medicines',
-    'Envolve Pharmaceuticals',
+    'EnvolveCare Express',
     'pharmacy procurement',
   ],
 

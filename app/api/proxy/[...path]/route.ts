@@ -3,15 +3,15 @@
  *
  * WHY THIS EXISTS
  * ───────────────
- * The browser runs on localhost:3000; the backend is on envolvepharm.com.ng.
+ * The browser runs on localhost:3000; the backend is on ece.envolvepharm.com.ng.
  * Modern browsers block cross-origin cookies (SameSite=Lax/Strict) and won't
  * send the backend's `access_token` / `refresh_token` cookies on XHR/fetch
  * requests from a different origin — even with withCredentials:true — unless
  * the cookie is SameSite=None AND Secure. HTTP localhost is never "Secure".
  *
  * The proxy makes every request same-origin:
- *   Browser ──► localhost:3000/api/proxy/auth/me  (same origin ✓)
- *   Next.js ──► envolvepharm.com.ng/…/auth/me     (server-to-server ✓)
+ *   Browser ──► localhost:3000/api/proxy/auth/me       (same origin ✓)
+ *   Next.js ──► ece.envolvepharm.com.ng/…/auth/me     (server-to-server ✓)
  *
  * On login, the backend's Set-Cookie response travels through the proxy,
  * which strips the `Secure` / `Domain` / `SameSite` constraints and
@@ -27,7 +27,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = 'https://envolvepharm.com.ng/erp/api/v1/public';
+const BACKEND_BASE = 'https://ece.envolvepharm.com.ng/api/v1/public';
 
 /** Headers that must not be forwarded (hop-by-hop). */
 const HOP_BY_HOP = new Set([
@@ -36,8 +36,19 @@ const HOP_BY_HOP = new Set([
   'proxy-authorization', 'proxy-authenticate',
 ]);
 
-/** Response headers we strip to avoid double-encoding / length mismatches. */
-const STRIP_RESPONSE = new Set(['content-encoding']);
+/**
+ * Response headers we strip before forwarding to the browser.
+ *
+ * content-encoding — proxy reads the body with arrayBuffer() which decompresses
+ *   it; forwarding the original encoding header would tell the browser to
+ *   decompress again → garbled response.
+ *
+ * content-length — the original byte count came from the compressed (or
+ *   chunked) backend response. After arrayBuffer() the size may differ.
+ *   Forwarding the old Content-Length causes ERR_CONTENT_LENGTH_MISMATCH in
+ *   Chrome. We let Next.js compute the correct length from the actual buffer.
+ */
+const STRIP_RESPONSE = new Set(['content-encoding', 'content-length']);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

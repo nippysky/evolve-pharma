@@ -24,7 +24,7 @@ export type DriverInviteInput = z.infer<typeof driverInviteSchema>;
 const FIELDS: EntityField[] = [
   { name: 'first_name',    label: 'First name',    required: true, placeholder: 'Musa' },
   { name: 'last_name',     label: 'Last name',     required: true, placeholder: 'Bello' },
-  { name: 'email',         label: 'Work email',    type: 'email',  required: true, placeholder: 'driver@envolvepharm.com.ng', full: true },
+  { name: 'email',         label: 'Work email',    type: 'email',  required: true, placeholder: 'driver@ece.envolvepharm.com.ng', full: true },
   { name: 'phone',         label: 'Phone',         type: 'tel',    required: true, placeholder: '+234 800 000 0000' },
   { name: 'vehicle_plate', label: 'Vehicle plate', required: true, placeholder: 'ABJ-148-XK' },
   {

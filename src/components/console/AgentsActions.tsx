@@ -11,7 +11,7 @@ import { inviteAgentAction, importAgentsAction } from '@/lib/actions/console';
 const FIELDS: EntityField[] = [
   { name: 'first_name', label: 'First name', required: true, placeholder: 'Amaka' },
   { name: 'last_name', label: 'Last name', required: true, placeholder: 'Eze' },
-  { name: 'email', label: 'Work email', type: 'email', required: true, placeholder: 'name@envolvepharm.com.ng', full: true },
+  { name: 'email', label: 'Work email', type: 'email', required: true, placeholder: 'name@ece.envolvepharm.com.ng', full: true },
   { name: 'phone', label: 'Phone', type: 'tel', required: true, placeholder: '+234 800 000 0000' },
   { name: 'region', label: 'Region', placeholder: 'Lagos' },
 ];

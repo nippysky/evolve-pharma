@@ -123,17 +123,49 @@ export default function SignUpPage() {
           setStep(3);
         },
         onError: (err: Error & { fieldErrors?: Record<string, string[]> }) => {
-          setServerError(err.message ?? 'Registration failed. Please try again.');
+          const msg = err.message?.toLowerCase() ?? '';
+
+          // Translate technical / server errors into plain English
+          if (msg.includes('smtp') || msg.includes('mail') || msg.includes('500') ||
+              msg.includes('internal server') || msg.includes('failed to connect to server')) {
+            setServerError('Registration submitted, but we had trouble sending your verification email. Please wait a moment and use "Resend code" on the next step, or contact support.');
+            // Still advance to OTP step so user can resend
+            setResendIn(30);
+            setStep(3);
+            return;
+          }
+
+          if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate') ||
+              msg.includes('taken') || msg.includes('registered')) {
+            setServerError('An account with this email already exists. Try signing in instead.');
+            return;
+          }
+
+          if (msg.includes('couldn\'t connect') || msg.includes('network') ||
+              msg.includes('internet') || msg.includes('reach')) {
+            setServerError('We couldn\'t connect to our servers. Please check your internet connection and try again.');
+            return;
+          }
+
+          if (msg.includes('too many') || msg.includes('rate') || msg.includes('429')) {
+            setServerError('Too many attempts. Please wait a few minutes and try again.');
+            return;
+          }
+
+          // Field-level validation errors from backend (422)
           if (err.fieldErrors) {
             const mapped: Record<string, string> = {};
             Object.entries(err.fieldErrors).forEach(([k, msgs]) => {
               if (!msgs?.[0]) return;
-              // Normalise backend key variants → frontend field names
               const key = k === 'pcn_certificate' ? 'pcn_cert' : k;
               mapped[key] = msgs[0];
             });
             setErrors(mapped);
+            setServerError('Please fix the highlighted fields and try again.');
+            return;
           }
+
+          setServerError(err.message ?? 'Registration failed. Please try again.');
         },
       },
     );
@@ -141,12 +173,13 @@ export default function SignUpPage() {
 
   // ── Resend OTP ───────────────────────────────────────────────────────────
   const handleResend = () => {
-    setResendIn(30);
+    if (resendOtpMutation.isPending) return;
+    setResendIn(60);
     resendOtpMutation.mutate(details.email, {
       onSuccess: () => toast.show({ tone: 'info', title: 'Code resent', description: `Sent to ${details.email}` }),
       onError: () => {
-        setResendIn(0);
-        toast.show({ tone: 'error', title: 'Could not resend', description: 'Please try again.' });
+        setResendIn(15); // cooldown even on failure — prevents spam
+        toast.show({ tone: 'error', title: 'Could not resend', description: 'Please try again in a moment.' });
       },
     });
   };
@@ -261,26 +294,11 @@ export default function SignUpPage() {
 
       <div className="mt-7">
         {serverError && (
-          <div className="mb-4 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
-            <div className="flex items-start gap-2">
-              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-              <span>{serverError}</span>
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-500" />
+              <p className="text-sm leading-relaxed text-red-800">{serverError}</p>
             </div>
-            {/* Show all field-level errors from the backend so you can see exactly what failed */}
-            {Object.keys(errors).length > 0 && (
-              <ul className="mt-2 pl-5 space-y-0.5">
-                {Object.entries(errors).map(([k, msg]) => (
-                  <li key={k} className="text-xs text-red-700">
-                    <span className="font-medium">{k.replace(/_/g, ' ')}:</span> {msg}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {serverError.toLowerCase().includes('network error') || serverError.toLowerCase().includes('cors') ? (
-              <p className="mt-2 pl-5 text-xs text-red-600">
-                Tip: open <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd> → Console to see the exact browser error. Common causes: the backend hasn&apos;t allowed this origin (CORS), or the server is unreachable.
-              </p>
-            ) : null}
           </div>
         )}
 
@@ -289,39 +307,39 @@ export default function SignUpPage() {
           <>
             <div className="grid gap-3 sm:grid-cols-3">
               <Field label="First name" htmlFor="first_name" required error={errors.first_name}>
-                <Input id="first_name" name="first_name" value={details.first_name} onChange={set('first_name')} autoComplete="given-name" placeholder="Amaka" />
+                <Input id="first_name" name="first_name" value={details.first_name} onChange={set('first_name')} autoComplete="given-name" placeholder="Amaka" maxLength={60} />
               </Field>
               <Field label="Middle name" htmlFor="middle_name" error={errors.middle_name}>
-                <Input id="middle_name" name="middle_name" value={details.middle_name} onChange={set('middle_name')} autoComplete="additional-name" placeholder="Optional" />
+                <Input id="middle_name" name="middle_name" value={details.middle_name} onChange={set('middle_name')} autoComplete="additional-name" placeholder="Optional" maxLength={60} />
               </Field>
               <Field label="Last name" htmlFor="last_name" required error={errors.last_name}>
-                <Input id="last_name" name="last_name" value={details.last_name} onChange={set('last_name')} autoComplete="family-name" placeholder="Eze" />
+                <Input id="last_name" name="last_name" value={details.last_name} onChange={set('last_name')} autoComplete="family-name" placeholder="Eze" maxLength={60} />
               </Field>
             </div>
 
             <Field label="Pharmacy / company name" htmlFor="company_name" required error={errors.company_name}>
-              <Input id="company_name" name="company_name" value={details.company_name} onChange={set('company_name')} placeholder="Greenleaf Pharmacy Ltd." />
+              <Input id="company_name" name="company_name" value={details.company_name} onChange={set('company_name')} placeholder="Greenleaf Pharmacy Ltd." maxLength={120} />
             </Field>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Work email" htmlFor="email" required error={errors.email}>
-                <Input id="email" name="email" type="email" value={details.email} onChange={set('email')} autoComplete="email" placeholder="you@pharmacy.ng" />
+                <Input id="email" name="email" type="email" value={details.email} onChange={set('email')} autoComplete="email" placeholder="you@pharmacy.ng" maxLength={254} />
               </Field>
-              <Field label="Phone" htmlFor="phone" required hint="Include country code" error={errors.phone}>
-                <Input id="phone" name="phone" type="tel" value={details.phone} onChange={set('phone')} autoComplete="tel" placeholder="+234 800 000 0000" />
+              <Field label="Phone" htmlFor="phone" required hint="e.g. 08012345678" error={errors.phone}>
+                <Input id="phone" name="phone" type="tel" value={details.phone} onChange={set('phone')} autoComplete="tel" placeholder="08012345678" maxLength={15} />
               </Field>
             </div>
 
             <Field label="Street address" htmlFor="address" required error={errors.address}>
-              <Input id="address" name="address" value={details.address} onChange={set('address')} autoComplete="street-address" placeholder="No 33, Ikeja" />
+              <Input id="address" name="address" value={details.address} onChange={set('address')} autoComplete="street-address" placeholder="No 33, Allen Avenue, Ikeja" maxLength={240} />
             </Field>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <Field label="City" htmlFor="city" required error={errors.city}>
-                <Input id="city" name="city" value={details.city} onChange={set('city')} autoComplete="address-level2" placeholder="Lagos" />
+                <Input id="city" name="city" value={details.city} onChange={set('city')} autoComplete="address-level2" placeholder="Lagos" maxLength={80} />
               </Field>
               <Field label="State" htmlFor="state" required error={errors.state}>
-                <Input id="state" name="state" value={details.state} onChange={set('state')} autoComplete="address-level1" placeholder="Lagos" />
+                <Input id="state" name="state" value={details.state} onChange={set('state')} autoComplete="address-level1" placeholder="Lagos" maxLength={80} />
               </Field>
               <Field label="Gender" htmlFor="gender" error={errors.gender}>
                 <Select
@@ -338,7 +356,7 @@ export default function SignUpPage() {
             </div>
 
             <Field label="Referral code" htmlFor="referral_code" hint="Optional — if someone referred you" error={errors.referral_code}>
-              <Input id="referral_code" name="referral_code" value={details.referral_code} onChange={set('referral_code')} placeholder="e.g. PHARMA2025" autoComplete="off" />
+              <Input id="referral_code" name="referral_code" value={details.referral_code} onChange={set('referral_code')} placeholder="e.g. PHARMA2025" autoComplete="off" maxLength={30} />
             </Field>
 
             <Button type="button" fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={next1}>

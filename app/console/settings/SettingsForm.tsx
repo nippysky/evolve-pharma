@@ -281,7 +281,7 @@ export function SettingsForm({ defaults }: SettingsFormProps) {
             Billing, API keys, webhook endpoints, or integrations? Reach out and our ops team will set you up directly.
           </p>
           <a
-            href="mailto:ops@envolvepharm.com.ng"
+            href="mailto:ops@ece.envolvepharm.com.ng"
             className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-md border border-line bg-white px-3 text-sm text-ink hover:border-line-strong"
           >
             Email ops <ArrowRight size={12} />

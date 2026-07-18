@@ -50,13 +50,34 @@ export default function SignInPage() {
           router.push('/portal/catalog');
         },
         onError: (err: Error) => {
+          const msg = err.message?.toLowerCase() ?? '';
+
           // Backend returns this message when the account is PENDING_REVIEW
-          if (err.message?.toLowerCase().includes('under review') ||
-              err.message?.toLowerCase().includes('pending')) {
+          if (msg.includes('under review') || msg.includes('pending')) {
             router.push('/sign-up/pending');
             return;
           }
-          setServerError(err.message ?? 'Sign in failed. Please check your credentials.');
+
+          // Translate technical errors into plain English
+          if (msg.includes('incorrect') || msg.includes('invalid') || msg.includes('wrong') ||
+              msg.includes('password') || msg.includes('credential') ||
+              (err as Error & { status?: number }).status === 401) {
+            setServerError('Incorrect email or password. Please double-check and try again.');
+            return;
+          }
+
+          if (msg.includes('couldn\'t connect') || msg.includes('network') ||
+              msg.includes('reach') || msg.includes('internet')) {
+            setServerError('We couldn\'t connect to our servers. Please check your internet connection and try again.');
+            return;
+          }
+
+          if (msg.includes('too many') || msg.includes('429')) {
+            setServerError('Too many sign-in attempts. Please wait a few minutes and try again.');
+            return;
+          }
+
+          setServerError(err.message ?? 'Sign in failed. Please check your details and try again.');
         },
       },
     );
@@ -76,16 +97,11 @@ export default function SignInPage() {
 
       <div className="mt-8">
         {serverError && (
-          <div className="mb-4 rounded-md border border-red-200 bg-danger-soft px-3.5 py-3 text-sm text-red-800">
-            <div className="flex items-start gap-2">
-              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-              <span>{serverError}</span>
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-500" />
+              <p className="text-sm leading-relaxed text-red-800">{serverError}</p>
             </div>
-            {(serverError.toLowerCase().includes('network error') || serverError.toLowerCase().includes('cors')) && (
-              <p className="mt-2 pl-5 text-xs text-red-600">
-                Tip: open <kbd className="rounded bg-red-100 px-1 py-0.5 font-mono">F12</kbd> → Console for the exact browser error.
-              </p>
-            )}
           </div>
         )}
 
@@ -135,7 +151,7 @@ export default function SignInPage() {
         </Button>
 
         <p className="mt-6 text-center text-sm text-ink-2">
-          New to Envolve?{' '}
+          New to EnvolveCare Express?{' '}
           <Link href="/sign-up" className="font-medium text-brand-600 hover:underline hover:underline-offset-2">
             Onboard your pharmacy
           </Link>

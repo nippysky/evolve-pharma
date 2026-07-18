@@ -12,7 +12,7 @@ import { Container } from '@/components/ui/Layout';
 import { Mail, Phone, MapPin, ArrowUpRight } from '@/components/icons';
 import { SITE } from '@/lib/constants';
 
-const MAIN_SITE = 'https://envolvepharm.com.ng';
+const MAIN_SITE = 'https://ece.envolvepharm.com.ng';
 
 const SHOP_LINKS: { label: string; href: string }[] = [
   { label: 'Catalog', href: '/products' },
@@ -21,7 +21,7 @@ const SHOP_LINKS: { label: string; href: string }[] = [
 ];
 
 const COMPANY_LINKS: { label: string; href: string }[] = [
-  { label: 'About Envolve', href: `${MAIN_SITE}/about` },
+  { label: 'About ECE', href: `${MAIN_SITE}/about` },
   { label: 'FAQ', href: `${MAIN_SITE}/faq` },
   { label: 'Contact', href: `${MAIN_SITE}/contact` },
   { label: 'Main site', href: MAIN_SITE },
@@ -45,7 +45,7 @@ export function Footer() {
             <Logo height={32} />
 
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-2">
-              The online ordering platform of Envolve Pharmaceuticals — distribution and sales of
+              The online ordering platform of EnvolveCare Express — distribution and sales of
               pharmaceuticals, industrial chemicals, and related products across Nigeria.
             </p>
 
@@ -139,7 +139,7 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-line-subtle py-6 text-xs text-ink-3 sm:flex-row">
-          <span>© {currentYear} Envolve Pharmaceuticals Ltd. All rights reserved.</span>
+          <span>© {currentYear} EnvolveCare Express. All rights reserved.</span>
           <span>Lagos, Nigeria 🇳🇬 · Licensed by PCN</span>
         </div>
       </Container>

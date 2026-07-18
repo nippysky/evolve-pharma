@@ -10,19 +10,19 @@ import type { OrderStatus, PaymentStatus, DeliveryStatus, Role } from '@/types';
 // ---------- Site ---------------------------------------------------------
 
 export const SITE = {
-  name: 'Envolve Pharmaceuticals',
-  shortName: 'Envolve',
+  name: 'EnvolveCare Express',
+  shortName: 'ECE',
   tagline: 'Order pharmaceuticals and industrial chemicals online.',
   description:
-    'The online ordering platform of Envolve Pharmaceuticals — a Nigerian distributor of pharmaceuticals, industrial chemicals, and related products. Browse the catalog and order from your verified account.',
-  url: 'https://envolvepharm.com.ng',
-  email: 'orders@envolvepharm.com.ng',
+    'The online ordering platform of EnvolveCare Express — a Nigerian distributor of pharmaceuticals, industrial chemicals, and related products. Browse the catalog and order from your verified account.',
+  url: 'https://ece.envolvepharm.com.ng',
+  email: 'orders@ece.envolvepharm.com.ng',
   phone: '+234 800 000 0000',
   address: 'Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos, Nigeria',
   socials: {
-    twitter: 'https://twitter.com/envolvepharm',
-    linkedin: 'https://linkedin.com/company/envolvepharm',
-    instagram: 'https://instagram.com/envolvepharm',
+    twitter: 'https://twitter.com/evolvecareexpress',
+    linkedin: 'https://linkedin.com/company/evolvecareexpress',
+    instagram: 'https://instagram.com/evolvecareexpress',
   },
 } as const;
 

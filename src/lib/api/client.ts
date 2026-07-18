@@ -111,37 +111,40 @@ function normalizeError(
   // HTTP error without a JSON body
   if (status) {
     const statusMessages: Record<number, string> = {
-      400: 'Bad request. Please check your input and try again.',
-      401: 'Your session has expired. Please sign in again.',
-      403: 'You do not have permission to perform this action.',
-      404: 'The requested resource was not found.',
-      409: 'A conflict occurred — this record may already exist.',
-      413: 'The uploaded file is too large. Maximum size is 8 MB.',
-      422: 'Validation failed. Please review the form and try again.',
-      429: 'Too many requests. Please wait a moment and try again.',
-      500: 'An internal server error occurred. Please try again later.',
-      502: 'The server is temporarily unavailable (502). Please try again.',
-      503: 'The server is temporarily unavailable (503). Please try again.',
+      400: 'Something looks off with what was submitted. Please check your details and try again.',
+      401: 'Incorrect email or password. Please double-check and try again.',
+      403: 'You don\'t have permission to do that. Contact your administrator if you think this is a mistake.',
+      404: 'We couldn\'t find what you\'re looking for. It may have been moved or deleted.',
+      409: 'This record already exists. Please check for duplicates.',
+      413: 'The file you uploaded is too large. Please use a file under 8 MB.',
+      422: 'Some of the information you entered isn\'t quite right. Please review and try again.',
+      429: 'You\'ve made too many attempts. Please wait a moment and try again.',
+      500: 'Something went wrong on our end. Please try again — our team has been notified.',
+      502: 'Our servers are temporarily unavailable. Please try again in a few moments.',
+      503: 'The service is temporarily down for maintenance. Please try again shortly.',
     };
-    const msg = statusMessages[status] ?? `Unexpected server response (${status}).`;
+    const msg = statusMessages[status] ?? `An unexpected error occurred (code ${status}). Please try again.`;
     const err = new Error(msg) as Error & { status?: number };
     err.status = status;
     return err;
   }
 
-  // No response — network / CORS / DNS / timeout
+  // No response — network / CORS / DNS / timeout / content-length mismatch
   if (error.code === 'ECONNABORTED' || error.code === 'ERR_CANCELED') {
-    return new Error('Request timed out. Please try again.');
+    return new Error('The request took too long to complete. Please check your connection and try again.');
   }
 
-  if (error.code === 'ERR_NETWORK' || !error.response) {
+  if (
+    error.code === 'ERR_NETWORK' ||
+    error.code === 'ERR_CONTENT_LENGTH_MISMATCH' ||
+    !error.response
+  ) {
     return new Error(
-      'Network error — unable to reach the server. ' +
-      'Check your internet connection or open DevTools (F12) for details.',
+      'We couldn\'t connect to our servers. Please check your internet connection and try again.',
     );
   }
 
-  return new Error(error.message ?? 'An unexpected error occurred. Please try again.');
+  return new Error(error.message ?? 'Something went wrong. Please try again.');
 }
 
 // ---------- Response interceptor (matches backend engineer's spec) ----------
@@ -167,10 +170,19 @@ apiClient.interceptors.response.use(
     const requestUrl = originalRequest.url ?? '';
     const isRefreshCall = requestUrl === AUTH.REFRESH || requestUrl.endsWith('/' + AUTH.REFRESH);
 
+    // Guard: login endpoints return 401 for WRONG CREDENTIALS, not for expired
+    // tokens. Attempting a refresh here makes no sense (there is no session yet)
+    // and would replace the "wrong password" error with a confusing refresh-fail
+    // error. Skip the refresh path entirely for all authentication flows.
+    const isLoginCall =
+      requestUrl.includes(AUTH.LOGIN_CUSTOMER) ||
+      requestUrl.includes(AUTH.LOGIN_STAFF);
+
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !isRefreshCall
+      !isRefreshCall &&
+      !isLoginCall
     ) {
       originalRequest._retry = true;
 

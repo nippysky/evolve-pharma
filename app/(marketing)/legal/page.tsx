@@ -29,7 +29,7 @@ export default function LegalPage() {
         <article className="prose-envolve mt-12 flex flex-col gap-5 text-sm leading-relaxed text-ink-2">
           <h2>Terms of Service</h2>
           <p>
-            By accessing the Envolve Pharmaceuticals platform you confirm that you are operating
+            By accessing the EnvolveCare Express platform you confirm that you are operating
             as a representative of a licensed Nigerian pharmacy in good standing with the
             Pharmacists Council of Nigeria (PCN). Any use that violates this premise is
             prohibited and may result in account termination.
@@ -65,7 +65,7 @@ export default function LegalPage() {
           <h2>Contact</h2>
           <p>
             For questions about these policies, email{' '}
-            <a href="mailto:legal@envolvepharm.com.ng">legal@envolvepharm.com.ng</a>.
+            <a href="mailto:legal@ece.envolvepharm.com.ng">legal@ece.envolvepharm.com.ng</a>.
           </p>
         </article>
       </Container>

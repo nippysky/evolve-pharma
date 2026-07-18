@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.pexels.com' },
       { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
       { protocol: 'https', hostname: 'cdn.envolvepharm.com.ng' },
+      { protocol: 'https', hostname: 'ece.envolvepharm.com.ng' },
     ],
     formats: ['image/avif', 'image/webp'],
   },

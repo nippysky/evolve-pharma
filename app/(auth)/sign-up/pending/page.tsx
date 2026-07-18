@@ -39,7 +39,7 @@ export default function RegistrationPendingPage() {
         Account pending review.
       </h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-2">
-        Thank you for registering with Envolve Pharmaceuticals. Our compliance team is
+        Thank you for registering with EnvolveCare Express. Our compliance team is
         reviewing your PCN certificate and pharmacy details — usually within{' '}
         <strong className="font-semibold text-ink">24–48 hours</strong>.
       </p>
@@ -79,10 +79,10 @@ export default function RegistrationPendingPage() {
       <p className="mt-6 text-sm text-ink-3">
         Questions?{' '}
         <a
-          href="mailto:support@envolvepharm.com.ng"
+          href="mailto:support@ece.envolvepharm.com.ng"
           className="font-medium text-brand-600 hover:underline hover:underline-offset-2"
         >
-          support@envolvepharm.com.ng
+          support@ece.envolvepharm.com.ng
         </a>
       </p>
 
