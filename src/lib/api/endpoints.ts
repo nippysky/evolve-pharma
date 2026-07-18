@@ -55,7 +55,7 @@ export const STAFF_ADMIN = {
   UNVERIFIED:  'staff/unverified',
   VERIFIED:    'staff/verified',
   REGISTER:    'auth/staff/register',
-  BULK_UPLOAD: 'staff/bulk-upload',
+  BULK_UPLOAD: 'staffs/bulk-upload',
 } as const;
 
 export const STAFF = {
