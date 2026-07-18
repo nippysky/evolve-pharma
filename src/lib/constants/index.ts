@@ -216,6 +216,21 @@ export const DELIVERY_STATUS_TONE: Record<DeliveryStatus, 'neutral' | 'info' | '
 
 // ---------- Categories --------------------------------------------------
 
+// ---------- Nigerian States -----------------------------------------------
+
+export const NIGERIAN_STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa',
+  'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti',
+  'Enugu', 'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano',
+  'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger',
+  'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto',
+  'Taraba', 'Yobe', 'Zamfara',
+] as const;
+
+export type NigerianState = (typeof NIGERIAN_STATES)[number];
+
+// ---------- Categories ---------------------------------------------------
+
 export const PRODUCT_CATEGORIES = [
   'Antibiotics',
   'Analgesics',

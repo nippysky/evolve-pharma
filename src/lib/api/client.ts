@@ -78,10 +78,31 @@ function normalizeError(
   const status = error.response?.status;
   const body   = error.response?.data as Record<string, unknown> | undefined;
 
+  /**
+   * Translate a raw backend message into a friendly string if it contains
+   * technical jargon a user should never see (SMTP, SQL, stack traces, etc.)
+   */
+  function sanitizeBackendMessage(raw: string): string {
+    const l = raw.toLowerCase();
+    if (
+      l.includes('smtp') || l.includes('invalid address') ||
+      l.includes('mail') || l.includes('econnrefused') ||
+      l.includes('enotfound') || l.includes('getaddrinfo') ||
+      l.includes('nodemailer') || l.includes('connect etimedout') ||
+      l.includes('failed to connect to server') || l.includes('could not connect')
+    ) {
+      return 'We ran into a technical issue on our end. Your information was saved — please try again in a moment or contact support.';
+    }
+    if (l.includes('syntax error') || l.includes('sequelize') || l.includes('sql')) {
+      return 'Something went wrong on our end. Please try again.';
+    }
+    return raw;
+  }
+
   if (body) {
     // Shape A — top-level message
     if (typeof body.message === 'string') {
-      const err = new Error(body.message) as Error & {
+      const err = new Error(sanitizeBackendMessage(body.message)) as Error & {
         fieldErrors?: Record<string, string[]>;
         status?: number;
       };
@@ -95,7 +116,7 @@ function normalizeError(
     if (body.error && typeof body.error === 'object') {
       const nested = body.error as Record<string, unknown>;
       if (typeof nested.message === 'string') {
-        const err = new Error(nested.message) as Error & {
+        const err = new Error(sanitizeBackendMessage(nested.message)) as Error & {
           fieldErrors?: Record<string, string[]>;
           status?: number;
         };

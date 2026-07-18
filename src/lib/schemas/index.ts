@@ -55,8 +55,7 @@ const customerRegistrationFields = z.object({
   address: z.string().trim().min(5, 'Enter your full street address').max(240),
   city: z.string().trim().min(2, 'City is required').max(80)
     .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'City should only contain letters'),
-  state: z.string().trim().min(2, 'State is required').max(80)
-    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'State should only contain letters'),
+  state: z.string().trim().min(2, 'Please select a state'),
   gender: z.string().trim().max(20).optional(),
   referral_code: z.string().trim().max(30)
     .regex(/^[a-zA-Z0-9]*$/, 'Referral code should only contain letters and numbers').optional(),
@@ -125,8 +124,7 @@ export const customerOnboardSchema = z.object({
   address: z.string().trim().min(5, 'Enter your full street address').max(240),
   city: z.string().trim().min(2, 'City is required').max(80)
     .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'City should only contain letters'),
-  state: z.string().trim().min(2, 'State is required').max(80)
-    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'State should only contain letters'),
+  state: z.string().trim().min(2, 'Please select a state'),
 });
 export type CustomerOnboardInput = z.infer<typeof customerOnboardSchema>;
 export const customerImportRowSchema = customerOnboardSchema;

@@ -22,6 +22,7 @@ import {
   useResendOtp,
 } from '@/hooks/auth/useCustomerAuth';
 import { customerDetailsSchema, passwordSchema } from '@/lib/schemas';
+import { NIGERIAN_STATES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 type Step = 1 | 2 | 3 | 4;
@@ -353,7 +354,17 @@ export default function SignUpPage() {
                 <Input id="city" name="city" value={details.city} onChange={set('city')} autoComplete="address-level2" placeholder="Lagos" maxLength={80} />
               </Field>
               <Field label="State" htmlFor="state" required error={errors.state}>
-                <Input id="state" name="state" value={details.state} onChange={set('state')} autoComplete="address-level1" placeholder="Lagos" maxLength={80} />
+                <Select
+                  id="state"
+                  name="state"
+                  value={details.state}
+                  onChange={(e) => setDetails((d) => ({ ...d, state: e.target.value }))}
+                >
+                  <option value="">Select state</option>
+                  {NIGERIAN_STATES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </Select>
               </Field>
               <Field label="Gender" htmlFor="gender" error={errors.gender}>
                 <Select
