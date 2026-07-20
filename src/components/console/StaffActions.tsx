@@ -3,10 +3,11 @@
 import { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/Button';
-import { Plus, Upload, AlertTriangle, CheckCircle, XCircle } from '@/components/icons';
+import { Plus, Upload, AlertTriangle, CheckCircle, XCircle, X } from '@/components/icons';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/contexts/ToastContext';
 import { useRegisterStaff, useBulkUploadStaff } from '@/hooks/staff/useStaff';
+import type { BulkUploadResult } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 
 // ---------- Add staff modal -------------------------------------------------
@@ -232,11 +233,13 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
   const uploadMut = useBulkUploadStaff();
   const inputRef  = useRef<HTMLInputElement>(null);
 
-  const [file,      setFile]      = useState<File | null>(null);
-  const [preview,   setPreview]   = useState<StaffPreviewRow[] | null>(null);
-  const [parsing,   setParsing]   = useState(false);
-  const [parseErr,  setParseErr]  = useState('');
-  const [typeError, setTypeError] = useState('');
+  const [file,        setFile]        = useState<File | null>(null);
+  const [preview,     setPreview]     = useState<StaffPreviewRow[] | null>(null);
+  const [parsing,     setParsing]     = useState(false);
+  const [parseErr,    setParseErr]    = useState('');
+  const [typeError,   setTypeError]   = useState('');
+  const [uploadResult, setUploadResult] = useState<BulkUploadResult | null>(null);
+  const [uploadErrMsg, setUploadErrMsg] = useState('');
 
   if (!open) return null;
 
@@ -245,6 +248,8 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
     setPreview(null);
     setParseErr('');
     setTypeError('');
+    setUploadResult(null);
+    setUploadErrMsg('');
     if (inputRef.current) inputRef.current.value = '';
   };
 
@@ -275,6 +280,8 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
 
   const submit = () => {
     if (!file) return;
+    setUploadResult(null);
+    setUploadErrMsg('');
     uploadMut.mutate(file, {
       onSuccess: (data) => {
         const existing = data.existing_emails?.length ?? 0;
@@ -288,8 +295,12 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
         });
         if (data.total_record_inserted > 0) { reset(); onClose(); }
       },
-      onError: (err: Error) => {
-        toast.show({ tone: 'error', title: 'Upload failed', description: err.message });
+      onError: (err: Error & { uploadResult?: BulkUploadResult }) => {
+        if (err.uploadResult) {
+          setUploadResult(err.uploadResult);
+        } else {
+          setUploadErrMsg(err.message ?? 'Upload failed. Please try again.');
+        }
       },
     });
   };
@@ -382,6 +393,62 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
               {typeError && <p className="mt-2 text-xs text-red-600">{typeError}</p>}
               {parseErr  && <p className="mt-2 text-xs text-red-600"><AlertTriangle size={11} className="inline mr-1" />{parseErr}</p>}
             </>
+          )}
+
+          {/* ── Upload result (shown after API responds) ─────────────────── */}
+          {uploadResult && (
+            <div className="mb-4">
+              {/* Summary bar */}
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                {uploadResult.successful > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf-200">
+                    <CheckCircle size={12} /> {uploadResult.successful} inserted
+                  </span>
+                ) : null}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+                  <AlertTriangle size={12} /> {uploadResult.failed} failed
+                </span>
+                <span className="text-xs text-ink-3 ml-auto">{uploadResult.total_records} total rows</span>
+              </div>
+
+              <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm font-medium text-red-800 mb-1">Upload completed with errors</p>
+                <p className="text-xs text-red-700 leading-relaxed">
+                  The rows below could not be inserted. This is a server-side issue — please contact your backend engineer.
+                  You can retry after the issue is resolved.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-line overflow-hidden">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead className="bg-bg-subtle text-[11px] font-semibold uppercase tracking-wider text-ink-3">
+                    <tr>
+                      <th className="px-3 py-2.5 w-12">Row</th>
+                      <th className="px-3 py-2.5">Email</th>
+                      <th className="px-3 py-2.5">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {uploadResult.failed_records.map((r) => (
+                      <tr key={r.row} className="border-t border-line bg-red-50/40">
+                        <td className="px-3 py-2.5 text-xs text-ink-3">{r.row}</td>
+                        <td className="px-3 py-2.5 text-xs font-mono text-ink">{r.email}</td>
+                        <td className="px-3 py-2.5 text-xs text-red-700">
+                          {r.errors.join(' · ')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {uploadErrMsg && (
+            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-500" />
+              <p className="text-sm leading-relaxed text-red-800">{uploadErrMsg}</p>
+            </div>
           )}
 
           {preview && (

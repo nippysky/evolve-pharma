@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { ArrowRight, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { useLoginCustomer } from '@/hooks/auth/useCustomerAuth';
+import { setCustomerSessionAction } from '@/lib/actions/role';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function SignInPage() {
     loginMutation.mutate(
       { email, password },
       {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           const customer = data.customer;
 
           // Account not yet approved — send to the pending page
@@ -37,9 +38,14 @@ export default function SignInPage() {
               title: 'Account pending review',
               description: 'Our team will approve your account shortly.',
             });
+            await setCustomerSessionAction();
             router.push('/sign-up/pending');
             return;
           }
+
+          // Stamp role=customer cookie — overwrites any stale admin/staff cookie
+          // so the portal layout's getSession() always routes correctly.
+          await setCustomerSessionAction();
 
           toast.show({
             tone: 'success',

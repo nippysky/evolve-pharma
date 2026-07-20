@@ -72,29 +72,50 @@ const processQueue = (error: unknown = null) => {
  *   Shape A: { status:"error", message:"...", errors:{ field:[...] } }
  *   Shape B: { status:"error", error:{ message:"...", details:{ field:[...] } } }
  */
+export interface BulkFailedRecord {
+  row: number;
+  email: string;
+  errors: string[];
+}
+export interface BulkUploadResult {
+  total_records: number;
+  successful: number;
+  failed: number;
+  failed_records: BulkFailedRecord[];
+}
+
 function normalizeError(
   error: AxiosError,
-): Error & { fieldErrors?: Record<string, string[]>; status?: number } {
+): Error & { fieldErrors?: Record<string, string[]>; status?: number; uploadResult?: BulkUploadResult } {
   const status = error.response?.status;
   const body   = error.response?.data as Record<string, unknown> | undefined;
 
   /**
    * Translate a raw backend message into a friendly string if it contains
-   * technical jargon a user should never see (SMTP, SQL, stack traces, etc.)
+   * technical jargon a user should never see (SMTP, SQL, PHP internals, etc.)
    */
   function sanitizeBackendMessage(raw: string): string {
     const l = raw.toLowerCase();
     if (
       l.includes('smtp') || l.includes('invalid address') ||
-      l.includes('mail') || l.includes('econnrefused') ||
-      l.includes('enotfound') || l.includes('getaddrinfo') ||
-      l.includes('nodemailer') || l.includes('connect etimedout') ||
-      l.includes('failed to connect to server') || l.includes('could not connect')
+      l.includes('econnrefused') || l.includes('enotfound') ||
+      l.includes('getaddrinfo') || l.includes('nodemailer') ||
+      l.includes('connect etimedout') || l.includes('failed to connect to server') ||
+      l.includes('could not connect')
     ) {
-      return 'We ran into a technical issue on our end. Your information was saved — please try again in a moment or contact support.';
+      return 'We ran into a technical issue on our end. Please try again in a moment or contact support.';
     }
-    if (l.includes('syntax error') || l.includes('sequelize') || l.includes('sql')) {
-      return 'Something went wrong on our end. Please try again.';
+    if (
+      l.includes('typed property') || l.includes('must not be accessed before initialization') ||
+      l.includes('app\\core') || l.includes('app\\\\core') ||
+      l.includes('syntax error') || l.includes('sequelize') || l.includes('sql') ||
+      l.includes('undefined variable') || l.includes('call to undefined')
+    ) {
+      return 'A server error occurred while processing this request. Please contact support.';
+    }
+    // Sanitize per-row errors inside bulk upload failed_records
+    if (l.includes('mail') && (l.includes('smtp') || l.includes('host'))) {
+      return 'We ran into a technical issue on our end. Please try again in a moment or contact support.';
     }
     return raw;
   }
@@ -105,6 +126,7 @@ function normalizeError(
       const err = new Error(sanitizeBackendMessage(body.message)) as Error & {
         fieldErrors?: Record<string, string[]>;
         status?: number;
+        uploadResult?: BulkUploadResult;
       };
       err.status = status;
       if (body.errors && typeof body.errors === 'object') {
@@ -113,16 +135,34 @@ function normalizeError(
       return err;
     }
     // Shape B — message nested under `error` key
+    // Also handles bulk-upload shape: { error: { message, data: { data: { failed_records } } } }
     if (body.error && typeof body.error === 'object') {
       const nested = body.error as Record<string, unknown>;
       if (typeof nested.message === 'string') {
         const err = new Error(sanitizeBackendMessage(nested.message)) as Error & {
           fieldErrors?: Record<string, string[]>;
           status?: number;
+          uploadResult?: BulkUploadResult;
         };
         err.status = status;
         if (nested.details && typeof nested.details === 'object') {
           err.fieldErrors = nested.details as Record<string, string[]>;
+        }
+        // Extract bulk upload result if present (nested under error.data.data)
+        const nestedData = nested.data as Record<string, unknown> | undefined;
+        const innerData  = nestedData?.data as Record<string, unknown> | undefined;
+        if (innerData && Array.isArray(innerData.failed_records)) {
+          const rawRecords = innerData.failed_records as Array<Record<string, unknown>>;
+          err.uploadResult = {
+            total_records: Number(innerData.total_records ?? 0),
+            successful:    Number(innerData.successful    ?? 0),
+            failed:        Number(innerData.failed        ?? 0),
+            failed_records: rawRecords.map((r) => ({
+              row:    Number(r.row ?? 0),
+              email:  String(r.email ?? ''),
+              errors: (Array.isArray(r.errors) ? r.errors as string[] : [String(r.errors ?? '')]).map(sanitizeBackendMessage),
+            })),
+          };
         }
         return err;
       }

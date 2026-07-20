@@ -41,7 +41,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-dvh bg-bg-subtle">
         {/* Sidebar skeleton */}
-        <aside className="hidden h-dvh w-sidebar shrink-0 flex-col bg-ink-bg px-4 pb-4 pt-5 lg:flex">
+        <aside className="hidden h-dvh w-sidebar shrink-0 flex-col bg-slate-900 px-4 pb-4 pt-5 lg:flex">
           {/* Logo */}
           <div className="border-b border-white/8 pb-4">
             <div className="h-7 w-24 animate-pulse rounded-md bg-white/10" />
