@@ -29,7 +29,13 @@ interface StoredUser {
  */
 export async function getSession(): Promise<SessionUser | null> {
   const store = await cookies();
-  const role = (store.get(ROLE_COOKIE_NAME)?.value ?? 'customer') as Role;
+  const roleCookieValue = store.get(ROLE_COOKIE_NAME)?.value;
+
+  // No role cookie = not signed in — return null so auth guards and
+  // session-aware UI correctly treat the visitor as logged out.
+  if (!roleCookieValue) return null;
+
+  const role = roleCookieValue as Role;
 
   let email = '';
   let full_name = '';

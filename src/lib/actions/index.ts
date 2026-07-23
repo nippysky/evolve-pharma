@@ -312,19 +312,22 @@ export async function updateProfileAction(
 }
 
 export async function checkoutAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
-  await sleep(1200);
+  await sleep(800);
   const parsed = checkoutSchema.safeParse({
-    delivery_address: formData.get('delivery_address'),
-    contact_phone: formData.get('contact_phone'),
-    delivery_notes: formData.get('delivery_notes') || undefined,
-    payment_method: formData.get('payment_method'),
-    po_number: formData.get('po_number') || undefined,
+    state:              formData.get('state'),
+    city:               formData.get('city'),
+    street_address:     formData.get('street_address'),
+    contact_phone:      formData.get('contact_phone'),
+    delivery_notes:     formData.get('delivery_notes')     || undefined,
+    payment_method:     formData.get('payment_method'),
+    po_number:          formData.get('po_number')          || undefined,
+    paystack_reference: formData.get('paystack_reference') || undefined,
   });
   if (!parsed.success) return fail(parsed.error);
   return {
     ok: true,
     data: {
-      order_number: `EVP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 999)).padStart(5, '0')}`,
+      order_number: `EVP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}`,
     },
   };
 }

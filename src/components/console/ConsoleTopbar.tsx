@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Search, Bell, Menu, X, Logout } from '@/components/icons';
+import { Bell, Menu, X, Logout } from '@/components/icons';
 import { Logo } from '@/components/shared/Logo';
+import { GlobalSearch } from '@/components/console/GlobalSearch';
 import { Icon, type IconName } from '@/components/icons';
 import { CONSOLE_NAV, DRIVER_NAV } from '@/lib/constants';
 import { signOutAction } from '@/lib/actions/role';
@@ -52,14 +53,8 @@ export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProp
 
         {/* Desktop search — hidden for drivers */}
         {role !== 'driver' && (
-          <div className="relative hidden flex-1 lg:block lg:max-w-md">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-3" />
-            <input
-              type="search"
-              placeholder="Search customers, orders, products…"
-              aria-label="Search"
-              className="h-9 w-full rounded-md border border-transparent bg-bg-muted pl-9 pr-3 text-sm text-ink placeholder:text-ink-3 focus:border-brand-500 focus:bg-white focus:outline-none"
-            />
+          <div className="hidden flex-1 lg:block lg:max-w-md">
+            <GlobalSearch />
           </div>
         )}
 

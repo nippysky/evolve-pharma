@@ -136,6 +136,12 @@ export const CONSOLE_NAV = [
         roles: ['admin'] as Role[],
       },
       {
+        label: 'Login Activity',
+        href: '/console/login-activity',
+        icon: 'Shield' as const,
+        roles: ['admin'] as Role[],
+      },
+      {
         label: 'Settings',
         href: '/console/settings',
         icon: 'Settings' as const,

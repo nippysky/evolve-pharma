@@ -258,11 +258,17 @@ export const basketItemSchema = z.object({
 export type BasketItemSchema = z.infer<typeof basketItemSchema>;
 
 export const checkoutSchema = z.object({
-  delivery_address: z.string().min(8, 'Confirm or enter the delivery address'),
-  contact_phone: phoneSchema,
-  delivery_notes: z.string().max(500).optional(),
-  payment_method: z.enum(['paystack', 'bank_transfer', 'cash_on_delivery']),
-  po_number: z.string().max(40).optional(),
+  state:            z.string().min(1, 'Please select your state'),
+  city:             z.string().trim().min(2, 'Enter your city / LGA'),
+  street_address:   z.string().trim().min(8, 'Enter a more complete street address'),
+  contact_phone:    z.string().trim().regex(
+                      /^(\+?234|0)[789]\d{9}$/,
+                      'Enter a valid Nigerian phone number (e.g. 08012345678)',
+                    ),
+  delivery_notes:   z.string().max(500).optional(),
+  payment_method:   z.enum(['paystack', 'bank_transfer', 'cash_on_delivery']),
+  po_number:        z.string().max(40).optional(),
+  paystack_reference: z.string().optional(),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
