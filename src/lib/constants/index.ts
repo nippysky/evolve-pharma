@@ -29,10 +29,9 @@ export const SITE = {
 // ---------- Portal navigation (customer) --------------------------------
 
 export const PORTAL_NAV = [
-  { label: 'Catalog', href: '/portal/catalog', icon: 'Pill' as const },
-  { label: 'Orders', href: '/portal/orders', icon: 'Box' as const },
-  { label: 'Notifications', href: '/portal/notifications', icon: 'Bell' as const },
-  { label: 'Profile', href: '/portal/profile', icon: 'User' as const },
+  { label: 'Catalog',   href: '/portal/catalog', icon: 'Pill' as const },
+  { label: 'My Orders', href: '/portal/orders',  icon: 'Box' as const },
+  { label: 'Profile',   href: '/portal/profile', icon: 'User' as const },
 ] as const;
 
 // ---------- Console navigation (admin + staff + driver) -----------------

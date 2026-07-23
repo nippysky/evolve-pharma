@@ -17,14 +17,11 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     redirect('/upload-pcn');
   }
 
-  // TODO: fetch real unread notification count from notifications API
-  const unread = 0;
-
   return (
     <div className="flex min-h-dvh bg-bg-subtle">
-      <PortalSidebar session={session} notificationCount={unread} />
+      <PortalSidebar session={session} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <PortalTopbar notificationCount={unread} />
+        <PortalTopbar />
         <div className="px-safe py-6 sm:py-8">
           {/* PCN verification pending banner */}
           {session.pcn_uploaded && !session.pcn_verified && (

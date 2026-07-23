@@ -78,9 +78,9 @@ export default function StaffSignInPage() {
             return;
           }
 
-          if (msg.includes('couldn\'t connect') || msg.includes('network') ||
-              msg.includes('reach') || msg.includes('internet')) {
-            setServerError('We couldn\'t connect to our servers. Please check your internet connection and try again.');
+          if (msg.includes('unavailable') || msg.includes('too long') ||
+              msg.includes('reach') || msg.includes('network') || msg.includes('connect')) {
+            setServerError('Our servers appear to be temporarily unavailable. Please try again in a moment.');
             return;
           }
 

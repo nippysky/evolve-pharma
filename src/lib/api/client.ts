@@ -192,7 +192,7 @@ function normalizeError(
 
   // No response — network / CORS / DNS / timeout / content-length mismatch
   if (error.code === 'ECONNABORTED' || error.code === 'ERR_CANCELED') {
-    return new Error('The request took too long to complete. Please check your connection and try again.');
+    return new Error('Our servers are taking too long to respond. Please try again in a moment.');
   }
 
   if (
@@ -201,7 +201,7 @@ function normalizeError(
     !error.response
   ) {
     return new Error(
-      'We couldn\'t connect to our servers. Please check your internet connection and try again.',
+      'Our servers appear to be temporarily unavailable. Please try again in a moment.',
     );
   }
 

@@ -27,7 +27,9 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = 'https://ece.envolvepharm.com.ng/api/v1/public';
+
+const BACKEND_BASE = 'https://envolvepharm.com.ng/test/api/v1/public/';
+// const BACKEND_BASE = 'https://ece.envolvepharm.com.ng/api/v1/public';
 
 /** Headers that must not be forwarded (hop-by-hop). */
 const HOP_BY_HOP = new Set([
@@ -134,17 +136,31 @@ async function proxyRequest(
   // ── Call backend ──────────────────────────────────────────────────────────
   let backendRes: Response;
   try {
-    backendRes = await fetch(backendUrl, {
-      method,
-      headers: forwardHeaders,
-      body,
-      redirect: 'manual',
-      cache:    'no-store',
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000); // 8 s max wait
+    try {
+      backendRes = await fetch(backendUrl, {
+        method,
+        headers: forwardHeaders,
+        body,
+        redirect: 'manual',
+        cache:    'no-store',
+        signal:   controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (err) {
+    const isTimeout = err instanceof Error &&
+      (err.name === 'AbortError' || err.message.includes('Timeout') || err.message.includes('timeout'));
     console.error('[Proxy] Network error →', backendUrl, err);
     return NextResponse.json(
-      { status: 'error', message: 'Proxy could not reach the backend.' },
+      {
+        status:  'error',
+        message: isTimeout
+          ? 'The server took too long to respond. Please try again.'
+          : 'Proxy could not reach the backend.',
+      },
       { status: 502 },
     );
   }

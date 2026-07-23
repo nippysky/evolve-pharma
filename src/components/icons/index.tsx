@@ -78,6 +78,7 @@ import {
   TrendingUp as LRTrendingUp,
   TrendingDown as LRTrendingDown,
   ClipboardList as LRClipboardList,
+  ShoppingCart as LRShoppingCart,
   type LucideProps,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -165,6 +166,7 @@ export const Leaf = wrap(LRLeaf);
 export const TrendingUp = wrap(LRTrendingUp);
 export const TrendingDown = wrap(LRTrendingDown);
 export const ClipboardList = wrap(LRClipboardList);
+export const ShoppingCart = wrap(LRShoppingCart);
 
 // ---------- Registry / dispatcher --------------------------------------
 
@@ -228,6 +230,7 @@ export const Icons = {
   TrendingUp,
   TrendingDown,
   ClipboardList,
+  ShoppingCart,
 } as const;
 
 export type IconName = keyof typeof Icons;
