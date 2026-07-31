@@ -126,19 +126,22 @@ export default function SignUpPage() {
         onError: (err: Error & { fieldErrors?: Record<string, string[]> }) => {
           const msg = err.message?.toLowerCase() ?? '';
 
-          // Translate technical / server errors into plain English
-          if (msg.includes('smtp') || msg.includes('mail') || msg.includes('500') ||
-              msg.includes('internal server') || msg.includes('failed to connect to server')) {
+          // Check for duplicate account FIRST — "email already exists" contains the
+          // substring "mail" which would otherwise match the smtp branch below.
+          if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate') ||
+              msg.includes('taken') || msg.includes('registered')) {
+            setServerError('An account with this email already exists. Try signing in instead.');
+            return;
+          }
+
+          // Email-delivery failure — use specific substrings that won't match user-facing copy
+          if (msg.includes('smtp') || msg.includes('sendmail') || msg.includes('mailer') ||
+              msg.includes('500') || msg.includes('internal server') ||
+              msg.includes('failed to connect to server')) {
             setServerError('Registration submitted, but we had trouble sending your verification email. Please wait a moment and use "Resend code" on the next step, or contact support.');
             // Still advance to OTP step so user can resend
             setResendIn(30);
             setStep(3);
-            return;
-          }
-
-          if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate') ||
-              msg.includes('taken') || msg.includes('registered')) {
-            setServerError('An account with this email already exists. Try signing in instead.');
             return;
           }
 
