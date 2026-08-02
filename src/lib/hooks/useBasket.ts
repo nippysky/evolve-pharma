@@ -15,7 +15,8 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { BasketItem, Product } from '@/types';
+import type { BasketItem } from '@/types';
+import type { ProductDTO } from '@/lib/api/types';
 
 interface BasketState {
   items: BasketItem[];
@@ -25,7 +26,7 @@ interface BasketState {
   hasItem: (productId: number) => boolean;
   getQuantity: (productId: number) => number;
   // ----- mutations -----
-  add: (product: Product, quantity?: number) => void;
+  add: (product: ProductDTO, quantity?: number) => void;
   setQuantity: (productId: number, quantity: number) => void;
   increment: (productId: number) => void;
   decrement: (productId: number) => void;
@@ -57,11 +58,11 @@ export const useBasket = create<BasketState>()(
           const item: BasketItem = {
             product_id: product.id,
             sku: product.sku,
-            name: product.name,
-            price: product.selling_price,
-            image: product.image_url,
+            name: product.brand_name,
+            price: parseFloat(product.selling_price),
+            image: product.images[0]?.url ?? '',
             quantity,
-            pack_size: product.pack_size,
+            pack_size: product.pack_size ?? '',
           };
           return { items: [...state.items, item] };
         }),

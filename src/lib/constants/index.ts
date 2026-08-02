@@ -46,28 +46,28 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: 'Overview',
-        href: '/console/overview',
+        href: '/admin/overview',
         icon: 'Dashboard' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
       },
       {
         label: 'Customers',
-        href: '/console/customers',
+        href: '/admin/customers',
         icon: 'Building' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
         permission: 'onboard_customers' as const,
       },
       {
         label: 'Orders',
-        href: '/console/orders',
+        href: '/admin/orders',
         icon: 'Box' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
       },
       {
         label: 'Deliveries',
-        href: '/console/deliveries',
+        href: '/admin/deliveries',
         icon: 'Truck' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
         permission: 'assign_drivers' as const,
       },
     ],
@@ -77,16 +77,23 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: 'Products',
-        href: '/console/products',
+        href: '/admin/products',
         icon: 'Pill' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
+        permission: 'manage_products' as const,
+      },
+      {
+        label: 'Categories',
+        href: '/admin/categories',
+        icon: 'Tag' as const,
+        roles: ['ADMIN'] as Role[],
         permission: 'manage_products' as const,
       },
       {
         label: 'Inventory',
-        href: '/console/inventory',
+        href: '/admin/inventory',
         icon: 'Boxes' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
         permission: 'manage_inventory' as const,
       },
     ],
@@ -96,21 +103,21 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: 'Staff',
-        href: '/console/staff',
+        href: '/admin/staff',
         icon: 'Users' as const,
-        roles: ['admin'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
       {
         label: 'Drivers',
-        href: '/console/drivers',
+        href: '/admin/drivers',
         icon: 'Truck' as const,
-        roles: ['admin'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
       {
         label: 'Roles',
-        href: '/console/roles',
+        href: '/admin/roles',
         icon: 'Shield' as const,
-        roles: ['admin'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
     ],
   },
@@ -119,9 +126,9 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: 'Reports',
-        href: '/console/reports',
+        href: '/admin/reports',
         icon: 'Chart' as const,
-        roles: ['admin', 'sales_agent'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
         permission: 'view_reports' as const,
       },
     ],
@@ -131,21 +138,21 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: 'Audit Logs',
-        href: '/console/audit-logs',
+        href: '/admin/audit-logs',
         icon: 'ClipboardList' as const,
-        roles: ['admin'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
       {
         label: 'Login Activity',
-        href: '/console/login-activity',
+        href: '/admin/login-activity',
         icon: 'Shield' as const,
-        roles: ['admin'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
       {
         label: 'Settings',
-        href: '/console/settings',
+        href: '/admin/settings',
         icon: 'Settings' as const,
-        roles: ['admin'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
     ],
   },
@@ -157,8 +164,8 @@ export const DRIVER_NAV = [
   {
     section: 'Deliveries',
     items: [
-      { label: 'My Assignments', href: '/console/driver', icon: 'Box' as const },
-      { label: 'History', href: '/console/driver/history', icon: 'Truck' as const },
+      { label: 'My Assignments', href: '/driver', icon: 'Box' as const },
+      { label: 'History', href: '/driver/history', icon: 'Truck' as const },
     ],
   },
 ] as const;

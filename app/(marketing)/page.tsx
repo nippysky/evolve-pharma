@@ -20,10 +20,10 @@ import {
   ArrowRight, Shield, Truck, CreditCard, CheckCircle,
   Pill, Sparkle, Lock, Basket, ShoppingCart, User,
 } from '@/components/icons';
-import { PRODUCT_CATEGORIES } from '@/lib/constants';
-import { DUMMY_PRODUCTS } from '@/lib/data/dummy-products';
-import { getSession } from '@/lib/auth';
-import { formatNaira } from '@/lib/utils';
+import { PRODUCT_CATEGORIES }                from '@/lib/constants';
+import { DUMMY_PRODUCTS }                    from '@/lib/data/dummy-products';
+import { getSession }                        from '@/lib/auth';
+import { formatNaira }                       from '@/lib/utils';
 
 const TRUST_FEATURES = [
   { Icon: Shield,     title: 'Verified sourcing',  body: 'Products sourced through trusted pharmaceutical distribution channels.' },
@@ -40,8 +40,8 @@ const STEPS = [
 export default async function HomePage() {
   const session    = await getSession();
   const isLoggedIn = !!session;
-  const isCustomer = session?.role === 'customer';
-  const portalHref = isCustomer ? '/portal/catalog' : '/console/overview';
+  const isCustomer = session?.role === 'CUSTOMER';
+  const portalHref = isCustomer ? '/portal/catalog' : '/admin/overview';
 
   const heroPreview    = DUMMY_PRODUCTS.slice(0, 4);
   const primaryProduct = DUMMY_PRODUCTS[0]!;
@@ -164,8 +164,8 @@ export default async function HomePage() {
                       className="group relative min-h-96 overflow-hidden border-b border-line-subtle bg-bg-muted lg:border-b-0 lg:border-r"
                     >
                       <Image
-                        src={primaryProduct.image_url}
-                        alt={primaryProduct.name}
+                        src={primaryProduct.images[0]?.url ?? ''}
+                        alt={primaryProduct.brand_name}
                         width={760}
                         height={820}
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
@@ -174,14 +174,14 @@ export default async function HomePage() {
                       <div className="absolute inset-0 bg-linear-to-t from-ink/70 via-ink/12 to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6">
                         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75">
-                          {primaryProduct.category}
+                          {primaryProduct.category?.name ?? ''}
                         </span>
                         <h2 className="mt-2 line-clamp-2 max-w-sm text-2xl font-semibold leading-tight tracking-[-0.04em]">
-                          {primaryProduct.name}
+                          {primaryProduct.brand_name}
                         </h2>
                         <div className="mt-4 flex items-center justify-between gap-4">
                           <span className="num font-display text-2xl tracking-[-0.04em]">
-                            {formatNaira(primaryProduct.selling_price)}
+                            {formatNaira(parseFloat(primaryProduct.selling_price))}
                           </span>
                           <span className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-ink transition-transform duration-200 group-hover:translate-x-0.5">
                             View <ArrowRight size={13} />
@@ -199,24 +199,26 @@ export default async function HomePage() {
                           className="group flex gap-3 border-b border-line-subtle p-3.5 transition-colors last:border-b-0 hover:bg-bg-subtle sm:flex-col sm:border-b-0 sm:border-r sm:last:border-r-0 lg:flex-row lg:border-b lg:border-r-0 lg:last:border-b-0"
                         >
                           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-bg-muted sm:h-28 sm:w-full lg:h-20 lg:w-20">
-                            <Image
-                              src={product.image_url}
-                              alt={product.name}
-                              width={240}
-                              height={240}
-                              priority
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-                            />
+                            {product.images[0]?.url ? (
+                              <Image
+                                src={product.images[0].url}
+                                alt={product.brand_name}
+                                width={240}
+                                height={240}
+                                priority
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                              />
+                            ) : null}
                           </div>
                           <div className="flex min-w-0 flex-1 flex-col justify-center">
                             <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-teal-600">
-                              {product.category}
+                              {product.category?.name ?? ''}
                             </span>
                             <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.02em] text-ink">
-                              {product.name}
+                              {product.brand_name}
                             </h3>
                             <p className="num mt-2 font-display text-base tracking-[-0.03em] text-ink">
-                              {formatNaira(product.selling_price)}
+                              {formatNaira(parseFloat(product.selling_price))}
                             </p>
                           </div>
                         </Link>

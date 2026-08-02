@@ -9,6 +9,9 @@ import { ArrowRight, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { useLoginCustomer } from '@/hooks/auth/useCustomerAuth';
 import { setCustomerSessionAction } from '@/lib/actions/role';
+import type { SessionUser } from '@/lib/api/types';
+
+type LoginResult = { customer: Omit<SessionUser, "status"> & { status: string } };
 
 export default function SignInPage() {
   const router = useRouter();
@@ -28,7 +31,7 @@ export default function SignInPage() {
     loginMutation.mutate(
       { email, password },
       {
-        onSuccess: async (data) => {
+        onSuccess: async (data: LoginResult) => {
           const customer = data.customer;
 
           // Account not yet approved — send to the pending page

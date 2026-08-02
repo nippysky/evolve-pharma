@@ -23,7 +23,7 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
 
   // Logged-in users don't need the marketing catalogue — send them to the real thing
   if (session) {
-    const dest = session.role === 'customer' ? '/portal/catalog' : '/console/overview';
+    const dest = session.role === 'CUSTOMER' ? '/portal/catalog' : '/admin/overview';
     redirect(dest);
   }
 

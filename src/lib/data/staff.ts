@@ -1,6 +1,2 @@
-/**
- * DEPRECATED — mock staff data removed.
- * Real staff data comes from GET /staff/verified and GET /staff/unverified.
- * Safe to delete once no longer referenced.
- */
+/** @deprecated — Dummy data removed. All data now comes from Prisma 7 + MySQL. */
 export {};

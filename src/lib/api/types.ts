@@ -1,395 +1,483 @@
 /**
- * ENVOLVE PHARMACEUTICALS — API Response Types
+ * EVOLVE PHARMACEUTICALS — Shared API / Entity Types
  *
- * All HTTP responses from the PHP backend follow these shapes.
- * Confirmed against actual API responses (Postman, 2026-06).
+ * These types mirror the Prisma schema and are shared between:
+ *   - Next.js API route handlers (server-side)
+ *   - React components that display data (client-side)
+ *   - Mobile app (same response envelope, same field names)
  *
- * Key: the backend uses  status: "success" | "error"  (strings),
- * NOT boolean true/false.
+ * All dates are ISO 8601 strings when serialised through JSON.
+ * All decimals (prices) are serialised as strings from Prisma's Decimal type.
  */
 
-// ---------- Envelope shapes -----------------------------------------------
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
-/** Standard success envelope — status is the string "success". */
+export type UserRole    = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
+export type UserStatus  = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+
+export type CustomerStatus =
+  | 'REGISTERED'
+  | 'OTP_CONFIRMED'
+  | 'PCN_CERT_UPLOADED'
+  | 'PENDING_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED';
+
+export type StaffVerificationStatus = 'UNVERIFIED' | 'VERIFIED';
+export type DriverStatus = 'AVAILABLE' | 'ON_DELIVERY' | 'OFF_DUTY' | 'SUSPENDED';
+
+export type ProductStatus = 'ACTIVE' | 'DRAFT' | 'DISCONTINUED';
+
+export type OrderStatus   = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
+export type PaymentStatus = 'UNPAID' | 'PAID' | 'PARTIAL' | 'REFUNDED' | 'FAILED';
+
+export type DeliveryStatus =
+  | 'AWAITING_DISPATCH'
+  | 'ASSIGNED'
+  | 'IN_TRANSIT'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'FAILED'
+  | 'RETURNED';
+
+export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
+export type OtpType           = 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
+export type LoginEvent        = 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOGOUT' | 'TOKEN_REFRESHED';
+
+// ─── API Envelope ─────────────────────────────────────────────────────────────
+
 export interface ApiSuccess<T = unknown> {
-  status: 'success';
+  status:  'success';
   message: string;
-  data: T;
+  data:    T;
 }
 
-/**
- * Standard error envelope.
- * status is any non-"success" string the backend sends (e.g. "error").
- * errors contains Laravel field-level validation messages.
- */
 export interface ApiError {
-  status: string; // e.g. "error", "fail", etc.
+  status:  'error';
   message: string;
-  errors?: Record<string, string[]>; // Laravel validation errors
+  errors?: Record<string, string[]>;
 }
 
-/** Union — either a success or an error response. */
 export type ApiResponse<T = unknown> = ApiSuccess<T> | ApiError;
 
-/** Paginated list response. */
-export interface PaginatedData<T> {
-  data: T[];
+export interface Pagination {
   current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-  from: number;
-  to: number;
+  per_page:     number;
+  total:        number;
+  total_pages:  number;
 }
 
-// ---------- Auth ------------------------------------------------------------
-
-/** POST auth/customer/register (multipart/form-data) */
-export interface RegisterCustomerPayload {
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  company_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  gender?: string;
-  referral_code?: string;
-  pcn_certificate: File;
+export interface PaginatedResponse<T> {
+  records:    T[];
+  pagination: Pagination;
 }
 
-/**
- * POST auth/customer/register → 201 Created
- * Actual shape confirmed from Postman (2026-06):
- * {
- *   "status": "success",
- *   "message": "Registration successful. Please check your email to continue verification.",
- *   "data": {
- *     "customer_id": 187,
- *     "email": "...",
- *     "status": "REGISTERED",
- *     "token_sent": true,
- *     "token_expires_at": "2026-06-18 00:14:16"
- *   }
- * }
- */
-export interface RegisterCustomerResponse {
-  customer_id: number;
-  email: string;
-  /** Always "REGISTERED" after a successful registration call. */
-  status: 'REGISTERED';
-  /** true when the OTP email was dispatched. */
-  token_sent: boolean;
-  /** ISO-ish datetime when the OTP expires. */
-  token_expires_at: string;
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+export interface UserDTO {
+  id:                 number;
+  uuid:               string;
+  first_name:         string;
+  middle_name?:       string | null;
+  last_name:          string;
+  email:              string;
+  phone?:             string | null;
+  role:               UserRole;
+  status:             UserStatus;
+  gender?:            string | null;
+  avatar_url?:        string | null;
+  email_verified_at?: string | null;
+  created_at:         string;
+  updated_at:         string;
 }
 
-/** POST auth/customer/login */
-export interface LoginCustomerPayload {
-  email: string;
+export interface SessionUser {
+  id:          number;
+  uuid:        string;
+  first_name:  string;
+  last_name:   string;
+  email:       string;
+  role:        UserRole;
+  status:      UserStatus;
+  avatar_url?: string | null;
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface AuthTokens {
+  access_token:  string;
+  refresh_token: string;
+  expires_in:    number; // seconds until access token expiry
+}
+
+export interface AuthResponse {
+  user:   SessionUser;
+  tokens: AuthTokens; // also set as httpOnly cookies for web clients
+}
+
+// ─── Customer ─────────────────────────────────────────────────────────────────
+
+export interface CustomerDTO {
+  id:                    number;
+  uuid:                  string;
+  user_id:               number;
+  user:                  UserDTO;
+  company_name?:         string | null;
+  address?:              string | null;
+  city?:                 string | null;
+  state?:                string | null;
+  pcn_certificate_url?:  string | null;
+  pcn_verified:          boolean;
+  status:                CustomerStatus;
+  referral_code?:        string | null;
+  referred_by?:          string | null;
+  review_note?:          string | null;
+  reviewed_by_id?:       number | null;
+  reviewed_at?:          string | null;
+  created_at:            string;
+  updated_at:            string;
+}
+
+// ─── Staff ────────────────────────────────────────────────────────────────────
+
+export interface StaffDTO {
+  id:                  number;
+  user_id:             number;
+  user:                UserDTO;
+  employee_code:       string;
+  department?:         string | null;
+  job_title?:          string | null;
+  verification_status: StaffVerificationStatus;
+  created_at:          string;
+  updated_at:          string;
+}
+
+// ─── Driver ───────────────────────────────────────────────────────────────────
+
+export interface DriverDTO {
+  id:               number;
+  user_id:          number;
+  user:             UserDTO;
+  employee_code?:   string | null;
+  license_number?:  string | null;
+  vehicle_type?:    string | null;
+  vehicle_plate?:   string | null;
+  driver_status:    DriverStatus;
+  created_at:       string;
+  updated_at:       string;
+}
+
+// ─── Category ─────────────────────────────────────────────────────────────────
+
+export interface CategoryDTO {
+  id:         number;
+  name:       string;
+  created_at: string;
+}
+
+// ─── Manufacturer ─────────────────────────────────────────────────────────────
+
+export interface ManufacturerDTO {
+  id:         number;
+  name:       string;
+  created_at: string;
+}
+
+// ─── Product ──────────────────────────────────────────────────────────────────
+
+export interface ProductImageDTO {
+  id:                   number;
+  product_id:           number;
+  cloudinary_public_id: string;
+  url:                  string;
+  is_primary:           boolean;
+  created_at:           string;
+}
+
+export interface ProductDTO {
+  id:                       number;
+  uuid:                     string;
+  sku:                      string;
+  category_id?:             number | null;
+  category?:                CategoryDTO | null;
+  manufacturer_id?:         number | null;
+  manufacturer?:            ManufacturerDTO | null;
+  brand_name:               string;
+  generic_name:             string;
+  product_strength?:        string | null;
+  pack_size?:               string | null;
+  quantity_per_carton?:     number | null;
+  description?:             string | null;
+  allow_unit_sale:          boolean;
+  minimum_order:            number;
+  selling_price:            string; // Decimal → string
+  last_cost_price?:         string | null;
+  final_price?:             string | null;
+  discount_percentage?:     string | null;
+  minimum_stock_level:      number;
+  reorder_quantity:         number;
+  status:                   ProductStatus;
+  total_quantity_available: number; // computed via SUM(inventory_batches)
+  images:                   ProductImageDTO[];
+  created_at:               string;
+  updated_at:               string;
+}
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+export interface InventoryBatchDTO {
+  id:           number;
+  product_id:   number;
+  product?:     Pick<ProductDTO, 'id' | 'sku' | 'brand_name' | 'generic_name'>;
+  batch_number: string;
+  quantity:     number;
+  cost_price:   string;
+  expiry_date?: string | null;
+  received_at:  string;
+  created_at:   string;
+}
+
+export interface StockMovementDTO {
+  id:              number;
+  product_id:      number;
+  product?:        Pick<ProductDTO, 'id' | 'sku' | 'brand_name'>;
+  batch_id?:       number | null;
+  type:            StockMovementType;
+  quantity:        number;
+  reference_type?: string | null;
+  reference_id?:   number | null;
+  notes?:          string | null;
+  created_at:      string;
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+export interface OrderItemDTO {
+  id:         number;
+  order_id:   number;
+  product_id: number;
+  product?:   Pick<ProductDTO, 'id' | 'sku' | 'brand_name' | 'generic_name' | 'images'>;
+  quantity:   number;
+  unit_price: string;
+  subtotal:   string;
+}
+
+export interface OrderDTO {
+  id:                 number;
+  uuid:               string;
+  order_number:       string;
+  customer_id:        number;
+  customer?:          Pick<CustomerDTO, 'id' | 'uuid' | 'company_name' | 'user'>;
+  status:             OrderStatus;
+  payment_status:     PaymentStatus;
+  payment_reference?: string | null;
+  delivery_address?:  string | null;
+  delivery_city?:     string | null;
+  delivery_state?:    string | null;
+  subtotal:           string;
+  discount:           string;
+  delivery_fee:       string;
+  total:              string;
+  notes?:             string | null;
+  items?:             OrderItemDTO[];
+  delivery?:          DeliveryDTO | null;
+  created_at:         string;
+  updated_at:         string;
+}
+
+// ─── Deliveries ───────────────────────────────────────────────────────────────
+
+export interface DeliveryDTO {
+  id:             number;
+  uuid:           string;
+  tracking_code:  string;
+  order_id:       number;
+  order?:         Pick<OrderDTO, 'id' | 'order_number' | 'customer'>;
+  driver_id?:     number | null;
+  driver?:        Pick<DriverDTO, 'id' | 'user' | 'vehicle_type' | 'vehicle_plate'> | null;
+  status:         DeliveryStatus;
+  dispatched_at?: string | null;
+  delivered_at?:  string | null;
+  notes?:         string | null;
+  created_at:     string;
+  updated_at:     string;
+}
+
+// ─── Audit / Security ─────────────────────────────────────────────────────────
+
+export interface LoginHistoryDTO {
+  id:                number;
+  user_id?:          number | null;
+  user_type:         string;
+  user_name?:        string | null;
+  email?:            string | null;
+  ip_address?:       string | null;
+  device_name?:      string | null;
+  browser?:          string | null;
+  operating_system?: string | null;
+  country?:          string | null;
+  city?:             string | null;
+  event:             LoginEvent;
+  created_at:        string;
+}
+
+export interface AuditLogDTO {
+  id:           number;
+  user_id?:     number | null;
+  user_type:    string;
+  user_name?:   string | null;
+  email?:       string | null;
+  action:       string;
+  entity_type?: string | null;
+  entity_id?:   string | null;
+  description?: string | null;
+  ip_address?:  string | null;
+  user_agent?:  string | null;
+  created_at:   string;
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface NotificationDTO {
+  id:         number;
+  user_id:    number;
+  title:      string;
+  body:       string;
+  type:       string;
+  is_read:    boolean;
+  created_at: string;
+}
+
+// ─── Bulk Import ──────────────────────────────────────────────────────────────
+
+export interface BulkImportResult {
+  total:   number;
+  success: number;
+  failed:  number;
+  errors:  Array<{ row: number; sku?: string; reason: string }>;
+}
+
+// ─── Backward-compat aliases ──────────────────────────────────────────────────
+
+/** @deprecated Use AuditLogDTO */
+export type AuditLogRecord = AuditLogDTO;
+
+/** @deprecated Use LoginHistoryDTO */
+export type LoginHistoryRecord = LoginHistoryDTO;
+
+/** @deprecated Use Pagination */
+export type PaginationMeta = Pagination;
+
+/** @deprecated Use ProductDTO */
+export type AdminProductRecord = ProductDTO;
+
+/** @deprecated Use BulkImportResult */
+export type BulkImportProductResponse = BulkImportResult;
+
+// ─── Staff / customer hook types (used by useStaff.ts — will be rewritten in Module 6) ──
+
+export interface LoginStaffPayload {
+  email:    string;
   password: string;
 }
 
-/**
- * Customer Login → 200
- * {
- *   "data": {
- *     "customer": {
- *       "id": "186", "first_name": "Ifeoluwa", "last_name": "Ayomide",
- *       "email": "...", "role": "CUSTOMER",
- *       "status": "APPROVED" | "PENDING_REVIEW" | ...,
- *       "referral_code": "ENV58A5D112"
- *     }
- *   }
- * }
- * Route to portal if status === "APPROVED", else to /sign-up/pending.
- */
-export interface LoginCustomerResponse {
-  customer: {
-    id: string | number;
-    first_name: string;
-    last_name: string;
-    email: string;
-    role: string;
-    /** "APPROVED" | "PENDING_REVIEW" | other statuses */
-    status: string;
-    referral_code?: string;
-    company_name?: string;
-    pcn_uploaded?: boolean;
-    pcn_verified?: boolean;
-  };
+export interface RegisterStaffPayload {
+  first_name:  string;
+  middle_name?: string;
+  last_name:   string;
+  email:       string;
+  password?:   string;
+  role?:       'STAFF' | 'DRIVER';
+  phone?:      string;
+  department?: string;
+  job_title?:  string;
+  gender?:     string;
 }
 
-/** POST auth/customer/verify-otp */
+/**
+ * Flat shape returned by the staff listing endpoints.
+ * Maps onto StaffDTO + the nested user fields for easy table rendering.
+ */
+export interface StaffRecord {
+  id:                  number;
+  user_id:             number;
+  employee_code:       string;
+  department?:         string | null;
+  job_title?:          string | null;
+  verification_status: StaffVerificationStatus;
+  // Flattened from user relation
+  first_name:          string;
+  last_name:           string;
+  email:               string;
+  phone?:              string | null;
+  email_verified_at?:  string | null;
+  created_at:          string;
+}
+
+/**
+ * Flat shape returned by the customer listing endpoints.
+ * Maps onto CustomerDTO + nested user fields for easy table rendering.
+ */
+export interface CustomerAdminRecord {
+  id:               number;
+  user_id:          number;
+  company_name?:    string | null;
+  status:           CustomerStatus;
+  referral_code?:   string | null;
+  review_note?:     string | null;
+  pcn_verified:     boolean;
+  // Flattened from user relation
+  first_name:       string;
+  last_name:        string;
+  email:            string;
+  phone?:           string | null;
+  created_at:       string;
+}
+
+// ─── Customer auth payloads (used by useCustomerAuth.ts — will be wired in Module 6) ──
+
+export interface RegisterCustomerPayload {
+  first_name:       string;
+  middle_name?:     string;
+  last_name:        string;
+  email:            string;
+  phone?:           string;
+  company_name?:    string;
+  referral_code?:   string;
+  address?:         string;
+  city?:            string;
+  state?:           string;
+  gender?:          string;
+  pcn_certificate?: File;
+}
+
+export interface LoginCustomerPayload {
+  email:    string;
+  password: string;
+}
+
 export interface VerifyOtpPayload {
-  email: string;
+  email:    string;
   otp_code: string;
 }
 
-/**
- * Verify OTP → 200
- * {
- *   "email": "...",
- *   "token": "cbb2a400ffab252...",  ← REQUIRED for create-password
- *   "message": "OTP verified successfully"
- * }
- */
-export interface VerifyOtpResponse {
-  email: string;
-  /** Short-lived token that must be passed to create-password. */
-  token: string;
-  message?: string;
-}
-
-/**
- * POST auth/customer/create-password
- * Requires the token from the verify-OTP step.
- */
 export interface CreatePasswordPayload {
   password: string;
-  token: string; // from VerifyOtpResponse.token
+  token:    string;
 }
 
-/**
- * Create Password → 200
- * { "customer_id": "188", "status": "PENDING_REVIEW" }
- */
-export interface CreatePasswordResponse {
-  customer_id: string | number;
-  status: 'PENDING_REVIEW' | string;
-}
+// ─── Staff bulk upload result (returned by POST /api/staff/bulk-upload) ───────
 
-/** GET auth/me — profile for any authenticated user (customer or staff) */
-export interface MeResponse {
-  id: string | number;
-  uuid?: string;
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  role: string;          // "CUSTOMER" | "ADMIN" | "STAFF" | "DRIVER"
-  status: string;
-  // Customer-only fields
-  company_name?: string;
-  pcn_uploaded?: boolean;
-  pcn_verified?: boolean;
-  referral_code?: string;
-  // Staff-only fields
-  department?: string;
-  job_title?: string;
-  employee_code?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// ---------- Staff auth ------------------------------------------------------
-
-/** POST auth/login-staff — same endpoint for ADMIN, STAFF, DRIVER */
-export interface LoginStaffPayload {
-  email: string;
-  password: string;
-}
-
-/**
- * Staff Login → 200
- * { "status":"success", "message":"Login Successful",
- *   "data":{ "id":"151", "email":"admin@gmail.com", "role":"ADMIN", "status":"ACTIVE", "employee_code":null } }
- * role: "ADMIN" | "STAFF" | "DRIVER"
- */
-export interface LoginStaffResponse {
-  id: string | number;
-  email: string;
-  role: 'ADMIN' | 'STAFF' | 'DRIVER' | string;
-  /** "ACTIVE" | "INACTIVE" | other status strings */
-  status: string;
-  employee_code?: string | null;
-}
-
-/** POST auth/staff/register */
-export interface RegisterStaffPayload {
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  department?: string;
-  job_title?: string;
-  gender: string;
-}
-
-/**
- * Staff Register → 200
- * { "id":458, "employee_code":"EMP-2026-000001", "email":"...",
- *   "status":"UNVERIFIED", "verification_expires_at":"..." }
- */
-export interface RegisterStaffResponse {
-  id: string | number;
-  employee_code: string;
-  email: string;
-  status: 'UNVERIFIED' | string;
-  verification_expires_at?: string;
-}
-
-// ---------- Staff lists (admin) ---------------------------------------------
-
-export interface StaffRecord {
-  id: string | number;
-  uuid?: string;
-  employee_code: string;
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  department?: string;
-  job_title?: string;
-  gender?: string;
-  verification_status: 'UNVERIFIED' | 'VERIFIED' | string;
-  email_verified_at?: string | null;
-  created_at: string;
-}
-
-export interface StaffListResponse {
-  total: number;
-  records: StaffRecord[];
-}
-
-/** POST staff/bulk-upload (form-data) */
-export interface BulkUploadStaffSuccess {
+export interface StaffBulkUploadResult {
   total_record_inserted: number;
-  existing_emails: string[];
-  total_existing_record: number;
-}
-
-// ---------- Customer lists (admin) ------------------------------------------
-
-export interface CustomerAdminRecord {
-  id: string | number;
-  uuid?: string;
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  company_name?: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  gender?: string;
-  /**
-   * Lifecycle status string from the backend:
-   * "REGISTERED" | "PCN_CERT_UPLOADED" | "OTP_CONFIRMED" | "PENDING_REVIEW" | "APPROVED" | "REJECTED"
-   */
-  status: string;
-  verification_status?: string;
-  reviewed_by?: string | number | null;
-  reviewed_at?: string | null;
-  review_note?: string | null;   // returned on approved/rejected records
-  email_verified_at?: string | null;
-  created_at: string;
-}
-
-export interface CustomerAdminListResponse {
-  total: number;
-  records: CustomerAdminRecord[];
-}
-
-/** POST customers/{id}/approval — body the backend actually expects */
-export interface ReviewCustomerPayload {
-  /** "APPROVE" or "REJECTED" — exact strings the backend accepts */
-  decision: 'APPROVE' | 'REJECTED';
-  review_notes: string;          // required for both approve and reject
-}
-
-export interface ReviewCustomerResponse {
-  customer_id: string | number;
-  email: string;
-  status: 'APPROVED' | 'REJECTED' | string;
-  reviewed_at: string;
-  reviewed_by: string | number;
-  review_notes?: string;
-}
-
-/** POST customers/bulk-upload — returns 200 even on partial failures */
-export interface BulkUploadFailedRecord {
-  row: number;
-  email: string;
-  errors: string[];
-}
-
-export interface BulkUploadCustomerResponse {
-  total_records: number;
-  successful: number;
-  failed: number;
-  failed_records: BulkUploadFailedRecord[];
-}
-
-// ---------- Pagination meta ------------------------------------------------
-
-export interface PaginationMeta {
-  current_page: number;
-  per_page: number;
-  total: number;
-  total_pages: number;
-}
-
-// ---------- Login history (admin) ------------------------------------------
-
-/** One entry from GET admin/login-history */
-export interface LoginHistoryRecord {
-  id: string;
-  user_id: string;
-  user_type: string;           // "ADMIN" | "CUSTOMER" | "STAFF"
-  ip_address: string;
-  device_name: string;
-  browser: string;
-  operating_system: string;
-  country: string;
-  city: string;
-  event: string;               // "LOGIN_SUCCESS" | "LOGIN_FAILED" etc.
-  created_at: string;
-  user_name: string | null;
-  email: string | null;
-}
-
-export interface LoginHistoryResponse {
-  pagination: PaginationMeta;
-  records: LoginHistoryRecord[];
-}
-
-// ---------- Audit logs (admin) ---------------------------------------------
-
-/** One entry from GET admin/logs */
-export interface AuditLogRecord {
-  id: string;
-  user_id: string;
-  user_type: string;
-  action: string;              // "LOGIN" | "CREATE_STAFF" | "APPROVE_ACCOUNT" etc.
-  entity_type: string;         // "Admin" | "Customer" | "Staff"
-  entity_id: string;
-  description: string;
-  ip_address: string;
-  user_agent: string;
-  created_at: string;
-  user_name: string | null;
-  email: string | null;
-}
-
-export interface AuditLogsResponse {
-  pagination: PaginationMeta;
-  records: AuditLogRecord[];
-}
-
-// ---------- Helpers ---------------------------------------------------------
-
-/**
- * Type-guard: narrows ApiResponse<T> to ApiSuccess<T>.
- * Uses the string "success" because the backend status field is a string,
- * NOT a boolean.
- */
-export function isApiSuccess<T>(res: ApiResponse<T>): res is ApiSuccess<T> {
-  return res.status === 'success';
+  /** Display alias — may equal total_record_inserted in some API versions */
+  successful?:           number;
+  failed?:               number;
+  total_records?:        number;
+  existing_emails?:      string[];
+  failed_records:        Array<{
+    row:    number;
+    email:  string;
+    errors: string[];
+  }>;
 }

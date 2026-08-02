@@ -36,6 +36,13 @@ import { formatDate, cn } from '@/lib/utils';
 import type { Role } from '@/types';
 import type { CustomerAdminRecord } from '@/lib/api/types';
 
+type CustomerBulkResult = {
+  total_records: number;
+  successful:    number;
+  failed:        number;
+  failed_records?: Array<{ row: number; email?: string; reason?: string }>;
+};
+
 // ---------- Constants -------------------------------------------------------
 
 const PAGE_SIZE = 15;
@@ -311,7 +318,7 @@ function ReviewModal({ customer, initialDecision = 'APPROVE', onClose, onSuccess
     reviewMut.mutate(
       { id: customer.id, decision, review_notes: notes.trim() },
       {
-        onSuccess: (data) => {
+        onSuccess: (data: CustomerAdminRecord) => {
           toast.show({
             tone: decision === 'APPROVE' ? 'success' : 'info',
             title: decision === 'APPROVE' ? 'Customer approved' : 'Application rejected',
@@ -881,7 +888,7 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
     if (!file) return;
     setServerFails([]);
     uploadMut.mutate(file, {
-      onSuccess: (data) => {
+      onSuccess: (data: CustomerBulkResult) => {
         const hasFails = data.failed > 0;
         toast.show({
           tone: hasFails ? 'warning' : 'success',
@@ -891,7 +898,7 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
             : 'All records inserted successfully.',
         });
         if (hasFails) {
-          setServerFails(data.failed_records);
+          setServerFails((data.failed_records ?? []) as Parameters<typeof setServerFails>[0]);
         } else {
           reset(); onClose();
         }
@@ -1148,7 +1155,7 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
 // ---------- Main view -------------------------------------------------------
 
 export function CustomersView({ role }: { role: Role }) {
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'ADMIN';
 
   const [activeFilter,       setActiveFilter]       = useState<StageFilter>('all');
   const [query,              setQuery]              = useState('');

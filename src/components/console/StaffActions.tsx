@@ -7,7 +7,7 @@ import { Plus, Upload, AlertTriangle, CheckCircle, XCircle, X } from '@/componen
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/contexts/ToastContext';
 import { useRegisterStaff, useBulkUploadStaff } from '@/hooks/staff/useStaff';
-import type { BulkUploadResult } from '@/lib/api/client';
+import type { StaffBulkUploadResult as BulkUploadResult } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
 // ---------- Add staff modal -------------------------------------------------
@@ -283,7 +283,7 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
     setUploadResult(null);
     setUploadErrMsg('');
     uploadMut.mutate(file, {
-      onSuccess: (data) => {
+      onSuccess: (data: BulkUploadResult) => {
         const existing = data.existing_emails?.length ?? 0;
         toast.show({
           tone: existing > 0 && data.total_record_inserted === 0 ? 'warning' : 'success',
@@ -400,9 +400,9 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
             <div className="mb-4">
               {/* Summary bar */}
               <div className="flex flex-wrap items-center gap-3 mb-3">
-                {uploadResult.successful > 0 ? (
+                {(uploadResult.successful ?? 0) > 0 ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-semibold text-leaf-700 ring-1 ring-inset ring-leaf-200">
-                    <CheckCircle size={12} /> {uploadResult.successful} inserted
+                    <CheckCircle size={12} /> {uploadResult.successful ?? 0} inserted
                   </span>
                 ) : null}
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
@@ -429,7 +429,7 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
                     </tr>
                   </thead>
                   <tbody>
-                    {uploadResult.failed_records.map((r) => (
+                    {uploadResult.failed_records.map((r: BulkUploadResult['failed_records'][number]) => (
                       <tr key={r.row} className="border-t border-line bg-red-50/40">
                         <td className="px-3 py-2.5 text-xs text-ink-3">{r.row}</td>
                         <td className="px-3 py-2.5 text-xs font-mono text-ink">{r.email}</td>

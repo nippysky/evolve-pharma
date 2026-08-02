@@ -109,11 +109,11 @@ export function useAllStaff() {
   const unverifiedQ = useUnverifiedStaff();
 
   const isLoading = (verifiedQ.isLoading && !verifiedQ.data) || (unverifiedQ.isLoading && !unverifiedQ.data);
-  const errors    = [verifiedQ.error, unverifiedQ.error].filter((e): e is Error => e != null);
+  const errors    = [verifiedQ.error, unverifiedQ.error].filter((e: unknown): e is Error => e instanceof Error);
 
   const allRecords: TaggedStaffRecord[] = [
-    ...(verifiedQ.data?.records   ?? []).map((r) => ({ ...r, _status: 'VERIFIED'   as const })),
-    ...(unverifiedQ.data?.records ?? []).map((r) => ({ ...r, _status: 'UNVERIFIED' as const })),
+    ...(verifiedQ.data?.records   ?? []).map((r: StaffRecord) => ({ ...r, _status: 'VERIFIED'   as const })),
+    ...(unverifiedQ.data?.records ?? []).map((r: StaffRecord) => ({ ...r, _status: 'UNVERIFIED' as const })),
   ];
 
   const counts: Record<StaffStatus, number> = {
@@ -166,12 +166,12 @@ export function useAllCustomers() {
   });
 
   // Loading = at least one stage has no data yet
-  const isLoading = results.some((r) => r.isLoading && !r.data);
-  const isFetching = results.some((r) => r.isFetching);
-  const errors     = results.map((r) => r.error).filter((e): e is Error => e != null);
+  const isLoading = results.some((r: any) => r.isLoading && !r.data);
+  const isFetching = results.some((r: any) => r.isFetching);
+  const errors     = results.map((r: any) => r.error).filter((e: unknown): e is Error => e instanceof Error);
 
   const allRecords: TaggedCustomerRecord[] = ALL_CUSTOMER_STAGES.flatMap((stage, i) =>
-    (results[i]?.data?.records ?? []).map((rec) => ({ ...rec, _stage: stage })),
+    (results[i]?.data?.records ?? []).map((rec: CustomerAdminRecord) => ({ ...rec, _stage: stage })),
   );
 
   const counts = ALL_CUSTOMER_STAGES.reduce<Record<CustomerStage, number>>(
@@ -182,7 +182,7 @@ export function useAllCustomers() {
     {} as Record<CustomerStage, number>,
   );
 
-  const refetchAll = () => { results.forEach((r) => void r.refetch()); };
+  const refetchAll = () => { results.forEach((r: any) => void r.refetch()); };
 
   return { allRecords, counts, isLoading, isFetching, errors, refetchAll };
 }
@@ -197,10 +197,10 @@ export function useReviewCustomer() {
       decision,
       review_notes,
     }: {
-      id: number | string;
+      id: number;
       decision: 'APPROVE' | 'REJECTED';
       review_notes: string;
-    }) => reviewCustomer(id, decision, review_notes),
+    }) => reviewCustomer(id, decision === 'APPROVE' ? 'approve' : 'reject', review_notes),
     onSuccess: () => {
       // Invalidate all customer tabs so counts + lists stay in sync
       queryClient.invalidateQueries({ queryKey: ['customers-admin'] });

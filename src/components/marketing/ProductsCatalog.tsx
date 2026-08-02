@@ -6,13 +6,13 @@ import { ProductCard } from '@/components/shared/ProductCard';
 import { EmptyState } from '@/components/ui/Primitives';
 import { Search, CheckCircle, Pill, X } from '@/components/icons';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
-import type { Product } from '@/types';
+import type { ProductDTO } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
 const ALL = 'All';
 
 interface ProductsCatalogProps {
-  products: Product[];
+  products: ProductDTO[];
   initialCategory?: string;
 }
 
@@ -21,21 +21,21 @@ export function ProductsCatalog({ products, initialCategory }: ProductsCatalogPr
   const [category, setCategory] = useState<string>(initialCategory ?? ALL);
 
   const usedCategories = useMemo(
-    () => [ALL, ...PRODUCT_CATEGORIES.filter((c) => products.some((p) => p.category === c))],
+    () => [ALL, ...PRODUCT_CATEGORIES.filter((c) => products.some((p) => p.category?.name === c))],
     [products],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
-      if (category !== ALL && p.category !== category) return false;
+      if (category !== ALL && p.category?.name !== category) return false;
       if (!q) return true;
       return (
-        p.name.toLowerCase().includes(q) ||
+        p.brand_name.toLowerCase().includes(q) ||
         p.generic_name.toLowerCase().includes(q) ||
-        p.manufacturer.toLowerCase().includes(q) ||
+        (p.manufacturer?.name ?? '').toLowerCase().includes(q) ||
         p.sku.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
+        (p.category?.name ?? '').toLowerCase().includes(q)
       );
     });
   }, [products, query, category]);

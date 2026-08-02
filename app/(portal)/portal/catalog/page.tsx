@@ -10,10 +10,11 @@ import { DUMMY_PRODUCTS } from '@/lib/data/dummy-products';
 import { useBasket } from '@/lib/hooks/useBasket';
 import { useToast } from '@/contexts/ToastContext';
 import { formatNaira, cn } from '@/lib/utils';
+import type { ProductDTO } from '@/lib/api/types';
 
 const ALL = 'All';
 
-function CatalogProductCard({ product }: { product: (typeof DUMMY_PRODUCTS)[number] }) {
+function CatalogProductCard({ product }: { product: ProductDTO }) {
   const add = useBasket((s) => s.add);
   const has = useBasket((s) => s.hasItem);
   const getQty = useBasket((s) => s.getQuantity);
@@ -27,9 +28,12 @@ function CatalogProductCard({ product }: { product: (typeof DUMMY_PRODUCTS)[numb
     toast.show({
       tone: 'success',
       title: inBasket ? `Added another · ${qty + 1} total` : 'Added to basket',
-      description: product.name,
+      description: product.brand_name,
     });
   };
+
+  const imageUrl = product.images[0]?.url ?? '';
+  const categoryName = product.category?.name ?? '';
 
   return (
     <article className={cn(
@@ -39,50 +43,50 @@ function CatalogProductCard({ product }: { product: (typeof DUMMY_PRODUCTS)[numb
       'hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-[0_8px_30px_rgba(4,42,54,0.10)]',
     )}>
       <Link href={`/portal/catalog/${product.sku}`} className="block aspect-[4/3] overflow-hidden bg-bg-muted">
-        <Image
-          src={product.image_url}
-          alt={product.name}
-          width={480}
-          height={360}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={product.brand_name}
+            width={480}
+            height={360}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ink-4">
+            <Pill size={40} />
+          </div>
+        )}
       </Link>
-
-      {product.prescription_required && (
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-2 shadow-sm backdrop-blur-sm">
-          Rx
-        </span>
-      )}
 
       <div className="flex flex-1 flex-col p-4">
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-teal-600">
-          {product.category}
+          {categoryName}
         </span>
 
         <Link
           href={`/portal/catalog/${product.sku}`}
           className="mt-1.5 line-clamp-2 text-[14px] font-semibold leading-snug tracking-tight text-ink transition-colors hover:text-teal-700"
         >
-          {product.name}
+          {product.brand_name}
         </Link>
 
         <p className="mt-1 line-clamp-1 text-[11px] text-ink-3">
           {product.generic_name}
-          {product.strength !== '—' ? ` · ${product.strength}` : ''}
+          {product.product_strength && product.product_strength !== '—' ? ` · ${product.product_strength}` : ''}
         </p>
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-4">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-4">Per pack</p>
             <span className="num mt-0.5 block font-display text-[1.2rem] leading-none tracking-[-0.03em] text-ink">
-              {formatNaira(product.selling_price)}
+              {formatNaira(parseFloat(product.selling_price))}
             </span>
           </div>
 
           <button
             type="button"
             onClick={handleAdd}
-            aria-label={`${inBasket ? 'Add more' : 'Add'} ${product.name} to basket`}
+            aria-label={`${inBasket ? 'Add more' : 'Add'} ${product.brand_name} to basket`}
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200',
               inBasket
@@ -116,21 +120,21 @@ export default function PortalCatalogPage() {
   }, [params]);
 
   const usedCategories = useMemo(
-    () => [ALL, ...PRODUCT_CATEGORIES.filter((c) => DUMMY_PRODUCTS.some((p) => p.category === c))],
+    () => [ALL, ...PRODUCT_CATEGORIES.filter((c) => DUMMY_PRODUCTS.some((p) => p.category?.name === c))],
     [],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return DUMMY_PRODUCTS.filter((p) => {
-      if (category !== ALL && p.category !== category) return false;
+      if (category !== ALL && p.category?.name !== category) return false;
       if (!q) return true;
       return (
-        p.name.toLowerCase().includes(q) ||
+        p.brand_name.toLowerCase().includes(q) ||
         p.generic_name.toLowerCase().includes(q) ||
-        p.manufacturer.toLowerCase().includes(q) ||
+        (p.manufacturer?.name ?? '').toLowerCase().includes(q) ||
         p.sku.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
+        (p.category?.name ?? '').toLowerCase().includes(q)
       );
     });
   }, [query, category]);
@@ -138,10 +142,10 @@ export default function PortalCatalogPage() {
   const countFor = (cat: string) => {
     const q = query.trim().toLowerCase();
     return DUMMY_PRODUCTS.filter((p) => {
-      if (cat !== ALL && p.category !== cat) return false;
+      if (cat !== ALL && p.category?.name !== cat) return false;
       if (!q) return true;
       return (
-        p.name.toLowerCase().includes(q) ||
+        p.brand_name.toLowerCase().includes(q) ||
         p.generic_name.toLowerCase().includes(q) ||
         p.sku.toLowerCase().includes(q)
       );

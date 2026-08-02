@@ -1,42 +1,32 @@
 'use server';
 
+/**
+ * Session actions — thin wrappers used by portal/console logout flows.
+ *
+ * In the new JWT-cookie system (Module 2) these will be replaced by
+ * direct calls to POST /api/auth/logout. Kept here as stubs so the
+ * existing UI components still compile without changes.
+ */
+
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ROLE_COOKIE_NAME, USER_COOKIE_NAME } from '@/lib/auth';
-
-const COOKIE_OPTS = {
-  path:     '/',
-  httpOnly: false,
-  sameSite: 'lax' as const,
-  maxAge:   60 * 60 * 24 * 30,
-};
+import { ACCESS_COOKIE, REFRESH_COOKIE } from '@/lib/auth';
 
 /**
- * Called immediately after a successful CUSTOMER login.
- * Explicitly stamps role=customer so any stale admin/staff cookie
- * left over from a previous session (common on Vercel previews) is
- * overwritten before the layout's getSession() runs.
+ * No-op — customer auth cookies are now set by the API route
+ * (POST /api/auth/customer/login). Kept for backward-compat.
  */
 export async function setCustomerSessionAction(): Promise<void> {
-  const store = await cookies();
-  store.set(ROLE_COOKIE_NAME, 'customer', COOKIE_OPTS);
-  // Remove any leftover staff user-info cookie
-  store.delete(USER_COOKIE_NAME);
+  // New auth: cookies are set by the API route handler, not a server action.
 }
 
 /**
- * Sign out — clears the session role cookie and routes back to the right
- * door: staff (admin / sales_agent) land on /staff/sign-in, customers on
- * /sign-in. The role is read before the cookie is cleared, since getSession
- * defaults to `customer` once it's gone. Works for both shells, so the same
- * action can back every logout button.
+ * Sign out — clears both JWT cookies and redirects to /sign-in.
+ * Works for all roles (customer, staff, admin).
  */
-export async function signOutAction() {
+export async function signOutAction(): Promise<void> {
   const store = await cookies();
-  const role = store.get(ROLE_COOKIE_NAME)?.value;
-  const staffRoles = ['admin', 'sales_agent', 'driver'];
-  const target = staffRoles.includes(role ?? '') ? '/staff/sign-in' : '/sign-in';
-  store.delete(ROLE_COOKIE_NAME);
-  store.delete(USER_COOKIE_NAME);
-  redirect(target);
+  store.delete(ACCESS_COOKIE);
+  store.delete(REFRESH_COOKIE);
+  redirect('/sign-in');
 }

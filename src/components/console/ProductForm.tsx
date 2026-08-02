@@ -33,7 +33,7 @@ export function ProductForm({ product, mode }: ProductFormProps) {
       mode === 'create' ? await createProductAction(fd) : await updateProductAction(product!.id, fd);
     if (r.ok) {
       toast.show({ tone: 'success', title: mode === 'create' ? 'Product created' : 'Product updated' });
-      if (mode === 'create') router.push('/console/products');
+      if (mode === 'create') router.push('/admin/products');
       else router.refresh();
     } else if (!r.fieldErrors) {
       toast.show({

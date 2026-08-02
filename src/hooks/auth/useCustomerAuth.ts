@@ -69,7 +69,7 @@ export function useLoginCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: LoginCustomerPayload) => loginCustomer(payload),
-    onSuccess: (data) => {
+    onSuccess: (data: Awaited<ReturnType<typeof loginCustomer>>) => {
       // Pre-populate the me cache so the first portal load is instant
       // Login response wraps the user under `data.customer`
       queryClient.setQueryData(AUTH_KEYS.me, data.customer);

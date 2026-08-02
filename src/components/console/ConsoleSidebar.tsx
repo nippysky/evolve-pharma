@@ -17,15 +17,15 @@ interface ConsoleSidebarProps {
 // ── Role metadata ─────────────────────────────────────────────────────────────
 
 const ROLE_LABEL: Record<string, string> = {
-  admin:       'Admin',
-  sales_agent: 'Staff',
-  driver:      'Driver',
+  ADMIN:  'Admin',
+  STAFF:  'Staff',
+  DRIVER: 'Driver',
 };
 
 const ROLE_ICON: Record<string, typeof Shield> = {
-  admin:       Shield,
-  sales_agent: UsersIcon,
-  driver:      Truck,
+  ADMIN:  Shield,
+  STAFF:  UsersIcon,
+  DRIVER: Truck,
 };
 
 /**
@@ -36,7 +36,7 @@ const ROLE_ICON: Record<string, typeof Shield> = {
  *  Driver      — orange-950 / amber accents    (active, on-the-move)
  */
 const ROLE_THEME = {
-  admin: {
+  ADMIN: {
     sidebar:   'bg-slate-900',
     border:    'border-white/8',
     badge:     'bg-indigo-500/20 text-indigo-300',
@@ -49,8 +49,8 @@ const ROLE_THEME = {
     dot:       'bg-emerald-400',
     topAccent: 'bg-indigo-500',
   },
-  sales_agent: {
-    sidebar:   'bg-[#052e16]',          // green-950 equivalent
+  STAFF: {
+    sidebar:   'bg-[#052e16]',
     border:    'border-white/8',
     badge:     'bg-emerald-500/20 text-emerald-300',
     activeLink:'bg-emerald-500/18 text-emerald-300 font-medium',
@@ -62,8 +62,8 @@ const ROLE_THEME = {
     dot:       'bg-emerald-400',
     topAccent: 'bg-emerald-500',
   },
-  driver: {
-    sidebar:   'bg-[#431407]',          // orange-950 equivalent
+  DRIVER: {
+    sidebar:   'bg-[#431407]',
     border:    'border-white/8',
     badge:     'bg-amber-500/20 text-amber-300',
     activeLink:'bg-amber-500/18 text-amber-300 font-medium',
@@ -82,7 +82,7 @@ const ROLE_THEME = {
   dot: string; topAccent: string;
 }>;
 
-const DEFAULT_THEME = ROLE_THEME.admin;
+const DEFAULT_THEME = ROLE_THEME.ADMIN;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -94,10 +94,10 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
   const RoleIcon  = ROLE_ICON[session.role]  ?? UsersIcon;
   const roleLabel = ROLE_LABEL[session.role] ?? session.role;
 
-  // Real data from auth/me; fall back to cookie values until it resolves
+  // Real data from auth/me; fall back to JWT values until it resolves
   const displayName  = user
     ? `${user.first_name}${user.last_name ? ` ${user.last_name}` : ''}`
-    : session.full_name;
+    : `${session.first_name} ${session.last_name}`.trim();
   const displayEmail = user?.email ?? session.email;
 
   const initials = displayName
@@ -109,7 +109,7 @@ export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
 
   // Driver gets a minimal nav; all other roles get the full CONSOLE_NAV
   // filtered by their roles array.
-  const navGroups = session.role === 'driver' ? DRIVER_NAV : CONSOLE_NAV;
+  const navGroups = session.role === 'DRIVER' ? DRIVER_NAV : CONSOLE_NAV;
 
   const isVisible = (item: Record<string, unknown>) => {
     if (!('roles' in item)) return true;

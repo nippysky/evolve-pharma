@@ -11,6 +11,8 @@ import { useLoginStaff } from '@/hooks/staff/useStaff';
 import { setStaffSessionAction } from '@/lib/actions';
 import { getMe } from '@/lib/api/services/auth.service';
 
+type StaffLoginData = { status: string; role: string; email: string; token?: string };
+
 export default function StaffSignInPage() {
   const router = useRouter();
   const toast = useToast();
@@ -30,7 +32,7 @@ export default function StaffSignInPage() {
     loginMutation.mutate(
       { email, password },
       {
-        onSuccess: async (data) => {
+        onSuccess: async (data: StaffLoginData) => {
           // Block inactive accounts before setting any cookie
           if (data.status && data.status.toUpperCase() !== 'ACTIVE') {
             setServerError(
@@ -63,8 +65,8 @@ export default function StaffSignInPage() {
 
           const target =
             data.role.toUpperCase() === 'DRIVER'
-              ? '/console/driver'
-              : '/console/overview';
+              ? '/driver'
+              : '/admin/overview';
 
           router.push(target);
         },

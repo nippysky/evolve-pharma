@@ -5,7 +5,7 @@ import { Container } from '@/components/ui/Layout';
 import { ButtonLink } from '@/components/ui/Button';
 import {
   ArrowLeft, ArrowRight, Shield, Pill, Box,
-  Lock, ShoppingCart, User,
+  Lock, ShoppingCart,
 } from '@/components/icons';
 import { getSession } from '@/lib/auth';
 import { getProductBySku } from '@/lib/data/dummy-products';
@@ -24,24 +24,27 @@ export default async function MarketingProductDetail({ params }: Props) {
 
   // Logged-in users go straight to the real portal product page
   if (session) {
-    const dest = session.role === 'customer'
-      ? `/portal/catalog/${product.sku}`
-      : '/console/overview';
+    const dest = session.role === 'CUSTOMER'
+      ? `/portal/catalog/${sku}`
+      : '/admin/overview';
     redirect(dest);
   }
 
   const isLoggedIn = false;
   const portalHref = `/portal/catalog/${product.sku}`;
 
+  const imageUrl     = product.images[0]?.url ?? '';
+  const categoryName = product.category?.name ?? '—';
+  const mfgName      = product.manufacturer?.name ?? '—';
+  const strength     = product.product_strength ?? '—';
+
   const details = [
     { label: 'Generic name',  value: product.generic_name },
-    { label: 'Manufacturer',  value: product.manufacturer },
-    { label: 'Dosage form',   value: product.form },
-    { label: 'Strength',      value: product.strength !== '—' ? product.strength : '—' },
-    { label: 'Pack size',     value: product.pack_size },
-    { label: 'Category',      value: product.category },
+    { label: 'Manufacturer',  value: mfgName },
+    { label: 'Strength',      value: strength },
+    { label: 'Pack size',     value: product.pack_size ?? '—' },
+    { label: 'Category',      value: categoryName },
     { label: 'SKU',           value: product.sku },
-    { label: 'Prescription',  value: product.prescription_required ? 'Required' : 'OTC' },
   ];
 
   return (
@@ -60,18 +63,19 @@ export default async function MarketingProductDetail({ params }: Props) {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-3xl border border-line-subtle bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
               <div className="relative aspect-square sm:aspect-[4/3]">
-                <Image
-                  src={product.image_url}
-                  alt={product.name}
-                  fill
-                  className="object-contain p-10"
-                  sizes="(max-width: 1024px) 100vw, 640px"
-                  priority
-                />
-                {product.prescription_required && (
-                  <span className="absolute left-4 top-4 rounded-full bg-ink/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
-                    Rx required
-                  </span>
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={product.brand_name}
+                    fill
+                    className="object-contain p-10"
+                    sizes="(max-width: 1024px) 100vw, 640px"
+                    priority
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-ink-4">
+                    <Pill size={60} />
+                  </div>
                 )}
               </div>
             </div>
@@ -95,25 +99,25 @@ export default async function MarketingProductDetail({ params }: Props) {
           <div className="flex flex-col gap-5">
             <div>
               <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-600">
-                {product.category}
+                {categoryName}
               </span>
               <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-ink">
-                {product.name}
+                {product.brand_name}
               </h1>
               <p className="mt-1.5 text-sm text-ink-3">
                 <span className="font-medium text-ink-2">{product.generic_name}</span>
-                {product.strength !== '—' && ` · ${product.strength}`}
+                {strength !== '—' && ` · ${strength}`}
               </p>
-              <p className="mt-1 text-xs text-ink-3">{product.manufacturer}</p>
+              <p className="mt-1 text-xs text-ink-3">{mfgName}</p>
             </div>
 
             {/* Price */}
             <div className="rounded-2xl border border-line-subtle bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.07)]">
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-4">Price per pack</p>
               <p className="num mt-1 font-display text-4xl font-semibold leading-none tracking-tight text-ink">
-                {formatNaira(product.selling_price)}
+                {formatNaira(parseFloat(product.selling_price))}
               </p>
-              <p className="mt-1.5 text-xs text-ink-3">Pack size: {product.pack_size} · VAT inclusive</p>
+              <p className="mt-1.5 text-xs text-ink-3">Pack size: {product.pack_size ?? '—'} · VAT inclusive</p>
             </div>
 
             {/* CTA — session-aware */}

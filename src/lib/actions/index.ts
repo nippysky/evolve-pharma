@@ -11,7 +11,6 @@
 
 'use server';
 
-import { cookies } from 'next/headers';
 import {
   signInSchema,
   customerRegistrationSchema,
@@ -21,9 +20,11 @@ import {
   checkoutSchema,
   productSchema,
 } from '@/lib/schemas';
-import { ROLE_COOKIE_NAME, USER_COOKIE_NAME } from '@/lib/auth';
 import { sleep } from '@/lib/utils';
 import type { Role } from '@/types';
+
+// Silence unused import — cookies used by stubs below
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 export type ActionResult<T = unknown> =
   | { ok: true; data?: T }
@@ -37,24 +38,13 @@ function fail(err: unknown, fallback = 'Something went wrong'): ActionResult {
   return { ok: false, message: fallback };
 }
 
-/**
- * Establish the active session role (demo build). In production this is
- * replaced by the signed session the PHP backend issues after verifying
- * credentials. Cookie options mirror the role switcher's.
- */
-async function setSessionRole(role: Role): Promise<void> {
-  const store = await cookies();
-  store.set(ROLE_COOKIE_NAME, role, {
-    path: '/',
-    httpOnly: false,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30,
-  });
-}
-
 // ---------- Auth actions -------------------------------------------------
 
-/** Customer sign-in — public door. Customers only. Routes to /portal/*. */
+/**
+ * Customer sign-in stub — in the new system, login is handled by
+ * POST /api/auth/customer/login (Module 2). Kept here for backward-compat
+ * until the sign-in page is migrated.
+ */
 export async function signInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
   await sleep(900);
   const parsed = signInSchema.safeParse({
@@ -62,11 +52,10 @@ export async function signInAction(_prev: unknown, formData: FormData): Promise<
     password: formData.get('password'),
   });
   if (!parsed.success) return fail(parsed.error);
-  await setSessionRole('customer');
   return { ok: true };
 }
 
-/** Staff sign-in — internal door (admin / sales_agent / driver). Routes to /console/*. */
+/** Staff sign-in stub — replaced by POST /api/auth/staff/login in Module 2. */
 export async function staffSignInAction(_prev: unknown, formData: FormData): Promise<ActionResult> {
   await sleep(900);
   const parsed = signInSchema.safeParse({
@@ -74,47 +63,18 @@ export async function staffSignInAction(_prev: unknown, formData: FormData): Pro
     password: formData.get('password'),
   });
   if (!parsed.success) return fail(parsed.error);
-  const requested = String(formData.get('role') ?? 'admin');
-  let role: Role = 'admin';
-  if (requested === 'sales_agent') role = 'sales_agent';
-  else if (requested === 'driver') role = 'driver';
-  await setSessionRole(role);
-  return { ok: true, data: { role } };
+  return { ok: true };
 }
 
 /**
- * Called by the staff sign-in page AFTER the real API login succeeds.
- * Maps the backend role string to our internal Role type and sets the
- * role cookie. Also persists real user data (email, full_name) so the
- * sidebar always shows the actual logged-in user — never dummy data.
- *
- * Backend role → internal role:
- *   "ADMIN"  → "admin"
- *   "STAFF"  → "sales_agent"
- *   "DRIVER" → "driver"
+ * Staff session cookie stub — no-op in new JWT system.
+ * Replaced by the API route setting httpOnly cookies directly.
  */
 export async function setStaffSessionAction(
-  backendRole: string,
-  userInfo?: { email?: string; full_name?: string },
+  _backendRole: string,
+  _userInfo?: { email?: string; full_name?: string },
 ): Promise<ActionResult<{ role: Role }>> {
-  let role: Role = 'admin';
-  const r = backendRole.toUpperCase();
-  if (r === 'STAFF')  role = 'sales_agent';
-  if (r === 'DRIVER') role = 'driver';
-  await setSessionRole(role);
-
-  // Persist real user data to override mock session values
-  if (userInfo && (userInfo.email || userInfo.full_name)) {
-    const store = await cookies();
-    store.set(USER_COOKIE_NAME, JSON.stringify(userInfo), {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
-    });
-  }
-
-  return { ok: true, data: { role } };
+  return { ok: true, data: { role: 'ADMIN' } };
 }
 
 /** Update a staff member's permission preset (admin only). */

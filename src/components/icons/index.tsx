@@ -39,6 +39,8 @@ import {
   RotateCw as LRRotateCw,
   Menu as LRMenu,
   MoreHorizontal as LRMoreH,
+  MoreVertical as LRMoreV,
+  Tag as LRTag,
   // brand / domain
   Bell as LRBell,
   User as LRUser,
@@ -167,6 +169,8 @@ export const TrendingUp = wrap(LRTrendingUp);
 export const TrendingDown = wrap(LRTrendingDown);
 export const ClipboardList = wrap(LRClipboardList);
 export const ShoppingCart = wrap(LRShoppingCart);
+export const MoreV = wrap(LRMoreV);
+export const Tag = wrap(LRTag);
 
 // ---------- Registry / dispatcher --------------------------------------
 
@@ -231,6 +235,8 @@ export const Icons = {
   TrendingDown,
   ClipboardList,
   ShoppingCart,
+  MoreV,
+  Tag,
 } as const;
 
 export type IconName = keyof typeof Icons;

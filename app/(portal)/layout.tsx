@@ -1,21 +1,23 @@
 import type { ReactNode } from 'react';
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth';
-import { PortalSidebar } from '@/components/portal/PortalSidebar';
-import { PortalTopbar } from '@/components/portal/PortalTopbar';
+import { redirect }       from 'next/navigation';
+import { getSession }     from '@/lib/auth';
+import { PortalSidebar }  from '@/components/portal/PortalSidebar';
+import { PortalTopbar }   from '@/components/portal/PortalTopbar';
+
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
+
+  // Not logged in → sign-in
   if (!session) redirect('/sign-in');
-  if (session.role !== 'customer') redirect('/console/overview');
+
+  // Wrong role → their dashboard
+  if (session.role !== 'CUSTOMER') redirect('/admin');
 
   /**
-   * PCN sticky gate — redirect if pcn_uploaded is explicitly false.
-   * Undefined means data unavailable (customer logged in without cookie),
-   * so we let them through (they uploaded during sign-up).
+   * PCN gate — in Module 2 we'll fetch pcn_verified from DB here.
+   * For now the gate is enforced via the API routes (customer can browse
+   * but can't checkout without PCN approval).
    */
-  if (session.pcn_uploaded === false) {
-    redirect('/upload-pcn');
-  }
 
   return (
     <div className="flex min-h-dvh bg-bg-subtle">
@@ -23,13 +25,6 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       <div className="flex min-w-0 flex-1 flex-col">
         <PortalTopbar />
         <div className="px-safe py-6 sm:py-8">
-          {/* PCN verification pending banner */}
-          {session.pcn_uploaded && !session.pcn_verified && (
-            <div className="mx-auto mb-6 max-w-7xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <strong className="font-semibold">PCN certificate under review.</strong>{' '}
-              Our compliance team is verifying your documents. You can browse the catalog but won&apos;t be able to place orders until verification is complete — usually within 24 hours.
-            </div>
-          )}
           <div className="mx-auto max-w-7xl">{children}</div>
         </div>
       </div>

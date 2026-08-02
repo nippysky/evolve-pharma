@@ -15,24 +15,25 @@ interface ConsoleTopbarProps {
   role: Role;
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  admin:       'Admin',
-  sales_agent: 'Staff',
-  driver:      'Driver',
+const ROLE_LABEL: Record<Role, string> = {
+  ADMIN:    'Admin',
+  STAFF:    'Staff',
+  DRIVER:   'Driver',
+  CUSTOMER: 'Customer',
 };
 
 export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const navGroups = role === 'driver' ? DRIVER_NAV : CONSOLE_NAV;
+  const navGroups = role === 'DRIVER' ? DRIVER_NAV : CONSOLE_NAV;
 
   const isItemVisible = (item: Record<string, unknown>): boolean => {
     if (!('roles' in item)) return true;
     const roles = item.roles as readonly string[];
-    if (!roles.includes(role)) return false;
-    // Admin sees everything; staff see items matching their role (permissions from backend TBD)
-    return true;
+    return roles.includes(role);
   };
+
+  const isDriver = role === 'DRIVER';
 
   return (
     <>
@@ -52,24 +53,24 @@ export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProp
         </div>
 
         {/* Desktop search — hidden for drivers */}
-        {role !== 'driver' && (
+        {!isDriver && (
           <div className="hidden flex-1 lg:block lg:max-w-md">
             <GlobalSearch />
           </div>
         )}
 
-        {role === 'driver' && (
+        {isDriver && (
           <div className="hidden flex-1 lg:block">
             <span className="text-sm font-medium text-ink-3">
-              Driver console &middot; <span className="text-ink">{ROLE_LABEL[role]}</span>
+              Driver portal &middot; <span className="text-ink">{ROLE_LABEL[role]}</span>
             </span>
           </div>
         )}
 
         <div className="flex items-center gap-1">
-          {role !== 'driver' && (
+          {!isDriver && (
             <Link
-              href="/console/notifications"
+              href="/admin/notifications"
               aria-label="Notifications"
               className="relative grid h-9 w-9 place-items-center rounded-md text-ink-2 hover:bg-bg-muted hover:text-ink"
             >

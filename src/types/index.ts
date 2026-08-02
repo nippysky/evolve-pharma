@@ -13,7 +13,12 @@ export type UUID = string;
 export type ISODate = string;
 export type Money = number; // stored in NGN major units (₦)
 
-export type Role = 'admin' | 'sales_agent' | 'driver' | 'customer';
+/** New uppercase roles matching the Prisma schema and JWT payload. */
+export type Role = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
+
+/** @deprecated Use Role */
+export type LegacyRole = 'admin' | 'sales_agent' | 'driver' | 'customer';
+
 export type Status = 'active' | 'inactive' | 'pending' | 'suspended';
 
 // ---------- Staff Permissions (sales_agent / staff) -----------------------
@@ -328,14 +333,24 @@ export interface Basket {
 
 // ---------- Session -------------------------------------------------------
 
+/**
+ * Session user — matches the TokenPayload embedded in the JWT.
+ * All fields are verified on every request via JWT signature.
+ *
+ * Computed helper: `full_name = first_name + " " + last_name`
+ */
 export interface SessionUser {
-  role: Role;
-  email: string;
-  full_name: string;
-  /** sales_agent permissions — populated when backend ships a permissions endpoint */
-  permissions?: StaffPermissionKey[];
+  userId:     number;
+  role:       Role;
+  email:      string;
+  first_name: string;
+  last_name:  string;
+  /** Convenience accessor — not stored in JWT, derived on the client */
+  full_name?: string;
+  /** Staff permission keys — populated from DB for STAFF role */
+  permissions?:       StaffPermissionKey[];
   permission_preset?: StaffPermissionPreset | null;
-  /** Customer PCN gate fields — stored in cookie at customer login */
+  /** Customer PCN gate fields — checked via DB query in portal layout */
   pcn_uploaded?: boolean;
   pcn_verified?: boolean;
 }
@@ -347,6 +362,6 @@ export function hasPermission(
   key: StaffPermissionKey,
 ): boolean {
   if (!session) return false;
-  if (session.role === 'admin') return true;
+  if (session.role === 'ADMIN') return true;
   return session.permissions?.includes(key) ?? false;
 }

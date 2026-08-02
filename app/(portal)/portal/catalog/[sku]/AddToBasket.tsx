@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { Plus, Minus, ShoppingCart, Check } from '@/components/icons';
 import { useBasket } from '@/lib/hooks/useBasket';
 import { useToast } from '@/contexts/ToastContext';
-import type { Product } from '@/types';
+import type { ProductDTO } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
-export function AddToBasket({ product }: { product: Product }) {
+export function AddToBasket({ product }: { product: ProductDTO }) {
   const [qty, setQty] = useState(1);
   const add = useBasket((s) => s.add);
   const has = useBasket((s) => s.hasItem);
@@ -20,7 +20,7 @@ export function AddToBasket({ product }: { product: Product }) {
     add(product, qty);
     toast.show({
       tone: 'success',
-      title: `${qty} × ${product.name} added`,
+      title: `${qty} × ${product.brand_name} added`,
       description: inBasket
         ? `${basketQty + qty} total in basket`
         : 'Continue browsing or head to your basket.',

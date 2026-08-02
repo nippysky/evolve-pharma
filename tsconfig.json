@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@db/*": [
+        "./src/generated/prisma/*"
       ]
     },
     "forceConsistentCasingInFileNames": true,

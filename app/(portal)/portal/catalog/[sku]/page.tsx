@@ -15,15 +15,18 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = getProductBySku(sku);
   if (!product) notFound();
 
+  const imageUrl      = product.images[0]?.url ?? '';
+  const categoryName  = product.category?.name ?? '—';
+  const mfgName       = product.manufacturer?.name ?? '—';
+  const strength      = product.product_strength ?? '—';
+
   const details = [
     { label: 'Generic name',  value: product.generic_name },
-    { label: 'Manufacturer',  value: product.manufacturer },
-    { label: 'Dosage form',   value: product.form },
-    { label: 'Strength',      value: product.strength !== '—' ? product.strength : '—' },
-    { label: 'Pack size',     value: product.pack_size },
-    { label: 'Category',      value: product.category },
+    { label: 'Manufacturer',  value: mfgName },
+    { label: 'Strength',      value: strength },
+    { label: 'Pack size',     value: product.pack_size ?? '—' },
+    { label: 'Category',      value: categoryName },
     { label: 'SKU / Code',    value: product.sku },
-    { label: 'Prescription',  value: product.prescription_required ? 'Required' : 'OTC — no prescription needed' },
   ];
 
   return (
@@ -41,18 +44,19 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="space-y-4">
           <div className="overflow-hidden rounded-2xl border border-line-subtle bg-white">
             <div className="relative aspect-square sm:aspect-[4/3]">
-              <Image
-                src={product.image_url}
-                alt={product.name}
-                fill
-                className="object-contain p-8"
-                sizes="(max-width: 1024px) 100vw, 600px"
-                priority
-              />
-              {product.prescription_required && (
-                <span className="absolute left-4 top-4 rounded-full bg-ink/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
-                  Rx required
-                </span>
+              {imageUrl ? (
+                <Image
+                  src={imageUrl}
+                  alt={product.brand_name}
+                  fill
+                  className="object-contain p-8"
+                  sizes="(max-width: 1024px) 100vw, 600px"
+                  priority
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-ink-4">
+                  <Pill size={60} />
+                </div>
               )}
             </div>
           </div>
@@ -76,18 +80,18 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="flex flex-col gap-5">
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-600">
-              {product.category}
+              {categoryName}
             </span>
             <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-ink sm:text-3xl">
-              {product.name}
+              {product.brand_name}
             </h1>
             <p className="mt-1.5 text-sm text-ink-3">
               <span className="font-medium text-ink-2">{product.generic_name}</span>
-              {product.strength !== '—' && ` · ${product.strength}`}
+              {strength !== '—' && ` · ${strength}`}
             </p>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-3">
               <Building size={12} />
-              {product.manufacturer}
+              {mfgName}
             </p>
           </div>
 
@@ -95,10 +99,10 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 to-cyan-50 p-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-600">Price per pack</p>
             <p className="num mt-1 font-display text-4xl font-semibold leading-none tracking-tight text-ink">
-              {formatNaira(product.selling_price)}
+              {formatNaira(parseFloat(product.selling_price))}
             </p>
             <p className="mt-1.5 text-xs text-ink-3">
-              Pack size: {product.pack_size} · VAT inclusive
+              Pack size: {product.pack_size ?? '—'} · VAT inclusive
             </p>
           </div>
 

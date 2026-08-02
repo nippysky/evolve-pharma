@@ -9,7 +9,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSession, hasPermission } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { hasPermission } from '@/types';
 import {
   agentInviteSchema,
   agentImportRowSchema,
@@ -54,7 +55,7 @@ function summarize(
 // ---------- Sales agents -------------------------------------------------
 
 export async function inviteAgentAction(formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
   await sleep(900);
   const parsed = agentInviteSchema.safeParse({
     first_name: formData.get('first_name'),
@@ -64,21 +65,21 @@ export async function inviteAgentAction(formData: FormData): Promise<ActionResul
     region: formData.get('region') || undefined,
   });
   if (!parsed.success) return fail(parsed.error);
-  revalidatePath('/console/staff');
+  revalidatePath('/admin/staff');
   return { ok: true };
 }
 
 export async function importAgentsAction(rows: unknown[]): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
   await sleep(1000);
-  revalidatePath('/console/staff');
+  revalidatePath('/admin/staff');
   return { ok: true, data: summarize(rows, agentImportRowSchema) };
 }
 
 // ---------- Internal staff -----------------------------------------------
 
 export async function inviteStaffAction(formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
   await sleep(900);
   const parsed = staffInviteSchema.safeParse({
     first_name: formData.get('first_name'),
@@ -90,21 +91,21 @@ export async function inviteStaffAction(formData: FormData): Promise<ActionResul
     job_title: formData.get('job_title'),
   });
   if (!parsed.success) return fail(parsed.error);
-  revalidatePath('/console/staff');
+  revalidatePath('/admin/staff');
   return { ok: true };
 }
 
 export async function importStaffAction(rows: unknown[]): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
   await sleep(1000);
-  revalidatePath('/console/staff');
+  revalidatePath('/admin/staff');
   return { ok: true, data: summarize(rows, staffImportRowSchema) };
 }
 
 // ---------- Customers ----------------------------------------------------
 
 export async function onboardCustomerAction(formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['admin', 'sales_agent']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN', 'STAFF']))) return NOT_AUTHORIZED;
   await sleep(1000);
   const parsed = customerOnboardSchema.safeParse({
     first_name: formData.get('first_name'),
@@ -119,14 +120,14 @@ export async function onboardCustomerAction(formData: FormData): Promise<ActionR
     country: formData.get('country'),
   });
   if (!parsed.success) return fail(parsed.error);
-  revalidatePath('/console/customers');
+  revalidatePath('/admin/customers');
   return { ok: true };
 }
 
 export async function importCustomersAction(rows: unknown[]): Promise<ActionResult> {
-  if (!(await guard(['admin', 'sales_agent']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN', 'STAFF']))) return NOT_AUTHORIZED;
   await sleep(1000);
-  revalidatePath('/console/customers');
+  revalidatePath('/admin/customers');
   return { ok: true, data: summarize(rows, customerImportRowSchema) };
 }
 
@@ -134,10 +135,10 @@ export async function reviewCustomerAction(
   customerId: number,
   decision: 'approve' | 'reject',
 ): Promise<ActionResult> {
-  if (!(await guard(['admin']))) return { ok: false, message: 'Only admins can review signups.' };
+  if (!(await guard(['ADMIN']))) return { ok: false, message: 'Only admins can review signups.' };
   await sleep(700);
   if (!Number.isFinite(customerId)) return { ok: false, message: 'Invalid customer.' };
-  revalidatePath('/console/customers');
+  revalidatePath('/admin/customers');
   return { ok: true, data: { customerId, decision } };
 }
 
@@ -161,38 +162,38 @@ function parseProductForm(formData: FormData) {
 }
 
 export async function createProductAction(formData: FormData): Promise<ActionResult> {
-  const session = await guard(['admin', 'sales_agent']);
+  const session = await guard(['ADMIN', 'STAFF']);
   if (!session || !hasPermission(session, 'manage_products')) return NOT_AUTHORIZED;
   await sleep(900);
   const parsed = parseProductForm(formData);
   if (!parsed.success) return fail(parsed.error);
-  revalidatePath('/console/products');
+  revalidatePath('/admin/products');
   return { ok: true };
 }
 
 export async function updateProductAction(id: number, formData: FormData): Promise<ActionResult> {
-  const session = await guard(['admin', 'sales_agent']);
+  const session = await guard(['ADMIN', 'STAFF']);
   if (!session || !hasPermission(session, 'manage_products')) return NOT_AUTHORIZED;
   await sleep(900);
   if (!Number.isFinite(id)) return { ok: false, message: 'Invalid product.' };
   const parsed = parseProductForm(formData);
   if (!parsed.success) return fail(parsed.error);
-  revalidatePath('/console/products');
+  revalidatePath('/admin/products');
   return { ok: true };
 }
 
 export async function importProductsAction(rows: unknown[]): Promise<ActionResult> {
-  const session = await guard(['admin', 'sales_agent']);
+  const session = await guard(['ADMIN', 'STAFF']);
   if (!session || !hasPermission(session, 'manage_products')) return NOT_AUTHORIZED;
   await sleep(1000);
-  revalidatePath('/console/products');
+  revalidatePath('/admin/products');
   return { ok: true, data: summarize(rows, productImportRowSchema) };
 }
 
 // ---------- Inventory (stock) --------------------------------------------
 
 export async function receiveStockAction(formData: FormData): Promise<ActionResult> {
-  const session = await guard(['admin', 'sales_agent']);
+  const session = await guard(['ADMIN', 'STAFF']);
   if (!session || !hasPermission(session, 'manage_inventory')) return NOT_AUTHORIZED;
   await sleep(800);
   const parsed = batchReceiveSchema.safeParse({
@@ -203,14 +204,14 @@ export async function receiveStockAction(formData: FormData): Promise<ActionResu
   });
   if (!parsed.success) return fail(parsed.error);
   // Real impl: resolve product by SKU, append a batch, recompute totals.
-  revalidatePath('/console/inventory');
+  revalidatePath('/admin/inventory');
   return { ok: true };
 }
 
 export async function importBatchesAction(rows: unknown[]): Promise<ActionResult> {
-  const session = await guard(['admin', 'sales_agent']);
+  const session = await guard(['ADMIN', 'STAFF']);
   if (!session || !hasPermission(session, 'manage_inventory')) return NOT_AUTHORIZED;
   await sleep(1000);
-  revalidatePath('/console/inventory');
+  revalidatePath('/admin/inventory');
   return { ok: true, data: summarize(rows, batchImportRowSchema) };
 }

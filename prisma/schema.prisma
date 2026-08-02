@@ -1,0 +1,494 @@
+// =============================================================================
+// EVOLVE PHARMACEUTICALS — Prisma Schema
+// Database: MySQL (Hostinger cPanel)
+// Images/Files: Cloudinary (URLs stored in DB, never raw files)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  STAFF
+  DRIVER
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CustomerStatus {
+  REGISTERED
+  OTP_CONFIRMED
+  PCN_CERT_UPLOADED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum StaffVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_DELIVERY
+  OFF_DUTY
+  SUSPENDED
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  DISCONTINUED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  DISPATCHED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  PARTIAL
+  REFUNDED
+  FAILED
+}
+
+enum DeliveryStatus {
+  AWAITING_DISPATCH
+  ASSIGNED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum LoginEvent {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  TOKEN_REFRESHED
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+// Single table for all user types. Role determines which sub-profile exists.
+
+model User {
+  id                Int        @id @default(autoincrement())
+  uuid              String     @unique @default(uuid()) @db.VarChar(36)
+  first_name        String     @db.VarChar(100)
+  middle_name       String?    @db.VarChar(100)
+  last_name         String     @db.VarChar(100)
+  email             String     @unique @db.VarChar(255)
+  phone             String?    @db.VarChar(20)
+  password_hash     String     @db.VarChar(255)
+  role              UserRole
+  status            UserStatus @default(ACTIVE)
+  gender            String?    @db.VarChar(20)
+  // Cloudinary URL for profile/avatar image
+  avatar_url        String?    @db.VarChar(500)
+  email_verified_at DateTime?
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+
+  // Sub-profiles (one-to-one)
+  customer  Customer?
+  staff     Staff?
+  driver    Driver?
+
+  // Audit / security relations
+  loginHistory      LoginHistory[]
+  auditLogs         AuditLog[]
+  otpTokens         OtpToken[]
+  notifications     Notification[]
+
+  // Refresh token sessions
+  refreshTokens     RefreshToken[]
+
+  // Product ownership
+  createdProducts   Product[] @relation("ProductCreatedBy")
+  updatedProducts   Product[] @relation("ProductUpdatedBy")
+  deletedProducts   Product[] @relation("ProductDeletedBy")
+
+  // Customer review
+  reviewedCustomers Customer[] @relation("CustomerReviewedBy")
+
+  @@map("users")
+}
+
+// ─── Customer ────────────────────────────────────────────────────────────────
+
+model Customer {
+  id                   Int            @id @default(autoincrement())
+  uuid                 String         @unique @default(uuid()) @db.VarChar(36)
+  user_id              Int            @unique
+  user                 User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company_name         String?        @db.VarChar(255)
+  address              String?        @db.VarChar(500)
+  city                 String?        @db.VarChar(100)
+  state                String?        @db.VarChar(100)
+  // Cloudinary URL for uploaded PCN certificate (PDF or image)
+  pcn_certificate_url  String?        @db.VarChar(500)
+  pcn_verified         Boolean        @default(false)
+  status               CustomerStatus @default(REGISTERED)
+  // Unique referral code e.g. "ENV58A5D112"
+  referral_code        String?        @unique @db.VarChar(50)
+  referred_by          String?        @db.VarChar(50) // referral_code of referrer
+  review_note          String?        @db.Text
+  reviewed_by_id       Int?
+  reviewed_by          User?          @relation("CustomerReviewedBy", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  reviewed_at          DateTime?
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
+
+  orders               Order[]
+
+  @@map("customers")
+}
+
+// ─── Staff ───────────────────────────────────────────────────────────────────
+
+model Staff {
+  id                  Int                     @id @default(autoincrement())
+  user_id             Int                     @unique
+  user                User                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  employee_code       String                  @unique @db.VarChar(50)
+  department          String?                 @db.VarChar(100)
+  job_title           String?                 @db.VarChar(100)
+  verification_status StaffVerificationStatus @default(UNVERIFIED)
+  created_at          DateTime                @default(now())
+  updated_at          DateTime                @updatedAt
+
+  @@map("staff")
+}
+
+// ─── Driver ───────────────────────────────────────────────────────────────────
+
+model Driver {
+  id             Int          @id @default(autoincrement())
+  user_id        Int          @unique
+  user           User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  employee_code  String?      @unique @db.VarChar(50)
+  license_number String?      @db.VarChar(50)
+  vehicle_type   String?      @db.VarChar(100)
+  vehicle_plate  String?      @db.VarChar(30)
+  driver_status  DriverStatus @default(AVAILABLE)
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  deliveries     Delivery[]
+
+  @@map("drivers")
+}
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
+model Category {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(150)
+  created_at DateTime  @default(now())
+
+  products   Product[]
+
+  @@map("categories")
+}
+
+model Manufacturer {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(255)
+  created_at DateTime  @default(now())
+
+  products   Product[]
+
+  @@map("manufacturers")
+}
+
+model Product {
+  id                  Int           @id @default(autoincrement())
+  uuid                String        @unique @default(uuid()) @db.VarChar(36)
+  sku                 String        @unique @db.VarChar(100)
+  category_id         Int?
+  category            Category?     @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  manufacturer_id     Int?
+  manufacturer        Manufacturer? @relation(fields: [manufacturer_id], references: [id], onDelete: SetNull)
+  brand_name          String        @db.VarChar(255)
+  generic_name        String        @db.VarChar(255)
+  product_strength    String?       @db.VarChar(100)
+  pack_size           String?       @db.VarChar(100)
+  quantity_per_carton Int?
+  description         String?       @db.Text
+  allow_unit_sale     Boolean       @default(false)
+  minimum_order       Int           @default(1)
+  selling_price       Decimal       @db.Decimal(12, 2)
+  // last_cost_price is derived from the most recent InventoryBatch cost_price
+  // but stored here for fast reads without joining batches
+  last_cost_price     Decimal?      @db.Decimal(12, 2)
+  final_price         Decimal?      @db.Decimal(12, 2)
+  discount_percentage Decimal?      @db.Decimal(5, 2)
+  minimum_stock_level Int           @default(0)
+  reorder_quantity    Int           @default(0)
+  status              ProductStatus @default(DRAFT)
+  // Soft delete
+  deleted_at          DateTime?
+  deleted_by_id       Int?
+  deleted_by          User?         @relation("ProductDeletedBy", fields: [deleted_by_id], references: [id], onDelete: SetNull)
+  created_by_id       Int?
+  created_by          User?         @relation("ProductCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  updated_by_id       Int?
+  updated_by          User?         @relation("ProductUpdatedBy", fields: [updated_by_id], references: [id], onDelete: SetNull)
+  created_at          DateTime      @default(now())
+  updated_at          DateTime      @updatedAt
+
+  images           ProductImage[]
+  inventoryBatches InventoryBatch[]
+  stockMovements   StockMovement[]
+  orderItems       OrderItem[]
+
+  // total_quantity_available is computed in API via:
+  // SELECT SUM(quantity) FROM inventory_batches WHERE product_id = ? AND expiry_date > NOW()
+
+  @@map("products")
+}
+
+// Stores Cloudinary image references for each product.
+// One product can have multiple images; is_primary flags the hero image.
+model ProductImage {
+  id                   Int      @id @default(autoincrement())
+  product_id           Int
+  product              Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  // Cloudinary public_id used for deletion/transformation (e.g. "evolve/products/abc123")
+  cloudinary_public_id String   @db.VarChar(255)
+  // Full Cloudinary delivery URL (e.g. "https://res.cloudinary.com/…/image/upload/…")
+  url                  String   @db.VarChar(500)
+  is_primary           Boolean  @default(false)
+  created_at           DateTime @default(now())
+
+  @@map("product_images")
+}
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+// Each import/restock creates a new batch with its own cost price and expiry.
+
+model InventoryBatch {
+  id             Int       @id @default(autoincrement())
+  product_id     Int
+  product        Product   @relation(fields: [product_id], references: [id])
+  batch_number   String    @unique @db.VarChar(100)
+  quantity       Int       // current quantity remaining in this batch
+  cost_price     Decimal   @db.Decimal(12, 2)
+  expiry_date    DateTime? @db.Date
+  received_at    DateTime  @default(now())
+  created_by_id  Int?
+  created_at     DateTime  @default(now())
+
+  stockMovements StockMovement[]
+
+  @@map("inventory_batches")
+}
+
+// Every stock change (in, out, adjustment) is recorded here for full traceability.
+model StockMovement {
+  id             Int               @id @default(autoincrement())
+  product_id     Int
+  product        Product           @relation(fields: [product_id], references: [id])
+  batch_id       Int?
+  batch          InventoryBatch?   @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  type           StockMovementType
+  quantity       Int               // always positive; direction determined by type
+  // What triggered this movement: "ORDER" | "BULK_IMPORT" | "MANUAL_ADJUSTMENT"
+  reference_type String?           @db.VarChar(50)
+  reference_id   Int?              // e.g. order_id when reference_type = "ORDER"
+  notes          String?           @db.Text
+  created_by_id  Int?
+  created_at     DateTime          @default(now())
+
+  @@map("stock_movements")
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id                Int           @id @default(autoincrement())
+  uuid              String        @unique @default(uuid()) @db.VarChar(36)
+  // Human-readable: "ENV-2026-000001"
+  order_number      String        @unique @db.VarChar(50)
+  customer_id       Int
+  customer          Customer      @relation(fields: [customer_id], references: [id])
+  status            OrderStatus   @default(PENDING)
+  payment_status    PaymentStatus @default(UNPAID)
+  // Paystack reference returned after successful payment
+  payment_reference String?       @db.VarChar(255)
+  delivery_address  String?       @db.VarChar(500)
+  delivery_city     String?       @db.VarChar(100)
+  delivery_state    String?       @db.VarChar(100)
+  subtotal          Decimal       @db.Decimal(12, 2)
+  discount          Decimal       @default(0) @db.Decimal(12, 2)
+  delivery_fee      Decimal       @default(0) @db.Decimal(12, 2)
+  total             Decimal       @db.Decimal(12, 2)
+  notes             String?       @db.Text
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  items    OrderItem[]
+  delivery Delivery?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  order_id   Int
+  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product_id Int
+  product    Product @relation(fields: [product_id], references: [id])
+  // Snapshot the price at time of order so price changes don't affect history
+  quantity   Int
+  unit_price Decimal @db.Decimal(12, 2)
+  subtotal   Decimal @db.Decimal(12, 2)
+
+  @@map("order_items")
+}
+
+// ─── Deliveries ───────────────────────────────────────────────────────────────
+
+model Delivery {
+  id            Int            @id @default(autoincrement())
+  uuid          String         @unique @default(uuid()) @db.VarChar(36)
+  tracking_code String         @unique @db.VarChar(50)
+  order_id      Int            @unique
+  order         Order          @relation(fields: [order_id], references: [id])
+  driver_id     Int?
+  driver        Driver?        @relation(fields: [driver_id], references: [id], onDelete: SetNull)
+  status        DeliveryStatus @default(AWAITING_DISPATCH)
+  dispatched_at DateTime?
+  delivered_at  DateTime?
+  notes         String?        @db.Text
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+
+  @@map("deliveries")
+}
+
+// ─── Auth / Security ──────────────────────────────────────────────────────────
+
+// Persisted refresh tokens — enables logout + forced session revocation.
+// Each device/session gets its own row. On logout, the row is deleted.
+// On refresh, jti must exist here or the token is rejected.
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  jti        String   @unique @db.VarChar(36) // UUID stored inside the JWT
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_role  UserRole
+  // Optional: record which device/client owns this token
+  user_agent String?  @db.VarChar(500)
+  ip_address String?  @db.VarChar(45)
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+  @@map("refresh_tokens")
+}
+
+// Short-lived OTP codes for email verification and password reset
+model OtpToken {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token      String    @db.VarChar(10)
+  type       OtpType
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+
+  @@map("otp_tokens")
+}
+
+// Every login attempt recorded for the Login Activity console page
+model LoginHistory {
+  id               Int        @id @default(autoincrement())
+  user_id          Int?
+  user             User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  // Denormalised so the row is readable even if the user is deleted
+  user_type        String     @db.VarChar(20)
+  user_name        String?    @db.VarChar(200)
+  email            String?    @db.VarChar(255)
+  ip_address       String?    @db.VarChar(45)
+  device_name      String?    @db.VarChar(200)
+  browser          String?    @db.VarChar(100)
+  operating_system String?    @db.VarChar(100)
+  country          String?    @db.VarChar(100)
+  city             String?    @db.VarChar(100)
+  event            LoginEvent
+  created_at       DateTime   @default(now())
+
+  @@map("login_history")
+}
+
+// Every significant action on any entity, powering the Audit Trail console page
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  user        User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  // Denormalised for readability after user deletion
+  user_type   String   @db.VarChar(20)
+  user_name   String?  @db.VarChar(200)
+  email       String?  @db.VarChar(255)
+  // e.g. "LOGIN" | "CREATE_STAFF" | "APPROVE_ACCOUNT" | "BULK_IMPORT_PRODUCTS"
+  action      String   @db.VarChar(100)
+  // e.g. "Product" | "Customer" | "Order"
+  entity_type String?  @db.VarChar(100)
+  entity_id   String?  @db.VarChar(50)
+  description String?  @db.Text
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?  @db.Text
+  created_at  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title      String   @db.VarChar(255)
+  body       String   @db.Text
+  // "order_update" | "low_stock" | "customer_review" | "system"
+  type       String   @db.VarChar(50)
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@map("notifications")
+}

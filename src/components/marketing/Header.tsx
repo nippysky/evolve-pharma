@@ -65,8 +65,8 @@ function displayName(session: SessionUser): string {
 
 export function Header({ session }: HeaderProps) {
   const isLoggedIn = !!session;
-  const isCustomer = session?.role === 'customer';
-  const portalHref = isCustomer ? '/portal/catalog' : '/console/overview';
+  const isCustomer = session?.role === 'CUSTOMER';
+  const portalHref = isCustomer ? '/portal/catalog' : '/admin/overview';
 
   const scrolled = useSyncExternalStore(subscribeToScroll, getScrollSnapshot, getServerScrollSnapshot);
   const [drawerOpen, setDrawerOpen] = useState(false);

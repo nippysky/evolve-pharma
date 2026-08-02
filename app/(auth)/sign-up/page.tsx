@@ -198,7 +198,7 @@ export default function SignUpPage() {
     verifyOtpMutation.mutate(
       { email: details.email, otp_code: code },
       {
-        onSuccess: (data) => {
+        onSuccess: (data: { token: string }) => {
           // Capture the token — it's required for the create-password step
           setOtpToken(data.token);
           toast.show({ tone: 'success', title: 'Email verified' });
