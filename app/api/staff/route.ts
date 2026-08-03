@@ -38,9 +38,13 @@ const createSchema = z.object({
   email:       z.email('Invalid email address'),
   phone:       z.string().max(20).optional(),
   gender:      z.string().max(20).optional(),
-  department:  z.string().max(100).optional(),
-  job_title:   z.string().max(100).optional(),
-  role:        z.enum(['STAFF', 'DRIVER']).default('STAFF'),
+  department:    z.string().max(100).optional(),
+  job_title:     z.string().max(100).optional(),
+  role:          z.enum(['STAFF', 'DRIVER']).default('STAFF'),
+  // Driver-specific (only used when role === 'DRIVER')
+  vehicle_plate: z.string().max(30).optional(),
+  vehicle_type:  z.string().max(100).optional(),
+  region:        z.string().max(100).optional(),
   // employee_code auto-generated server-side
 });
 
@@ -50,7 +54,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession(req);
     if (!session) return apiUnauthorized();
-    if (session.role !== 'ADMIN') return apiForbidden();
+    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
 
     const sp = req.nextUrl.searchParams;
     const { page, limit, skip } = parsePagination(sp, { limit: 20 });
@@ -109,6 +113,8 @@ export async function GET(req: NextRequest) {
       job_title:           u.staff?.job_title    ?? null,
       verification_status: u.staff?.verification_status ?? null,
       driver_status:       u.driver?.driver_status ?? null,
+      vehicle_plate:       u.driver?.vehicle_plate  ?? null,
+      vehicle_type:        u.driver?.vehicle_type   ?? null,
     }));
 
     return apiPaginated(records, { page, limit, total }, 'Staff retrieved successfully');
@@ -124,7 +130,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession(req);
     if (!session) return apiUnauthorized();
-    if (session.role !== 'ADMIN') return apiForbidden();
+    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
 
     let body: unknown;
     try { body = await req.json(); }
@@ -139,7 +145,7 @@ export async function POST(req: NextRequest) {
       return apiError('Please review the fields below.', 422, errors);
     }
 
-    const { first_name, middle_name, last_name, email, phone, gender, department, job_title, role } = parsed.data;
+    const { first_name, middle_name, last_name, email, phone, gender, department, job_title, role, vehicle_plate, vehicle_type, region } = parsed.data;
 
     const existingUser = await db.user.findUnique({ where: { email } });
     if (existingUser) return apiError('An account with this email already exists.', 409);
@@ -186,6 +192,8 @@ export async function POST(req: NextRequest) {
           data: {
             user_id:       newUser.id,
             employee_code,
+            vehicle_plate: vehicle_plate ?? null,
+            vehicle_type:  vehicle_type  ?? null,
             driver_status: 'AVAILABLE',
           },
         });

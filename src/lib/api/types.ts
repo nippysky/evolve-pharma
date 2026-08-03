@@ -417,6 +417,27 @@ export interface StaffRecord {
 }
 
 /**
+ * Flat shape returned by the staff listing endpoint when role=DRIVER.
+ * Extends the base user fields with driver-specific columns.
+ */
+export interface DriverRecord {
+  id:            number;
+  uuid?:         string | null;
+  first_name:    string;
+  last_name:     string;
+  email:         string;
+  phone?:        string | null;
+  role:          string;
+  status:        string;
+  avatar_url?:   string | null;
+  employee_code: string | null;
+  driver_status: string | null;
+  vehicle_plate: string | null;
+  vehicle_type:  string | null;
+  created_at:    string;
+}
+
+/**
  * Flat shape returned by the customer listing endpoints.
  * Maps onto CustomerDTO + nested user fields for easy table rendering.
  */

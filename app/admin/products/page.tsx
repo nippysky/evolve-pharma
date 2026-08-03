@@ -18,8 +18,8 @@ export const metadata = {
 
 export default async function ConsoleProductsPage() {
   const session = await getSession();
-  if (!session) redirect('/sign-in');
-  if (session.role !== 'ADMIN') redirect('/admin/overview');
+  if (!session) redirect('/staff/sign-in');
+  if (!['ADMIN', 'STAFF'].includes(session.role)) redirect('/admin/overview');
 
   return (
     <>

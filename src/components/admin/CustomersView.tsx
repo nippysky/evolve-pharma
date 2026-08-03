@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import * as XLSX from 'xlsx';
 import {
   Search,
@@ -1112,42 +1113,47 @@ function CustomerTable({
 
                 {/* Actions */}
                 <Td align="right">
-                  {c._stage === 'pending' ? (
-                    /* Pending → Review button for everyone (admin + staff) */
-                    <button
-                      type="button"
-                      onClick={() => onReview(c)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-100 hover:border-brand-400"
-                      title="Open review panel to verify PCN certificate"
-                    >
-                      <Eye size={12} />
-                      Review
-                    </button>
-                  ) : c._stage === 'approved' && isAdmin ? (
-                    /* Approved → admin-only: reverse to rejected */
-                    <button
-                      type="button"
-                      onClick={() => onReReview(c, 'REJECTED')}
+                  <div className="flex items-center justify-end gap-2">
+                    {/* View detail page — always visible */}
+                    <Link
+                      href={`/admin/customers/${c.id}`}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-bg-subtle px-2.5 py-1.5 text-xs font-medium text-ink-2 ring-1 ring-inset ring-line transition-colors hover:bg-bg-muted hover:text-ink"
-                      title="Re-review this customer"
+                      title="View full customer profile"
                     >
                       <Eye size={12} />
-                      Re-review
-                    </button>
-                  ) : c._stage === 'rejected' && isAdmin ? (
-                    /* Rejected → admin-only: reconsider */
-                    <button
-                      type="button"
-                      onClick={() => onReReview(c, 'APPROVE')}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-bg-subtle px-2.5 py-1.5 text-xs font-medium text-ink-2 ring-1 ring-inset ring-line transition-colors hover:bg-bg-muted hover:text-ink"
-                      title="Reconsider this application"
-                    >
-                      <Eye size={12} />
-                      Reconsider
-                    </button>
-                  ) : (
-                    <span className="text-xs text-ink-4">—</span>
-                  )}
+                      View
+                    </Link>
+
+                    {/* Stage-specific action */}
+                    {c._stage === 'pending' ? (
+                      <button
+                        type="button"
+                        onClick={() => onReview(c)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-100 hover:border-brand-400"
+                        title="Open review panel to verify PCN certificate"
+                      >
+                        Review
+                      </button>
+                    ) : c._stage === 'approved' && isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => onReReview(c, 'REJECTED')}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-bg-subtle px-2.5 py-1.5 text-xs font-medium text-ink-2 ring-1 ring-inset ring-line transition-colors hover:bg-bg-muted hover:text-ink"
+                        title="Re-review this customer"
+                      >
+                        Re-review
+                      </button>
+                    ) : c._stage === 'rejected' && isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => onReReview(c, 'APPROVE')}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-bg-subtle px-2.5 py-1.5 text-xs font-medium text-ink-2 ring-1 ring-inset ring-line transition-colors hover:bg-bg-muted hover:text-ink"
+                        title="Reconsider this application"
+                      >
+                        Reconsider
+                      </button>
+                    ) : null}
+                  </div>
                 </Td>
               </Tr>
             ))}

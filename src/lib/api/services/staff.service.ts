@@ -11,6 +11,7 @@ import type {
   RegisterStaffPayload,
   SessionUser,
   StaffRecord,
+  DriverRecord,
   StaffBulkUploadResult,
 } from '@/lib/api/types';
 
@@ -100,7 +101,7 @@ export async function registerStaff(
 export async function bulkUploadStaff(file: File): Promise<StaffBulkUploadResult> {
   const fd = new FormData();
   fd.append('file', file);
-  const res  = await fetch('/api/staff/bulk-upload', {
+  const res  = await fetch('/api/staff/bulk-upload?force_role=STAFF', {
     method:      'POST',
     credentials: 'include',
     body:        fd,
@@ -125,4 +126,10 @@ export async function listVerifiedStaff(): Promise<ListResponse<StaffRecord>> {
 
 export async function listUnverifiedStaff(): Promise<ListResponse<StaffRecord>> {
   return apiFetch<ListResponse<StaffRecord>>('/api/staff?verification=UNVERIFIED&limit=200');
+}
+
+// ─── Driver lists ─────────────────────────────────────────────────────────────
+
+export async function listDrivers(): Promise<ListResponse<DriverRecord>> {
+  return apiFetch<ListResponse<DriverRecord>>('/api/staff?role=DRIVER&limit=500');
 }

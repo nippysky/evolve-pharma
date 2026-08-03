@@ -87,6 +87,23 @@ export async function listCustomersByStage(
   };
 }
 
+/**
+ * Fetch ALL customers in a single request — no stage filter.
+ * Used by useAllCustomers() to avoid 6 parallel DB connections
+ * exhausting the Hostinger shared-hosting pool (limit=2).
+ */
+export async function listAllCustomers(): Promise<ListResponse<CustomerAdminRecord>> {
+  const data = await apiFetch<{
+    records:    Record<string, unknown>[];
+    pagination: { total: number };
+  }>(`/api/customers?limit=1000`);
+
+  return {
+    records: (data.records ?? []).map(mapRecord),
+    total:   data.pagination?.total ?? data.records?.length ?? 0,
+  };
+}
+
 export async function reviewCustomer(
   id: number,
   action: 'approve' | 'reject',

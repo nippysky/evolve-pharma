@@ -17,7 +17,7 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
   const registerMut = useRegisterStaff();
   const [form, setForm] = useState({
     first_name: '', middle_name: '', last_name: '',
-    email: '', phone: '', department: '', job_title: '', gender: '',
+    email: '', phone: '', department: '', job_title: '',
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
@@ -40,7 +40,6 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
         phone:       form.phone.trim(),
         department:  form.department.trim() || undefined,
         job_title:   form.job_title.trim() || undefined,
-        gender:      form.gender,
       },
       {
         onSuccess: () => {
@@ -50,7 +49,7 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
             description: 'An email has been sent for them to verify their account.',
           });
           onClose();
-          setForm({ first_name:'', middle_name:'', last_name:'', email:'', phone:'', department:'', job_title:'', gender:'' });
+          setForm({ first_name:'', middle_name:'', last_name:'', email:'', phone:'', department:'', job_title:'' });
         },
         onError: (err: Error & { fieldErrors?: Record<string, string[]> }) => {
           if (err.fieldErrors) {
@@ -99,21 +98,6 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
               <Input id="sf-title" value={form.job_title} onChange={(e) => set('job_title', e.target.value)} placeholder="Sales Rep" />
             </Field>
           </div>
-          <Field label="Gender" htmlFor="sf-gender" required error={firstErr('gender')}>
-            <select
-              id="sf-gender"
-              value={form.gender}
-              onChange={(e) => set('gender', e.target.value)}
-              required
-              className="h-10 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink focus:border-brand-500 focus:outline-none"
-            >
-              <option value="" disabled>Select gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Prefer not to say</option>
-            </select>
-          </Field>
-
           {registerMut.isError && !Object.keys(fieldErrors).length && (
             <div className="flex items-center gap-2 rounded-md border border-red-200 bg-danger-soft px-3 py-2.5 text-sm text-red-800">
               <AlertTriangle size={13} />

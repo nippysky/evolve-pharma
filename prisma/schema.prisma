@@ -424,7 +424,7 @@ model OtpToken {
   id         Int       @id @default(autoincrement())
   user_id    Int
   user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  token      String    @db.VarChar(10)
+  token      String    @db.VarChar(64)
   type       OtpType
   expires_at DateTime
   used_at    DateTime?
@@ -474,6 +474,18 @@ model AuditLog {
   created_at  DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+// ─── App Settings ─────────────────────────────────────────────────────────────
+// Simple key-value store for admin-configurable settings.
+// One row per setting key (e.g. "company_name", "currency").
+
+model AppSettings {
+  key        String   @id @db.VarChar(100)
+  value      String   @db.Text
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("app_settings")
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────

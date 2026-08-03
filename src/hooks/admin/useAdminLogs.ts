@@ -1,47 +1,42 @@
 /**
  * ENVOLVE PHARMACEUTICALS — Admin Logs Hooks
- *
- * TanStack Query hooks for login history and audit logs.
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { getLoginHistory, getAuditLogs } from '@/lib/api/services/admin.service';
-
-// ---------- Query key factory -----------------------------------------------
+import {
+  getLoginHistory,
+  getAuditLogs,
+  type LoginHistoryFilters,
+  type AuditLogFilters,
+} from '@/lib/api/services/admin.service';
 
 export const ADMIN_LOG_KEYS = {
-  loginHistory: (page: number, limit: number) =>
-    ['admin', 'login-history', page, limit] as const,
-  auditLogs: (page: number, limit: number) =>
-    ['admin', 'audit-logs', page, limit] as const,
+  loginHistory: (page: number, limit: number, f: LoginHistoryFilters) =>
+    ['admin', 'login-history', page, limit, f] as const,
+  auditLogs: (page: number, limit: number, f: AuditLogFilters) =>
+    ['admin', 'audit-logs', page, limit, f] as const,
 };
 
-// ---------- Login history ---------------------------------------------------
-
-/**
- * Fetches paginated login history.
- * @param page  1-indexed page number
- * @param limit Records per page (default 10)
- */
-export function useLoginHistory(page = 1, limit = 10) {
+export function useLoginHistory(
+  page    = 1,
+  limit   = 20,
+  filters: LoginHistoryFilters = {},
+) {
   return useQuery({
-    queryKey: ADMIN_LOG_KEYS.loginHistory(page, limit),
-    queryFn: () => getLoginHistory(page, limit),
-    staleTime: 60 * 1000, // 1 minute — audit data is semi-static
+    queryKey: ADMIN_LOG_KEYS.loginHistory(page, limit, filters),
+    queryFn:  () => getLoginHistory(page, limit, filters),
+    staleTime: 30_000,
   });
 }
 
-// ---------- Audit logs ------------------------------------------------------
-
-/**
- * Fetches paginated audit logs.
- * @param page  1-indexed page number
- * @param limit Records per page (default 20)
- */
-export function useAuditLogs(page = 1, limit = 20) {
+export function useAuditLogs(
+  page    = 1,
+  limit   = 20,
+  filters: AuditLogFilters = {},
+) {
   return useQuery({
-    queryKey: ADMIN_LOG_KEYS.auditLogs(page, limit),
-    queryFn: () => getAuditLogs(page, limit),
-    staleTime: 60 * 1000,
+    queryKey: ADMIN_LOG_KEYS.auditLogs(page, limit, filters),
+    queryFn:  () => getAuditLogs(page, limit, filters),
+    staleTime: 30_000,
   });
 }

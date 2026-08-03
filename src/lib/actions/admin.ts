@@ -173,10 +173,13 @@ export async function importStaffAction(rows: unknown[]): Promise<ActionResult> 
 export async function inviteDriverAction(formData: FormData): Promise<ActionResult> {
   if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
 
-  const firstName = (formData.get('first_name') as string | null)?.trim();
-  const lastName  = (formData.get('last_name')  as string | null)?.trim();
-  const email     = (formData.get('email')      as string | null)?.trim().toLowerCase();
-  const phone     = (formData.get('phone')      as string | null)?.trim();
+  const firstName    = (formData.get('first_name')    as string | null)?.trim();
+  const lastName     = (formData.get('last_name')     as string | null)?.trim();
+  const email        = (formData.get('email')         as string | null)?.trim().toLowerCase();
+  const phone        = (formData.get('phone')         as string | null)?.trim();
+  const vehiclePlate = (formData.get('vehicle_plate') as string | null)?.trim();
+  const vehicleType  = (formData.get('vehicle_type')  as string | null)?.trim();
+  const region       = (formData.get('region')        as string | null)?.trim();
 
   if (!firstName || !lastName || !email || !phone) {
     return { ok: false, message: 'First name, last name, email, and phone are required.' };
@@ -185,7 +188,16 @@ export async function inviteDriverAction(formData: FormData): Promise<ActionResu
   const result = await internalFetch('/api/staff', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ first_name: firstName, last_name: lastName, email, phone, role: 'DRIVER' }),
+    body:    JSON.stringify({
+      first_name:    firstName,
+      last_name:     lastName,
+      email,
+      phone,
+      role:          'DRIVER',
+      vehicle_plate: vehiclePlate,
+      vehicle_type:  vehicleType,
+      region,
+    }),
   });
 
   if (!result.ok) return fromApiResult(result);

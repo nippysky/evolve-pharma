@@ -20,10 +20,11 @@ import type { SessionUser } from '@/types';
 
 async function getSessionWithPermCheck(): Promise<SessionUser> {
   const session = await getSession();
-  if (!session) redirect('/sign-in');
+  if (!session) redirect('/staff/sign-in');
   if (session.role === 'CUSTOMER') redirect('/portal/catalog');
   if (session.role === 'DRIVER') redirect('/driver');
-  if (!hasPermission(session, 'view_reports')) redirect('/admin/overview');
+  // ADMIN and STAFF always have report access; other roles need the permission preset
+  if (session.role !== 'ADMIN' && session.role !== 'STAFF' && !hasPermission(session, 'view_reports')) redirect('/admin/overview');
   return session;
 }
 

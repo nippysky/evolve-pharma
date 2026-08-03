@@ -9,29 +9,35 @@
 
 'use client';
 
-import { useMutation, useQuery, useQueryClient, useQueries } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   loginStaff,
   registerStaff,
   bulkUploadStaff,
   listVerifiedStaff,
   listUnverifiedStaff,
+  listDrivers,
 } from '@/lib/api/services/staff.service';
 import {
   listCustomersByStage,
+  listAllCustomers,
   reviewCustomer,
   bulkUploadCustomers,
   createCustomer,
   type CreateCustomerInput,
   type CreateCustomerResult,
 } from '@/lib/api/services/customers.service';
-import type { LoginStaffPayload, RegisterStaffPayload, CustomerAdminRecord, StaffRecord } from '@/lib/api/types';
+import type { LoginStaffPayload, RegisterStaffPayload, CustomerAdminRecord, StaffRecord, DriverRecord } from '@/lib/api/types';
 
 // ---------- Query keys -----------------------------------------------------
 
 export const STAFF_KEYS = {
   verified:   ['staff', 'verified']   as const,
   unverified: ['staff', 'unverified'] as const,
+} as const;
+
+export const DRIVER_KEYS = {
+  all: ['drivers'] as const,
 } as const;
 
 export const CUSTOMER_ADMIN_KEYS = {
@@ -58,8 +64,8 @@ export function useRegisterStaff() {
   return useMutation({
     mutationFn: (payload: RegisterStaffPayload) => registerStaff(payload),
     onSuccess: () => {
-      // New staff starts UNVERIFIED — refresh that list
-      queryClient.invalidateQueries({ queryKey: STAFF_KEYS.unverified });
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.unverified });
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.verified });
     },
   });
 }
@@ -71,7 +77,10 @@ export function useBulkUploadStaff() {
   return useMutation({
     mutationFn: (file: File) => bulkUploadStaff(file),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: STAFF_KEYS.unverified });
+      // Bulk-invited staff start UNVERIFIED — invalidate both lists
+      // so the table refreshes immediately without a hard reload.
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.unverified });
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.verified });
     },
   });
 }
@@ -132,6 +141,22 @@ export function useAllStaff() {
   return { allRecords, counts, isLoading, errors, refetchAll };
 }
 
+// ---------- Driver list ----------------------------------------------------
+
+export { type DriverRecord };
+
+export function useDrivers() {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: DRIVER_KEYS.all,
+    queryFn:  listDrivers,
+    staleTime: 2 * 60 * 1000,
+  });
+  const refetch = () => void query.refetch();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: DRIVER_KEYS.all });
+  return { ...query, refetch, invalidate };
+}
+
 // ---------- Customer admin lists -------------------------------------------
 
 export type CustomerStage = 'pending' | 'registered' | 'unverified' | 'verified' | 'approved' | 'rejected';
@@ -154,38 +179,51 @@ export function useCustomerAdminList(stage: CustomerStage) {
   });
 }
 
+// Status → stage mapping (mirrors STAGE_TO_STATUS in customers.service.ts)
+const STATUS_TO_STAGE: Record<string, CustomerStage> = {
+  REGISTERED:        'registered',
+  OTP_CONFIRMED:     'unverified',
+  PCN_CERT_UPLOADED: 'verified',
+  PENDING_REVIEW:    'pending',
+  APPROVED:          'approved',
+  REJECTED:          'rejected',
+};
+
 /**
- * Fetches ALL 6 stage endpoints in parallel and merges them into a single
- * flat list. Each record is tagged with `_stage` so the UI can filter
- * client-side without additional network round-trips.
+ * Fetches ALL customers in ONE request and splits them by stage client-side.
+ *
+ * Replaces the previous 6-parallel-query approach which exhausted the
+ * Hostinger shared-hosting DB connection pool (limit = 2 connections).
+ * One request = one connection = no pool starvation for other endpoints.
  */
 export function useAllCustomers() {
-  const results = useQueries({
-    queries: ALL_CUSTOMER_STAGES.map((stage) => ({
-      queryKey: CUSTOMER_ADMIN_KEYS.list(stage),
-      queryFn: (): ReturnType<typeof listCustomersByStage> => listCustomersByStage(stage),
-      staleTime: 60_000,
-    })),
+  const result = useQuery({
+    queryKey: ['customers-admin', 'all'],
+    queryFn:  listAllCustomers,
+    staleTime: 60_000,
   });
 
-  // Loading = at least one stage has no data yet
-  const isLoading = results.some((r: any) => r.isLoading && !r.data);
-  const isFetching = results.some((r: any) => r.isFetching);
-  const errors     = results.map((r: any) => r.error).filter((e: unknown): e is Error => e instanceof Error);
+  const isLoading  = result.isLoading && !result.data;
+  const isFetching = result.isFetching;
+  const errors     = result.error ? [result.error as Error] : [];
 
-  const allRecords: TaggedCustomerRecord[] = ALL_CUSTOMER_STAGES.flatMap((stage, i) =>
-    (results[i]?.data?.records ?? []).map((rec: CustomerAdminRecord) => ({ ...rec, _stage: stage })),
+  // Tag each record with its stage derived from status
+  const allRecords: TaggedCustomerRecord[] = (result.data?.records ?? []).map(
+    (rec: CustomerAdminRecord) => ({
+      ...rec,
+      _stage: (STATUS_TO_STAGE[rec.status] ?? 'registered') as CustomerStage,
+    }),
   );
 
   const counts = ALL_CUSTOMER_STAGES.reduce<Record<CustomerStage, number>>(
-    (acc, stage, i) => {
-      acc[stage] = results[i]?.data?.records?.length ?? 0;
+    (acc, stage) => {
+      acc[stage] = allRecords.filter((r) => r._stage === stage).length;
       return acc;
     },
     {} as Record<CustomerStage, number>,
   );
 
-  const refetchAll = () => { results.forEach((r: any) => void r.refetch()); };
+  const refetchAll = () => { void result.refetch(); };
 
   return { allRecords, counts, isLoading, isFetching, errors, refetchAll };
 }

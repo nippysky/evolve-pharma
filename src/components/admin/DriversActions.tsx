@@ -8,6 +8,8 @@ import { SheetImporter } from './SheetImporter';
 import { z } from 'zod';
 import { phoneSchema } from '@/lib/schemas';
 import { inviteDriverAction } from '@/lib/actions/admin';
+import { useQueryClient } from '@tanstack/react-query';
+import { DRIVER_KEYS } from '@/hooks/staff/useStaff';
 
 // Driver invite schema
 const driverInviteSchema = z.object({
@@ -53,15 +55,39 @@ const COLUMNS = [
   { key: 'region',        label: 'Region',        required: true  },
 ];
 
-async function importDriversAction(_rows: DriverInviteInput[]) {
-  // Bulk driver import requires a dedicated batch endpoint — not yet available.
-  // For now return a validation-only summary so the UI doesn't break.
-  return { ok: true as const, imported: 0, failed: 0 };
-}
-
-export function DriversActions() {
-  const [invite, setInvite]     = useState(false);
+export function DriversActions({ onImported }: { onImported?: () => void }) {
+  const queryClient = useQueryClient();
+  const [invite, setInvite]       = useState(false);
   const [importing, setImporting] = useState(false);
+
+  async function importDriversAction(rows: DriverInviteInput[]) {
+    // Build FormData with an XLSX blob so the bulk-upload endpoint can parse it
+    const XLSX = await import('xlsx');
+    const wsData = [
+      ['first_name', 'last_name', 'email', 'phone', 'vehicle_plate', 'vehicle_type', 'region', 'role'],
+      ...rows.map((r) => [r.first_name, r.last_name, r.email, r.phone, r.vehicle_plate, r.vehicle_type, r.region, 'DRIVER']),
+    ];
+    const ws  = XLSX.utils.aoa_to_sheet(wsData);
+    const wb  = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Drivers');
+    const buf  = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    const fd = new FormData();
+    fd.append('file', blob, 'drivers.xlsx');
+
+    const res  = await fetch('/api/staff/bulk-upload?force_role=DRIVER', { method: 'POST', body: fd, credentials: 'include' });
+    const json = await res.json() as { data?: { successful?: number; failed?: number } };
+
+    if (res.ok) {
+      void queryClient.invalidateQueries({ queryKey: DRIVER_KEYS.all });
+      onImported?.();
+      return { ok: true as const, data: { imported: json.data?.successful ?? 0, failed: json.data?.failed ?? 0 } };
+    }
+
+    const msg = (json as { message?: string }).message ?? 'Bulk import failed. Please try again.';
+    return { ok: false as const, message: msg };
+  }
 
   return (
     <>

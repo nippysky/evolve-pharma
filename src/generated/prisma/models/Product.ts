@@ -71,7 +71,6 @@ export type ProductMinAggregateOutputType = {
   product_strength: string | null
   pack_size: string | null
   quantity_per_carton: number | null
-  description: string | null
   allow_unit_sale: boolean | null
   minimum_order: number | null
   selling_price: runtime.Decimal | null
@@ -100,7 +99,6 @@ export type ProductMaxAggregateOutputType = {
   product_strength: string | null
   pack_size: string | null
   quantity_per_carton: number | null
-  description: string | null
   allow_unit_sale: boolean | null
   minimum_order: number | null
   selling_price: runtime.Decimal | null
@@ -129,7 +127,6 @@ export type ProductCountAggregateOutputType = {
   product_strength: number
   pack_size: number
   quantity_per_carton: number
-  description: number
   allow_unit_sale: number
   minimum_order: number
   selling_price: number
@@ -194,7 +191,6 @@ export type ProductMinAggregateInputType = {
   product_strength?: true
   pack_size?: true
   quantity_per_carton?: true
-  description?: true
   allow_unit_sale?: true
   minimum_order?: true
   selling_price?: true
@@ -223,7 +219,6 @@ export type ProductMaxAggregateInputType = {
   product_strength?: true
   pack_size?: true
   quantity_per_carton?: true
-  description?: true
   allow_unit_sale?: true
   minimum_order?: true
   selling_price?: true
@@ -252,7 +247,6 @@ export type ProductCountAggregateInputType = {
   product_strength?: true
   pack_size?: true
   quantity_per_carton?: true
-  description?: true
   allow_unit_sale?: true
   minimum_order?: true
   selling_price?: true
@@ -368,7 +362,6 @@ export type ProductGroupByOutputType = {
   product_strength: string | null
   pack_size: string | null
   quantity_per_carton: number | null
-  description: string | null
   allow_unit_sale: boolean
   minimum_order: number
   selling_price: runtime.Decimal
@@ -420,7 +413,6 @@ export type ProductWhereInput = {
   product_strength?: Prisma.StringNullableFilter<"Product"> | string | null
   pack_size?: Prisma.StringNullableFilter<"Product"> | string | null
   quantity_per_carton?: Prisma.IntNullableFilter<"Product"> | number | null
-  description?: Prisma.StringNullableFilter<"Product"> | string | null
   allow_unit_sale?: Prisma.BoolFilter<"Product"> | boolean
   minimum_order?: Prisma.IntFilter<"Product"> | number
   selling_price?: Prisma.DecimalFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -458,7 +450,6 @@ export type ProductOrderByWithRelationInput = {
   product_strength?: Prisma.SortOrderInput | Prisma.SortOrder
   pack_size?: Prisma.SortOrderInput | Prisma.SortOrder
   quantity_per_carton?: Prisma.SortOrderInput | Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
   allow_unit_sale?: Prisma.SortOrder
   minimum_order?: Prisma.SortOrder
   selling_price?: Prisma.SortOrder
@@ -500,7 +491,6 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   product_strength?: Prisma.StringNullableFilter<"Product"> | string | null
   pack_size?: Prisma.StringNullableFilter<"Product"> | string | null
   quantity_per_carton?: Prisma.IntNullableFilter<"Product"> | number | null
-  description?: Prisma.StringNullableFilter<"Product"> | string | null
   allow_unit_sale?: Prisma.BoolFilter<"Product"> | boolean
   minimum_order?: Prisma.IntFilter<"Product"> | number
   selling_price?: Prisma.DecimalFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -538,7 +528,6 @@ export type ProductOrderByWithAggregationInput = {
   product_strength?: Prisma.SortOrderInput | Prisma.SortOrder
   pack_size?: Prisma.SortOrderInput | Prisma.SortOrder
   quantity_per_carton?: Prisma.SortOrderInput | Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
   allow_unit_sale?: Prisma.SortOrder
   minimum_order?: Prisma.SortOrder
   selling_price?: Prisma.SortOrder
@@ -575,7 +564,6 @@ export type ProductScalarWhereWithAggregatesInput = {
   product_strength?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   pack_size?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   quantity_per_carton?: Prisma.IntNullableWithAggregatesFilter<"Product"> | number | null
-  description?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   allow_unit_sale?: Prisma.BoolWithAggregatesFilter<"Product"> | boolean
   minimum_order?: Prisma.IntWithAggregatesFilter<"Product"> | number
   selling_price?: Prisma.DecimalWithAggregatesFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -601,7 +589,6 @@ export type ProductCreateInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -636,7 +623,6 @@ export type ProductUncheckedCreateInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -666,7 +652,6 @@ export type ProductUpdateInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -701,7 +686,6 @@ export type ProductUncheckedUpdateInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -734,7 +718,6 @@ export type ProductCreateManyInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -760,7 +743,6 @@ export type ProductUpdateManyMutationInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -786,7 +768,6 @@ export type ProductUncheckedUpdateManyInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -831,7 +812,6 @@ export type ProductCountOrderByAggregateInput = {
   product_strength?: Prisma.SortOrder
   pack_size?: Prisma.SortOrder
   quantity_per_carton?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   allow_unit_sale?: Prisma.SortOrder
   minimum_order?: Prisma.SortOrder
   selling_price?: Prisma.SortOrder
@@ -877,7 +857,6 @@ export type ProductMaxOrderByAggregateInput = {
   product_strength?: Prisma.SortOrder
   pack_size?: Prisma.SortOrder
   quantity_per_carton?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   allow_unit_sale?: Prisma.SortOrder
   minimum_order?: Prisma.SortOrder
   selling_price?: Prisma.SortOrder
@@ -906,7 +885,6 @@ export type ProductMinOrderByAggregateInput = {
   product_strength?: Prisma.SortOrder
   pack_size?: Prisma.SortOrder
   quantity_per_carton?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   allow_unit_sale?: Prisma.SortOrder
   minimum_order?: Prisma.SortOrder
   selling_price?: Prisma.SortOrder
@@ -1240,7 +1218,6 @@ export type ProductCreateWithoutCreated_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1274,7 +1251,6 @@ export type ProductUncheckedCreateWithoutCreated_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1313,7 +1289,6 @@ export type ProductCreateWithoutUpdated_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1347,7 +1322,6 @@ export type ProductUncheckedCreateWithoutUpdated_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1386,7 +1360,6 @@ export type ProductCreateWithoutDeleted_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1420,7 +1393,6 @@ export type ProductUncheckedCreateWithoutDeleted_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1481,7 +1453,6 @@ export type ProductScalarWhereInput = {
   product_strength?: Prisma.StringNullableFilter<"Product"> | string | null
   pack_size?: Prisma.StringNullableFilter<"Product"> | string | null
   quantity_per_carton?: Prisma.IntNullableFilter<"Product"> | number | null
-  description?: Prisma.StringNullableFilter<"Product"> | string | null
   allow_unit_sale?: Prisma.BoolFilter<"Product"> | boolean
   minimum_order?: Prisma.IntFilter<"Product"> | number
   selling_price?: Prisma.DecimalFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1539,7 +1510,6 @@ export type ProductCreateWithoutCategoryInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1572,7 +1542,6 @@ export type ProductUncheckedCreateWithoutCategoryInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1628,7 +1597,6 @@ export type ProductCreateWithoutManufacturerInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1661,7 +1629,6 @@ export type ProductUncheckedCreateWithoutManufacturerInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1717,7 +1684,6 @@ export type ProductCreateWithoutImagesInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1751,7 +1717,6 @@ export type ProductUncheckedCreateWithoutImagesInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1796,7 +1761,6 @@ export type ProductUpdateWithoutImagesInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1830,7 +1794,6 @@ export type ProductUncheckedUpdateWithoutImagesInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1859,7 +1822,6 @@ export type ProductCreateWithoutInventoryBatchesInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1893,7 +1855,6 @@ export type ProductUncheckedCreateWithoutInventoryBatchesInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1938,7 +1899,6 @@ export type ProductUpdateWithoutInventoryBatchesInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1972,7 +1932,6 @@ export type ProductUncheckedUpdateWithoutInventoryBatchesInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2001,7 +1960,6 @@ export type ProductCreateWithoutStockMovementsInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2035,7 +1993,6 @@ export type ProductUncheckedCreateWithoutStockMovementsInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2080,7 +2037,6 @@ export type ProductUpdateWithoutStockMovementsInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2114,7 +2070,6 @@ export type ProductUncheckedUpdateWithoutStockMovementsInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2143,7 +2098,6 @@ export type ProductCreateWithoutOrderItemsInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2177,7 +2131,6 @@ export type ProductUncheckedCreateWithoutOrderItemsInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2222,7 +2175,6 @@ export type ProductUpdateWithoutOrderItemsInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2256,7 +2208,6 @@ export type ProductUncheckedUpdateWithoutOrderItemsInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2288,7 +2239,6 @@ export type ProductCreateManyCreated_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2316,7 +2266,6 @@ export type ProductCreateManyUpdated_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2344,7 +2293,6 @@ export type ProductCreateManyDeleted_byInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2369,7 +2317,6 @@ export type ProductUpdateWithoutCreated_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2403,7 +2350,6 @@ export type ProductUncheckedUpdateWithoutCreated_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2435,7 +2381,6 @@ export type ProductUncheckedUpdateManyWithoutCreated_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2460,7 +2405,6 @@ export type ProductUpdateWithoutUpdated_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2494,7 +2438,6 @@ export type ProductUncheckedUpdateWithoutUpdated_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2526,7 +2469,6 @@ export type ProductUncheckedUpdateManyWithoutUpdated_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2551,7 +2493,6 @@ export type ProductUpdateWithoutDeleted_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2585,7 +2526,6 @@ export type ProductUncheckedUpdateWithoutDeleted_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2617,7 +2557,6 @@ export type ProductUncheckedUpdateManyWithoutDeleted_byInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2644,7 +2583,6 @@ export type ProductCreateManyCategoryInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2670,7 +2608,6 @@ export type ProductUpdateWithoutCategoryInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2703,7 +2640,6 @@ export type ProductUncheckedUpdateWithoutCategoryInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2735,7 +2671,6 @@ export type ProductUncheckedUpdateManyWithoutCategoryInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2763,7 +2698,6 @@ export type ProductCreateManyManufacturerInput = {
   product_strength?: string | null
   pack_size?: string | null
   quantity_per_carton?: number | null
-  description?: string | null
   allow_unit_sale?: boolean
   minimum_order?: number
   selling_price: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2789,7 +2723,6 @@ export type ProductUpdateWithoutManufacturerInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2822,7 +2755,6 @@ export type ProductUncheckedUpdateWithoutManufacturerInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2854,7 +2786,6 @@ export type ProductUncheckedUpdateManyWithoutManufacturerInput = {
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pack_size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity_per_carton?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allow_unit_sale?: Prisma.BoolFieldUpdateOperationsInput | boolean
   minimum_order?: Prisma.IntFieldUpdateOperationsInput | number
   selling_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2941,7 +2872,6 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   product_strength?: boolean
   pack_size?: boolean
   quantity_per_carton?: boolean
-  description?: boolean
   allow_unit_sale?: boolean
   minimum_order?: boolean
   selling_price?: boolean
@@ -2982,7 +2912,6 @@ export type ProductSelectScalar = {
   product_strength?: boolean
   pack_size?: boolean
   quantity_per_carton?: boolean
-  description?: boolean
   allow_unit_sale?: boolean
   minimum_order?: boolean
   selling_price?: boolean
@@ -3000,7 +2929,7 @@ export type ProductSelectScalar = {
   updated_at?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "sku" | "category_id" | "manufacturer_id" | "brand_name" | "generic_name" | "product_strength" | "pack_size" | "quantity_per_carton" | "description" | "allow_unit_sale" | "minimum_order" | "selling_price" | "last_cost_price" | "final_price" | "discount_percentage" | "minimum_stock_level" | "reorder_quantity" | "status" | "deleted_at" | "deleted_by_id" | "created_by_id" | "updated_by_id" | "created_at" | "updated_at", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "sku" | "category_id" | "manufacturer_id" | "brand_name" | "generic_name" | "product_strength" | "pack_size" | "quantity_per_carton" | "allow_unit_sale" | "minimum_order" | "selling_price" | "last_cost_price" | "final_price" | "discount_percentage" | "minimum_stock_level" | "reorder_quantity" | "status" | "deleted_at" | "deleted_by_id" | "created_by_id" | "updated_by_id" | "created_at" | "updated_at", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.Product$categoryArgs<ExtArgs>
   manufacturer?: boolean | Prisma.Product$manufacturerArgs<ExtArgs>
@@ -3038,7 +2967,6 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     product_strength: string | null
     pack_size: string | null
     quantity_per_carton: number | null
-    description: string | null
     allow_unit_sale: boolean
     minimum_order: number
     selling_price: runtime.Decimal
@@ -3442,7 +3370,6 @@ export interface ProductFieldRefs {
   readonly product_strength: Prisma.FieldRef<"Product", 'String'>
   readonly pack_size: Prisma.FieldRef<"Product", 'String'>
   readonly quantity_per_carton: Prisma.FieldRef<"Product", 'Int'>
-  readonly description: Prisma.FieldRef<"Product", 'String'>
   readonly allow_unit_sale: Prisma.FieldRef<"Product", 'Boolean'>
   readonly minimum_order: Prisma.FieldRef<"Product", 'Int'>
   readonly selling_price: Prisma.FieldRef<"Product", 'Decimal'>

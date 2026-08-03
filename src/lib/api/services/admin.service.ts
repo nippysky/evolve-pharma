@@ -1,34 +1,66 @@
 /**
- * Admin Service — client-side stubs
- *
- * Will call /api/admin/* routes implemented in Module 7.
- * Stubs return empty/typed values so the TypeScript graph compiles cleanly.
+ * Admin Service — real API calls to /api/admin/*
  */
 
 import type { LoginHistoryDTO, AuditLogDTO, PaginatedResponse } from '@/lib/api/types';
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res  = await fetch(path, { credentials: 'include' });
+  const json = await res.json() as { data?: T; message?: string };
+  if (!res.ok) throw new Error(json.message ?? 'Request failed.');
+  return json.data as T;
+}
+
+function buildQS(params: Record<string, string | number | undefined>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '' && v !== null) sp.set(k, String(v));
+  }
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
+// ─── Login history filters ─────────────────────────────────────────────────────
+
+export interface LoginHistoryFilters {
+  user_type?: string;
+  event?:     string;
+  search?:    string;
+  from?:      string;
+  to?:        string;
+}
+
+// ─── Audit log filters ────────────────────────────────────────────────────────
+
+export interface AuditLogFilters {
+  user_type?:   string;
+  action?:      string;
+  entity_type?: string;
+  search?:      string;
+  from?:        string;
+  to?:          string;
+}
+
 // ─── Login history ────────────────────────────────────────────────────────────
 
 export async function getLoginHistory(
-  _page  = 1,
-  _limit = 10,
+  page    = 1,
+  limit   = 20,
+  filters: LoginHistoryFilters = {},
 ): Promise<PaginatedResponse<LoginHistoryDTO>> {
-  // Module 7 — will call GET /api/admin/login-history
-  return {
-    records:    [],
-    pagination: { current_page: 1, per_page: _limit, total: 0, total_pages: 0 },
-  };
+  const qs = buildQS({ page, limit, ...filters });
+  return apiFetch<PaginatedResponse<LoginHistoryDTO>>(`/api/admin/login-history${qs}`);
 }
 
 // ─── Audit logs ───────────────────────────────────────────────────────────────
 
 export async function getAuditLogs(
-  _page  = 1,
-  _limit = 20,
+  page    = 1,
+  limit   = 20,
+  filters: AuditLogFilters = {},
 ): Promise<PaginatedResponse<AuditLogDTO>> {
-  // Module 7 — will call GET /api/admin/audit-logs
-  return {
-    records:    [],
-    pagination: { current_page: 1, per_page: _limit, total: 0, total_pages: 0 },
-  };
+  const qs = buildQS({ page, limit, ...filters });
+  return apiFetch<PaginatedResponse<AuditLogDTO>>(`/api/admin/audit-logs${qs}`);
 }

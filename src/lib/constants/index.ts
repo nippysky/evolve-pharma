@@ -86,8 +86,7 @@ export const CONSOLE_NAV = [
         label: 'Categories',
         href: '/admin/categories',
         icon: 'Tag' as const,
-        roles: ['ADMIN'] as Role[],
-        permission: 'manage_products' as const,
+        roles: ['ADMIN', 'STAFF'] as Role[],
       },
       {
         label: 'Inventory',
@@ -111,7 +110,7 @@ export const CONSOLE_NAV = [
         label: 'Drivers',
         href: '/admin/drivers',
         icon: 'Truck' as const,
-        roles: ['ADMIN'] as Role[],
+        roles: ['ADMIN', 'STAFF'] as Role[],
       },
       {
         label: 'Roles',
