@@ -6,7 +6,7 @@ import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { CheckCircle, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-import { createProductAction, updateProductAction } from '@/lib/actions/console';
+import { createProductAction, updateProductAction } from '@/lib/actions/admin';
 import type { ActionResult } from '@/lib/actions';
 import { PRODUCT_CATEGORIES, PRODUCT_FORMS } from '@/lib/constants';
 import type { Product } from '@/types';

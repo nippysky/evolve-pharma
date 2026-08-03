@@ -1,9 +1,9 @@
 import type { ReactNode }     from 'react';
 import { redirect }            from 'next/navigation';
 import { getSession }          from '@/lib/auth';
-import { ConsoleSidebar }      from '@/components/console/ConsoleSidebar';
-import { ConsoleTopbar }       from '@/components/console/ConsoleTopbar';
-import { ConsoleAuthProvider } from '@/providers/ConsoleAuthProvider';
+import { AdminSidebar }      from '@/components/admin/AdminSidebar';
+import { AdminTopbar }       from '@/components/admin/AdminTopbar';
+import { AdminAuthProvider } from '@/providers/AdminAuthProvider';
 
 export default async function DriverLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
@@ -13,16 +13,16 @@ export default async function DriverLayout({ children }: { children: ReactNode }
   if (session.role !== 'DRIVER')   redirect('/admin/overview');
 
   return (
-    <ConsoleAuthProvider>
+    <AdminAuthProvider>
       <div className="flex min-h-dvh bg-bg-subtle">
-        <ConsoleSidebar session={session} />
+        <AdminSidebar session={session} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <ConsoleTopbar role={session.role} />
+          <AdminTopbar role={session.role} />
           <div className="px-safe py-6 sm:py-8">
             <div className="mx-auto max-w-330">{children}</div>
           </div>
         </div>
       </div>
-    </ConsoleAuthProvider>
+    </AdminAuthProvider>
   );
 }

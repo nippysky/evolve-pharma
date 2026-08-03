@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Bell, Menu, X, Logout } from '@/components/icons';
 import { Logo } from '@/components/shared/Logo';
-import { GlobalSearch } from '@/components/console/GlobalSearch';
+import { GlobalSearch } from '@/components/admin/GlobalSearch';
 import { Icon, type IconName } from '@/components/icons';
 import { CONSOLE_NAV, DRIVER_NAV } from '@/lib/constants';
-import { signOutAction } from '@/lib/actions/role';
+import { staffSignOutAction } from '@/lib/actions/role';
 import type { Role } from '@/types';
 
-interface ConsoleTopbarProps {
+interface AdminTopbarProps {
   notificationCount?: number;
   role: Role;
 }
@@ -22,7 +22,7 @@ const ROLE_LABEL: Record<Role, string> = {
   CUSTOMER: 'Customer',
 };
 
-export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProps) {
+export function AdminTopbar({ notificationCount = 0, role }: AdminTopbarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const navGroups = role === 'DRIVER' ? DRIVER_NAV : CONSOLE_NAV;
@@ -132,7 +132,7 @@ export function ConsoleTopbar({ notificationCount = 0, role }: ConsoleTopbarProp
               })}
             </nav>
 
-            <form action={signOutAction} className="mt-3 border-t border-white/8 pt-3">
+            <form action={staffSignOutAction} className="mt-3 border-t border-white/8 pt-3">
               <button
                 type="submit"
                 className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/4 hover:text-white"

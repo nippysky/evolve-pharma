@@ -24,9 +24,9 @@ export const phoneSchema = z
   .string()
   .trim()
   .min(1, 'Phone number is required')
-  .regex(/^[0-9]+$/, 'Phone number must contain digits only')
-  .min(10, 'Phone number must be at least 10 digits')
-  .max(11, 'Phone number cannot exceed 11 digits');
+  .regex(/^[0-9]+$/, 'Phone number must contain digits only — remove spaces, dashes, or country codes')
+  .min(10, 'Phone number is too short — enter a 10 or 11-digit number (e.g. 08012345678)')
+  .max(11, 'Phone number is too long — enter a 10 or 11-digit number (e.g. 08012345678)');
 
 // ---------- Auth ----------------------------------------------------------
 
@@ -53,8 +53,7 @@ const customerRegistrationFields = z.object({
   email: emailSchema,
   phone: phoneSchema,
   address: z.string().trim().min(5, 'Enter your full street address').max(240),
-  city: z.string().trim().min(2, 'City is required').max(80)
-    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'City should only contain letters'),
+  city: z.string().trim().min(2, 'City is required').max(80),
   state: z.string().trim().min(2, 'Please select a state'),
   gender: z.string().trim().max(20).optional(),
   referral_code: z.string().trim().max(30)
@@ -75,7 +74,6 @@ export const customerDetailsSchema = customerRegistrationFields.pick({
   address: true,
   city: true,
   state: true,
-  gender: true,
   referral_code: true,
 });
 export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
@@ -115,16 +113,25 @@ export const staffImportRowSchema = staffInviteSchema;
 // ---------- Customer (admin / agent onboarding + import) -----------------
 
 export const customerOnboardSchema = z.object({
-  first_name: nameField('First name'),
-  middle_name: z.string().trim().max(60).regex(/^[a-zA-ZÀ-ÿ\s'-]*$/, 'Middle name should only contain letters').optional(),
-  last_name: nameField('Last name'),
-  company_name: z.string().trim().min(2, 'Pharmacy name is required').max(120),
-  email: emailSchema,
-  phone: phoneSchema,
-  address: z.string().trim().min(5, 'Enter your full street address').max(240),
-  city: z.string().trim().min(2, 'City is required').max(80)
-    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'City should only contain letters'),
-  state: z.string().trim().min(2, 'Please select a state'),
+  first_name:   nameField('First name'),
+  middle_name:  z.string().trim().max(60)
+                  .regex(/^[a-zA-ZÀ-ÿ\s'-]*$/, 'Middle name: letters only, no numbers or special characters')
+                  .optional(),
+  last_name:    nameField('Last name'),
+  company_name: z.string().trim()
+                  .min(2, 'Pharmacy / company name is required')
+                  .max(120, 'Company name is too long (max 120 characters)'),
+  email:        emailSchema,
+  phone:        phoneSchema,
+  address:      z.string().trim()
+                  .min(5, 'Street address is too short — enter the full address')
+                  .max(240, 'Address is too long'),
+  // Relaxed: allow commas, brackets, etc. for real city names like "Abuja, FCT"
+  city:         z.string().trim()
+                  .min(2, 'City is required')
+                  .max(80, 'City name is too long'),
+  state:        z.string().trim()
+                  .min(2, 'Please select a state from the dropdown'),
 });
 export type CustomerOnboardInput = z.infer<typeof customerOnboardSchema>;
 export const customerImportRowSchema = customerOnboardSchema;

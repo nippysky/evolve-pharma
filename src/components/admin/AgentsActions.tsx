@@ -6,7 +6,7 @@ import { Plus, Upload } from '@/components/icons';
 import { CreateEntityModal, type EntityField } from './CreateEntityModal';
 import { SheetImporter } from './SheetImporter';
 import { agentInviteSchema, agentImportRowSchema, type AgentInviteInput } from '@/lib/schemas';
-import { inviteAgentAction, importAgentsAction } from '@/lib/actions/console';
+import { inviteAgentAction, importAgentsAction } from '@/lib/actions/admin';
 
 const FIELDS: EntityField[] = [
   { name: 'first_name', label: 'First name', required: true, placeholder: 'Amaka' },

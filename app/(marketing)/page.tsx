@@ -21,9 +21,13 @@ import {
   Pill, Sparkle, Lock, Basket, ShoppingCart, User,
 } from '@/components/icons';
 import { PRODUCT_CATEGORIES }                from '@/lib/constants';
-import { DUMMY_PRODUCTS }                    from '@/lib/data/dummy-products';
 import { getSession }                        from '@/lib/auth';
 import { formatNaira }                       from '@/lib/utils';
+import { getFeaturedProducts }               from '@/lib/data/products.server';
+
+// Cache this page for 10 minutes — same TTL as the product cache.
+// After a product is added/updated, call revalidateTag('products') to clear.
+export const revalidate = 600;
 
 const TRUST_FEATURES = [
   { Icon: Shield,     title: 'Verified sourcing',  body: 'Products sourced through trusted pharmaceutical distribution channels.' },
@@ -43,10 +47,10 @@ export default async function HomePage() {
   const isCustomer = session?.role === 'CUSTOMER';
   const portalHref = isCustomer ? '/portal/catalog' : '/admin/overview';
 
-  const heroPreview    = DUMMY_PRODUCTS.slice(0, 4);
-  const primaryProduct = DUMMY_PRODUCTS[0]!;
-  const sidePreviews   = heroPreview.slice(1, 4);
-  const featured       = DUMMY_PRODUCTS.slice(0, 8);
+  const products       = await getFeaturedProducts(8);
+  const primaryProduct = products[0] ?? null;
+  const sidePreviews   = products.slice(1, 4);
+  const featured       = products.slice(0, 8);
   const categories     = PRODUCT_CATEGORIES.slice(0, 8);
 
   return (
@@ -158,72 +162,90 @@ export default async function HomePage() {
                   </div>
 
                   <div className="grid gap-0 lg:grid-cols-[1.12fr_0.88fr]">
-                    {/* Primary hero product */}
-                    <Link
-                      href={`/products/${primaryProduct.sku}`}
-                      className="group relative min-h-96 overflow-hidden border-b border-line-subtle bg-bg-muted lg:border-b-0 lg:border-r"
-                    >
-                      <Image
-                        src={primaryProduct.images[0]?.url ?? ''}
-                        alt={primaryProduct.brand_name}
-                        width={760}
-                        height={820}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                        priority
-                      />
-                      <div className="absolute inset-0 bg-linear-to-t from-ink/70 via-ink/12 to-transparent" />
-                      <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75">
-                          {primaryProduct.category?.name ?? ''}
-                        </span>
-                        <h2 className="mt-2 line-clamp-2 max-w-sm text-2xl font-semibold leading-tight tracking-[-0.04em]">
-                          {primaryProduct.brand_name}
-                        </h2>
-                        <div className="mt-4 flex items-center justify-between gap-4">
-                          <span className="num font-display text-2xl tracking-[-0.04em]">
-                            {formatNaira(parseFloat(primaryProduct.selling_price))}
-                          </span>
-                          <span className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-ink transition-transform duration-200 group-hover:translate-x-0.5">
-                            View <ArrowRight size={13} />
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-
-                    {/* Side previews */}
-                    <div className="grid gap-0 sm:grid-cols-3 lg:grid-cols-1">
-                      {sidePreviews.map((product) => (
+                    {primaryProduct ? (
+                      <>
+                        {/* Primary hero product */}
                         <Link
-                          key={product.id}
-                          href={`/products/${product.sku}`}
-                          className="group flex gap-3 border-b border-line-subtle p-3.5 transition-colors last:border-b-0 hover:bg-bg-subtle sm:flex-col sm:border-b-0 sm:border-r sm:last:border-r-0 lg:flex-row lg:border-b lg:border-r-0 lg:last:border-b-0"
+                          href={`/products/${primaryProduct.sku}`}
+                          className="group relative min-h-96 overflow-hidden border-b border-line-subtle bg-bg-muted lg:border-b-0 lg:border-r"
                         >
-                          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-bg-muted sm:h-28 sm:w-full lg:h-20 lg:w-20">
-                            {product.images[0]?.url ? (
-                              <Image
-                                src={product.images[0].url}
-                                alt={product.brand_name}
-                                width={240}
-                                height={240}
-                                priority
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-                              />
-                            ) : null}
-                          </div>
-                          <div className="flex min-w-0 flex-1 flex-col justify-center">
-                            <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-teal-600">
-                              {product.category?.name ?? ''}
+                          {primaryProduct.images[0]?.url && (
+                            <Image
+                              src={primaryProduct.images[0].url}
+                              alt={primaryProduct.brand_name}
+                              width={760}
+                              height={820}
+                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                              priority
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-linear-to-t from-ink/70 via-ink/12 to-transparent" />
+                          <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75">
+                              {primaryProduct.category?.name ?? ''}
                             </span>
-                            <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.02em] text-ink">
-                              {product.brand_name}
-                            </h3>
-                            <p className="num mt-2 font-display text-base tracking-[-0.03em] text-ink">
-                              {formatNaira(parseFloat(product.selling_price))}
-                            </p>
+                            <h2 className="mt-2 line-clamp-2 max-w-sm text-2xl font-semibold leading-tight tracking-[-0.04em]">
+                              {primaryProduct.brand_name}
+                            </h2>
+                            <div className="mt-4 flex items-center justify-between gap-4">
+                              <span className="num font-display text-2xl tracking-[-0.04em]">
+                                {formatNaira(parseFloat(primaryProduct.selling_price))}
+                              </span>
+                              <span className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-ink transition-transform duration-200 group-hover:translate-x-0.5">
+                                View <ArrowRight size={13} />
+                              </span>
+                            </div>
                           </div>
                         </Link>
-                      ))}
-                    </div>
+
+                        {/* Side previews */}
+                        <div className="grid gap-0 sm:grid-cols-3 lg:grid-cols-1">
+                          {sidePreviews.map((product) => (
+                            <Link
+                              key={product.id}
+                              href={`/products/${product.sku}`}
+                              className="group flex gap-3 border-b border-line-subtle p-3.5 transition-colors last:border-b-0 hover:bg-bg-subtle sm:flex-col sm:border-b-0 sm:border-r sm:last:border-r-0 lg:flex-row lg:border-b lg:border-r-0 lg:last:border-b-0"
+                            >
+                              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-bg-muted sm:h-28 sm:w-full lg:h-20 lg:w-20">
+                                {product.images[0]?.url ? (
+                                  <Image
+                                    src={product.images[0].url}
+                                    alt={product.brand_name}
+                                    width={240}
+                                    height={240}
+                                    priority
+                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                                  />
+                                ) : null}
+                              </div>
+                              <div className="flex min-w-0 flex-1 flex-col justify-center">
+                                <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-teal-600">
+                                  {product.category?.name ?? ''}
+                                </span>
+                                <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug tracking-[-0.02em] text-ink">
+                                  {product.brand_name}
+                                </h3>
+                                <p className="num mt-2 font-display text-base tracking-[-0.03em] text-ink">
+                                  {formatNaira(parseFloat(product.selling_price))}
+                                </p>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      /* Empty state — no products seeded yet */
+                      <div className="col-span-full flex min-h-80 flex-col items-center justify-center gap-3 p-8 text-center">
+                        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-bg-muted text-ink-3">
+                          <Pill size={24} />
+                        </span>
+                        <p className="text-sm font-medium text-ink-2">Catalogue coming soon</p>
+                        <p className="text-xs text-ink-4">Products will appear here once the catalogue is seeded.</p>
+                        <Link href="/products" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
+                          Browse catalogue <ArrowRight size={11} />
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -329,7 +351,10 @@ export default async function HomePage() {
           {/* Bottom CTA strip */}
           <div className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-line-subtle bg-white p-4 sm:p-5">
             <p className="text-sm font-medium text-ink-2">
-              <span className="font-semibold text-ink">{DUMMY_PRODUCTS.length} products</span> available in our catalogue — browse the full range
+              {featured.length > 0
+                ? <><span className="font-semibold text-ink">{featured.length}+ products</span> available in our catalogue — browse the full range</>
+                : <>Browse our full pharmaceutical catalogue</>
+              }
             </p>
             <Link
               href="/products"

@@ -4,8 +4,11 @@ import { Container, Section } from '@/components/ui/Layout';
 import { ButtonLink } from '@/components/ui/Button';
 import { ProductsCatalog } from '@/components/marketing/ProductsCatalog';
 import { ArrowRight, Basket, Shield, Truck, ShoppingCart } from '@/components/icons';
-import { DUMMY_PRODUCTS } from '@/lib/data/dummy-products';
+import { getActiveProducts } from '@/lib/data/products.server';
 import { getSession } from '@/lib/auth';
+
+// Cache for 5 minutes — same TTL as the product list cache.
+export const revalidate = 300;
 
 const CATALOG_FEATURES = [
   { label: 'Verified catalog',  description: 'Organized product discovery for approved buyers.',       Icon: Shield },
@@ -27,6 +30,7 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
     redirect(dest);
   }
 
+  const products   = await getActiveProducts();
   const isLoggedIn = false;
   const isCustomer = false;
   const portalHref = '/portal/catalog';
@@ -45,7 +49,7 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-line-subtle bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-brand-600 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-xl">
                 <span className="h-1.5 w-1.5 rounded-full bg-leaf-500" />
-                Catalogue · {DUMMY_PRODUCTS.length} products
+                Catalogue · {products.length} products
               </span>
 
               <h1 className="display-serif mt-5 max-w-3xl text-[clamp(2.4rem,5.2vw,5rem)] leading-[0.96] tracking-[-0.065em] text-ink">
@@ -109,7 +113,7 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
       <Section tight>
         <Container>
           <ProductsCatalog
-            products={DUMMY_PRODUCTS}
+            products={products}
             initialCategory={params.category}
           />
         </Container>

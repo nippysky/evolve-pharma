@@ -5,7 +5,7 @@
 
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
-import { CustomersView } from '@/components/console/CustomersView';
+import { CustomersView } from '@/components/admin/CustomersView';
 
 export const metadata = {
   title: 'Customers',

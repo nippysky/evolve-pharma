@@ -38,7 +38,6 @@ const emptyDetails = {
   address: '',
   city: '',
   state: '',
-  gender: '',
   referral_code: '',
 };
 
@@ -109,7 +108,6 @@ export default function SignUpPage() {
         address: details.address,
         city: details.city,
         state: details.state,
-        gender: details.gender || undefined,
         referral_code: details.referral_code || undefined,
         pcn_certificate: certFile,
       },
@@ -352,7 +350,7 @@ export default function SignUpPage() {
               <Input id="address" name="address" value={details.address} onChange={set('address')} autoComplete="street-address" placeholder="No 33, Allen Avenue, Ikeja" maxLength={240} />
             </Field>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="City" htmlFor="city" required error={errors.city}>
                 <Input id="city" name="city" value={details.city} onChange={set('city')} autoComplete="address-level2" placeholder="Lagos" maxLength={80} />
               </Field>
@@ -367,18 +365,6 @@ export default function SignUpPage() {
                   {NIGERIAN_STATES.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                </Select>
-              </Field>
-              <Field label="Gender" htmlFor="gender" error={errors.gender}>
-                <Select
-                  id="gender"
-                  name="gender"
-                  value={details.gender}
-                  onChange={(e) => setDetails((d) => ({ ...d, gender: e.target.value }))}
-                >
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
                 </Select>
               </Field>
             </div>

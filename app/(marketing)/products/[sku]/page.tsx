@@ -8,7 +8,7 @@ import {
   Lock, ShoppingCart,
 } from '@/components/icons';
 import { getSession } from '@/lib/auth';
-import { getProductBySku } from '@/lib/data/dummy-products';
+import { getProductBySkuFromDB } from '@/lib/data/products.server';
 import { formatNaira } from '@/lib/utils';
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 
 export default async function MarketingProductDetail({ params }: Props) {
   const { sku } = await params;
-  const product  = getProductBySku(sku);
+  const product  = await getProductBySkuFromDB(sku);
   if (!product) notFound();
 
   const session = await getSession();

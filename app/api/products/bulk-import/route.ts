@@ -1,17 +1,39 @@
 /**
  * POST /api/products/bulk-import
  *
- * Accepts a multipart/form-data Excel (.xlsx) or CSV file.
- * Parses rows, upserts products by SKU, and returns an import summary.
+ * Accepts multipart/form-data with an Excel (.xlsx / .xls) or CSV file.
  *
- * Required columns (case-insensitive header match):
- *   sku, brand_name, generic_name, selling_price
+ * ─── Query architecture (O(1) — fixed DB calls for any file size) ────────────
  *
- * Optional columns:
- *   category, manufacturer, product_strength, pack_size,
- *   quantity_per_carton, description, allow_unit_sale,
- *   minimum_order, last_cost_price, minimum_stock_level,
- *   reorder_quantity, status
+ *   1. Parse + validate entire file in memory        (0 DB calls)
+ *   2. Deduplicate within-file SKUs                  (0 DB calls)
+ *   3. createMany unique categories                  (1 query, INSERT IGNORE)
+ *   4. createMany unique manufacturers               (1 query, INSERT IGNORE)
+ *   5. findMany cats + findMany mfrs                 (2 queries — IN clause)
+ *   6. findMany existing products by derived SKU     (1 query — IN clause)
+ *   7. createMany new products                       (1 query)
+ *   8. Serial update for already-existing products   (N_existing queries, usually 0)
+ *   9. findMany all products by SKU → id map         (1 query — IN clause)
+ *  10. findMany already-existing batch_numbers       (1 query — IN clause)
+ *  11. createMany new inventory batches              (1 query)
+ *  12. findMany those batches back by batch_number   (1 query — to get auto-inc IDs)
+ *  13. createMany stock movements                    (1 query)
+ *
+ *   Total: ~13 fixed queries for any N (vs. 6 × N with the serial approach).
+ *
+ * Template columns (case-insensitive, spaces / hyphens → underscores):
+ *   manufacturer, brand_name, generic_name, product_strength, pack_size,
+ *   product_category, batch_no, expiry_date, minimum_order, quantity_per_carton,
+ *   quantity_received, shelf_location, cost_price, selling_price,
+ *   minimum_stock_level, reorder_quantity
+ *
+ * Responses:
+ *   200  { total_records, inserted, updated, failed,
+ *          inventory_batches_created, failed_records }
+ *   400  validation / file errors
+ *   401  unauthenticated
+ *   403  forbidden
+ *   500  server error
  */
 
 import { NextRequest } from 'next/server';
@@ -26,25 +48,35 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog } from '@/lib/audit';
 
-// ─── Row shape after parsing ──────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-interface ProductRow {
-  sku:                  string;
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_ROWS       = 1_000;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ParsedRow {
+  // row metadata (not stored)
+  rowNum: number;
+
+  // product fields
   brand_name:           string;
   generic_name:         string;
-  selling_price:        number;
-  category?:            string;
-  manufacturer?:        string;
+  manufacturer:         string;
+  product_category:     string;
   product_strength?:    string;
   pack_size?:           string;
   quantity_per_carton?: number;
-  description?:         string;
-  allow_unit_sale?:     boolean;
-  minimum_order?:       number;
-  last_cost_price?:     number;
-  minimum_stock_level?: number;
-  reorder_quantity?:    number;
-  status?:              'ACTIVE' | 'DRAFT' | 'DISCONTINUED';
+  minimum_order:        number;
+  selling_price:        number;
+  cost_price?:          number;
+  minimum_stock_level:  number;
+  reorder_quantity:     number;
+
+  // inventory fields
+  batch_no?:          string;
+  expiry_date?:       string;
+  quantity_received?: number;
 }
 
 interface RowError {
@@ -55,85 +87,108 @@ interface RowError {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Build a header-name → column-index map (lowercase, underscored). */
-function buildHeaderMap(headers: string[]): Record<string, number> {
-  const map: Record<string, number> = {};
-  headers.forEach((h, i) => {
-    const key = String(h).toLowerCase().trim().replace(/\s+/g, '_');
-    map[key] = i;
-  });
-  return map;
+function headerKey(h: string): string {
+  return String(h).toLowerCase().trim().replace(/[\s-]+/g, '_');
 }
 
-/** Safely read a cell as string. Returns '' when column is absent. */
-function cellStr(row: unknown[], headers: Record<string, number>, col: string): string {
+function cellStr(
+  row:     (string | number | boolean | null | undefined)[],
+  headers: Record<string, number>,
+  col:     string,
+): string {
   const i = headers[col];
   if (i === undefined) return '';
-  const v = (row as (string | number | boolean | null | undefined)[])[i];
+  const v = row[i];
   return v != null ? String(v).trim() : '';
 }
 
-// ─── Parse rows ───────────────────────────────────────────────────────────────
+function deriveSku(manufacturer: string, brandName: string): string {
+  const slug = (s: string) =>
+    s.toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 20);
+  return `${slug(manufacturer)}-${slug(brandName)}`;
+}
 
-function parseRows(rows: unknown[][]): { data: ProductRow[]; errors: RowError[] } {
-  if (rows.length < 2) return { data: [], errors: [] };
+function parseDate(raw: string): Date | null {
+  if (!raw) return null;
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d;
+}
 
-  const headers = buildHeaderMap(rows[0] as string[]);
-  const data:    ProductRow[] = [];
-  const errors:  RowError[]   = [];
-  const statusVals = new Set(['ACTIVE', 'DRAFT', 'DISCONTINUED']);
+// ─── Phase 1: Parse file → memory ────────────────────────────────────────────
 
-  for (let i = 1; i < rows.length; i++) {
-    const row     = rows[i] as unknown[];
-    const rowNum  = i + 1;
-    const rowErrs: string[] = [];
+function parseRows(rawRows: unknown[][]): {
+  rows:   ParsedRow[];
+  errors: RowError[];
+} {
+  if (rawRows.length < 2) return { rows: [], errors: [] };
 
-    const sku          = cellStr(row, headers, 'sku');
-    const brand_name   = cellStr(row, headers, 'brand_name');
-    const generic_name = cellStr(row, headers, 'generic_name');
-    const priceRaw     = cellStr(row, headers, 'selling_price');
-    const price        = parseFloat(priceRaw);
+  const headers: Record<string, number> = {};
+  (rawRows[0] as string[]).forEach((h, i) => { headers[headerKey(h)] = i; });
 
-    if (!sku)          rowErrs.push('sku is required');
-    if (!brand_name)   rowErrs.push('brand_name is required');
-    if (!generic_name) rowErrs.push('generic_name is required');
-    if (!priceRaw || isNaN(price) || price <= 0) rowErrs.push('selling_price must be a positive number');
+  const rows:   ParsedRow[] = [];
+  const errors: RowError[]  = [];
 
-    if (rowErrs.length) {
-      errors.push({ row: rowNum, sku: sku || `row ${rowNum}`, errors: rowErrs });
+  for (let i = 1; i < rawRows.length; i++) {
+    const row    = rawRows[i] as (string | number | boolean | null | undefined)[];
+    const rowNum = i + 1;
+    const errs:  string[] = [];
+
+    const brand_name       = cellStr(row, headers, 'brand_name');
+    const generic_name     = cellStr(row, headers, 'generic_name');
+    const manufacturer     = cellStr(row, headers, 'manufacturer');
+    const product_category = cellStr(row, headers, 'product_category');
+    const sellRaw          = cellStr(row, headers, 'selling_price');
+    const costRaw          = cellStr(row, headers, 'cost_price');
+
+    // Skip entirely blank rows
+    if (!brand_name && !generic_name && !manufacturer && !sellRaw) continue;
+
+    if (!brand_name)       errs.push('brand_name is required');
+    if (!generic_name)     errs.push('generic_name is required');
+    if (!manufacturer)     errs.push('manufacturer is required');
+    if (!product_category) errs.push('product_category is required');
+
+    const selling_price = parseFloat(sellRaw.replace(/,/g, ''));
+    if (!sellRaw || isNaN(selling_price) || selling_price <= 0)
+      errs.push('selling_price must be a positive number');
+
+    if (errs.length) {
+      const sku = manufacturer && brand_name ? deriveSku(manufacturer, brand_name) : `row ${rowNum}`;
+      errors.push({ row: rowNum, sku, errors: errs });
       continue;
     }
 
-    const statusRaw = cellStr(row, headers, 'status').toUpperCase();
-    const status    = statusVals.has(statusRaw) ? (statusRaw as ProductRow['status']) : 'DRAFT';
+    const cost_price = parseFloat(costRaw.replace(/,/g, ''));
+    const qpcRaw     = cellStr(row, headers, 'quantity_per_carton');
+    const moRaw      = cellStr(row, headers, 'minimum_order');
+    const mslRaw     = cellStr(row, headers, 'minimum_stock_level');
+    const rqRaw      = cellStr(row, headers, 'reorder_quantity');
+    const qrcvRaw    = cellStr(row, headers, 'quantity_received');
 
-    const qpc  = parseInt(cellStr(row, headers, 'quantity_per_carton'), 10);
-    const mo   = parseInt(cellStr(row, headers, 'minimum_order'),       10);
-    const lcp  = parseFloat(cellStr(row, headers, 'last_cost_price'));
-    const msl  = parseInt(cellStr(row, headers, 'minimum_stock_level'), 10);
-    const rq   = parseInt(cellStr(row, headers, 'reorder_quantity'),    10);
-
-    data.push({
-      sku,
+    rows.push({
+      rowNum,
       brand_name,
       generic_name,
-      selling_price:       price,
-      category:            cellStr(row, headers, 'category')         || undefined,
-      manufacturer:        cellStr(row, headers, 'manufacturer')     || undefined,
+      manufacturer,
+      product_category,
       product_strength:    cellStr(row, headers, 'product_strength') || undefined,
       pack_size:           cellStr(row, headers, 'pack_size')        || undefined,
-      quantity_per_carton: isNaN(qpc) ? undefined : qpc,
-      description:         cellStr(row, headers, 'description')      || undefined,
-      allow_unit_sale:     cellStr(row, headers, 'allow_unit_sale').toLowerCase() === 'true',
-      minimum_order:       isNaN(mo)  ? 1 : mo,
-      last_cost_price:     isNaN(lcp) ? undefined : lcp,
-      minimum_stock_level: isNaN(msl) ? 0 : msl,
-      reorder_quantity:    isNaN(rq)  ? 0 : rq,
-      status,
+      quantity_per_carton: parseInt(qpcRaw.replace(/,/g, ''), 10)  || undefined,
+      minimum_order:       Math.max(1, parseInt(moRaw.replace(/,/g, ''), 10)  || 1),
+      selling_price,
+      cost_price:          isNaN(cost_price) || cost_price <= 0 ? undefined : cost_price,
+      minimum_stock_level: parseInt(mslRaw.replace(/,/g, ''), 10) || 0,
+      reorder_quantity:    parseInt(rqRaw.replace(/,/g, ''),  10) || 0,
+      batch_no:            cellStr(row, headers, 'batch_no')     || undefined,
+      expiry_date:         cellStr(row, headers, 'expiry_date')  || undefined,
+      quantity_received:   parseInt(qrcvRaw.replace(/,/g, ''), 10) || undefined,
     });
   }
 
-  return { data, errors };
+  return { rows, errors };
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -144,6 +199,8 @@ export async function POST(req: NextRequest) {
     if (!session) return apiUnauthorized();
     if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
 
+    // ── File validation ──────────────────────────────────────────────────────
+
     const formData = await req.formData().catch(() => null);
     if (!formData) return apiError('Multipart form data required', 400);
 
@@ -153,72 +210,245 @@ export async function POST(req: NextRequest) {
     const blob = file as File;
     const name = blob.name.toLowerCase();
 
-    if (!name.endsWith('.xlsx') && !name.endsWith('.csv')) {
-      return apiError('Only .xlsx and .csv files are supported', 415);
-    }
+    if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv'))
+      return apiError('Only .xlsx, .xls, and .csv files are supported', 415);
+    if (blob.size > MAX_FILE_BYTES)
+      return apiError('File exceeds the 5 MB limit', 413);
 
-    const buffer     = Buffer.from(await blob.arrayBuffer());
-    const XLSX       = await import('xlsx');
-    const workbook   = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName  = workbook.SheetNames[0];
+    // ── Phase 1: Parse in memory ─────────────────────────────────────────────
+
+    const buffer    = Buffer.from(await blob.arrayBuffer());
+    const XLSX      = await import('xlsx');
+    const workbook  = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
     if (!sheetName) return apiError('Spreadsheet appears to be empty', 400);
-    const sheet      = workbook.Sheets[sheetName];
-    if (!sheet) return apiError('Could not read spreadsheet sheet', 400);
-    const rows       = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) return apiError('Could not read spreadsheet', 400);
 
-    const { data: validRows, errors: rowErrors } = parseRows(rows as unknown[][]);
+    const rawRows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
+    if (rawRows.length < 2) return apiError('No data rows found in the file', 400);
+    if (rawRows.length - 1 > MAX_ROWS)
+      return apiError(`File has more than ${MAX_ROWS} rows. Split into smaller batches.`, 400);
 
-    if (!validRows.length && rowErrors.length) {
-      return apiError('No valid rows found in the uploaded file.', 422, {
-        rows: rowErrors.map(e => `Row ${e.row} (${e.sku}): ${e.errors.join(', ')}`),
-      });
+    const { rows: allRows, errors: parseErrors } = parseRows(rawRows as unknown[][]);
+    if (!allRows.length) return apiError('No valid rows found.', 422);
+
+    // Within-file SKU deduplication (keep first occurrence)
+    const seenSkus  = new Map<string, number>(); // sku → rowNum
+    const validRows: ParsedRow[] = [];
+    const dupErrors: RowError[]  = [];
+
+    for (const row of allRows) {
+      const sku = deriveSku(row.manufacturer, row.brand_name);
+      if (seenSkus.has(sku)) {
+        dupErrors.push({
+          row:    row.rowNum,
+          sku,
+          errors: [`Duplicate in this file — same manufacturer + brand already in row ${seenSkus.get(sku)}`],
+        });
+      } else {
+        seenSkus.set(sku, row.rowNum);
+        validRows.push(row);
+      }
     }
 
-    // Resolve category and manufacturer IDs
-    const categoryNames     = [...new Set(validRows.map(r => r.category).filter(Boolean))] as string[];
-    const manufacturerNames = [...new Set(validRows.map(r => r.manufacturer).filter(Boolean))] as string[];
+    const failedRecords: RowError[] = [...parseErrors, ...dupErrors];
+    if (!validRows.length) return apiError('No unique valid rows to import.', 422);
+
+    // ── Phase 2: Seed categories + manufacturers (2 queries) ─────────────────
+
+    const uniqueCategories    = [...new Set(validRows.map(r => r.product_category))];
+    const uniqueManufacturers = [...new Set(validRows.map(r => r.manufacturer))];
+
+    // INSERT IGNORE via skipDuplicates — 1 query each, no pool pressure
+    await db.category.createMany({
+      data:            uniqueCategories.map(name => ({ name })),
+      skipDuplicates:  true,
+    });
+    await db.manufacturer.createMany({
+      data:            uniqueManufacturers.map(name => ({ name })),
+      skipDuplicates:  true,
+    });
+
+    // ── Phase 3: Load reference maps (2 queries, Promise.all) ────────────────
 
     const [cats, mfrs] = await Promise.all([
-      categoryNames.length     ? db.category.findMany({     where: { name: { in: categoryNames     } } }) : [],
-      manufacturerNames.length ? db.manufacturer.findMany({ where: { name: { in: manufacturerNames } } }) : [],
+      db.category.findMany({     select: { id: true, name: true }, where: { name: { in: uniqueCategories     } } }),
+      db.manufacturer.findMany({ select: { id: true, name: true }, where: { name: { in: uniqueManufacturers } } }),
     ]);
 
-    const catMap = new Map(cats.map(c  => [c.name,  c.id]));
+    const catMap = new Map(cats.map(c => [c.name, c.id]));
     const mfrMap = new Map(mfrs.map(m => [m.name, m.id]));
+
+    // ── Phase 4: Split rows into inserts vs updates (1 query) ────────────────
+
+    const allSkus     = validRows.map(r => deriveSku(r.manufacturer, r.brand_name));
+    const existingProd = await db.product.findMany({
+      select: { id: true, sku: true },
+      where:  { sku: { in: allSkus }, deleted_at: null },
+    });
+    const existingSkuSet = new Map(existingProd.map(p => [p.sku, p.id]));
+
+    const toCreate: ParsedRow[] = [];
+    const toUpdate: ParsedRow[] = [];
+
+    for (const row of validRows) {
+      const sku = deriveSku(row.manufacturer, row.brand_name);
+      if (existingSkuSet.has(sku)) toUpdate.push(row);
+      else                         toCreate.push(row);
+    }
+
+    // ── Phase 5: Bulk-insert new products (1 query) ───────────────────────────
 
     let inserted = 0;
     let updated  = 0;
 
-    for (const row of validRows) {
-      const data = {
-        brand_name:          row.brand_name,
-        generic_name:        row.generic_name,
-        selling_price:       row.selling_price,
-        category_id:         (row.category    ? catMap.get(row.category)    : undefined) ?? null,
-        manufacturer_id:     (row.manufacturer ? mfrMap.get(row.manufacturer): undefined) ?? null,
-        product_strength:    row.product_strength    ?? null,
-        pack_size:           row.pack_size           ?? null,
-        quantity_per_carton: row.quantity_per_carton ?? null,
-        description:         row.description         ?? null,
-        allow_unit_sale:     row.allow_unit_sale      ?? false,
-        minimum_order:       row.minimum_order        ?? 1,
-        last_cost_price:     row.last_cost_price      ?? null,
-        minimum_stock_level: row.minimum_stock_level  ?? 0,
-        reorder_quantity:    row.reorder_quantity      ?? 0,
-        status:              row.status               ?? ('DRAFT' as const),
-        updated_by_id:       session.userId,
-      };
+    if (toCreate.length > 0) {
+      await db.product.createMany({
+        data: toCreate.map(row => ({
+          sku:                 deriveSku(row.manufacturer, row.brand_name),
+          brand_name:          row.brand_name,
+          generic_name:        row.generic_name,
+          product_strength:    row.product_strength    ?? null,
+          pack_size:           row.pack_size           ?? null,
+          quantity_per_carton: row.quantity_per_carton ?? null,
+          minimum_order:       row.minimum_order,
+          selling_price:       row.selling_price,
+          last_cost_price:     row.cost_price          ?? null,
+          minimum_stock_level: row.minimum_stock_level,
+          reorder_quantity:    row.reorder_quantity,
+          category_id:         catMap.get(row.product_category) ?? null,
+          manufacturer_id:     mfrMap.get(row.manufacturer)     ?? null,
+          status:              'ACTIVE' as const,
+          created_by_id:       session.userId,
+          updated_by_id:       session.userId,
+        })),
+        skipDuplicates: true, // guard against any race
+      });
+      inserted = toCreate.length;
+    }
 
-      const existing = await db.product.findFirst({ where: { sku: row.sku, deleted_at: null } });
+    // ── Phase 6: Update existing products (serial, N_existing queries) ────────
+    // N_existing is typically 0 on first import; small on re-import.
+    // Accepts the serial cost — these are unavoidable since each row
+    // has distinct field values and MySQL has no upsertMany.
 
-      if (existing) {
-        await db.product.update({ where: { id: existing.id }, data });
+    for (const row of toUpdate) {
+      const sku = deriveSku(row.manufacturer, row.brand_name);
+      const id  = existingSkuSet.get(sku);
+      if (!id) continue;
+
+      try {
+        await db.product.update({
+          where: { id },
+          data:  {
+            brand_name:          row.brand_name,
+            generic_name:        row.generic_name,
+            product_strength:    row.product_strength    ?? null,
+            pack_size:           row.pack_size           ?? null,
+            quantity_per_carton: row.quantity_per_carton ?? null,
+            minimum_order:       row.minimum_order,
+            selling_price:       row.selling_price,
+            last_cost_price:     row.cost_price          ?? null,
+            minimum_stock_level: row.minimum_stock_level,
+            reorder_quantity:    row.reorder_quantity,
+            category_id:         catMap.get(row.product_category) ?? null,
+            manufacturer_id:     mfrMap.get(row.manufacturer)     ?? null,
+            status:              'ACTIVE' as const,
+            updated_by_id:       session.userId,
+          },
+        });
         updated++;
-      } else {
-        await db.product.create({ data: { ...data, sku: row.sku, created_by_id: session.userId } });
-        inserted++;
+      } catch (err) {
+        const sku2 = deriveSku(row.manufacturer, row.brand_name);
+        failedRecords.push({ row: row.rowNum, sku: sku2, errors: [(err as Error).message] });
       }
     }
+
+    // ── Phase 7: Resolve product IDs for batch FK (1 query) ──────────────────
+
+    const allProducts = await db.product.findMany({
+      select: { id: true, sku: true },
+      where:  { sku: { in: allSkus }, deleted_at: null },
+    });
+    const productIdMap = new Map(allProducts.map(p => [p.sku, p.id]));
+
+    // ── Phase 8: Inventory batches ────────────────────────────────────────────
+
+    // Only rows that carry batch_no + quantity_received > 0
+    const batchRows = validRows.filter(
+      r => r.batch_no && r.quantity_received && r.quantity_received > 0,
+    );
+
+    let batchesCreated = 0;
+
+    if (batchRows.length > 0) {
+      const batchNos = batchRows.map(r => r.batch_no as string);
+
+      // Find batch_numbers that already exist (1 query)
+      const existingBatches = await db.inventoryBatch.findMany({
+        select: { batch_number: true },
+        where:  { batch_number: { in: batchNos } },
+      });
+      const existingBatchSet = new Set(existingBatches.map(b => b.batch_number));
+
+      const newBatchRows = batchRows.filter(r => !existingBatchSet.has(r.batch_no as string));
+
+      if (newBatchRows.length > 0) {
+        // Bulk-insert batches (1 query)
+        await db.inventoryBatch.createMany({
+          data: newBatchRows.map(row => {
+            const sku       = deriveSku(row.manufacturer, row.brand_name);
+            const productId = productIdMap.get(sku) ?? 0;
+            const batchCost = row.cost_price ?? row.selling_price * 0.85;
+            return {
+              product_id:    productId,
+              batch_number:  row.batch_no as string,
+              quantity:      row.quantity_received as number,
+              cost_price:    batchCost,
+              expiry_date:   parseDate(row.expiry_date ?? ''),
+              created_by_id: session.userId,
+            };
+          }),
+          skipDuplicates: true,
+        });
+
+        // Fetch the just-created batches to get their auto-increment IDs (1 query)
+        const createdBatches = await db.inventoryBatch.findMany({
+          select: { id: true, batch_number: true, product_id: true, quantity: true },
+          where:  { batch_number: { in: newBatchRows.map(r => r.batch_no as string) } },
+        });
+
+        batchesCreated = createdBatches.length;
+
+        // Bulk-insert stock movements (1 query)
+        if (createdBatches.length > 0) {
+          await db.stockMovement.createMany({
+            data: createdBatches.map(batch => ({
+              product_id:     batch.product_id,
+              batch_id:       batch.id,
+              type:           'IN' as const,
+              quantity:       batch.quantity,
+              reference_type: 'BULK_IMPORT',
+              notes:          `Bulk import: batch ${batch.batch_number}`,
+              created_by_id:  session.userId,
+            })),
+          });
+        }
+      }
+
+      // Report skipped (already-existing) batches as informational failures
+      const skippedBatchRows = batchRows.filter(r => existingBatchSet.has(r.batch_no as string));
+      for (const row of skippedBatchRows) {
+        failedRecords.push({
+          row:    row.rowNum,
+          sku:    deriveSku(row.manufacturer, row.brand_name),
+          errors: [`Batch "${row.batch_no}" already exists — product was upserted but stock receipt skipped`],
+        });
+      }
+    }
+
+    // ── Audit + response ─────────────────────────────────────────────────────
 
     void writeAuditLog({
       userId:      session.userId,
@@ -227,17 +457,22 @@ export async function POST(req: NextRequest) {
       email:       session.email,
       action:      'BULK_IMPORT_PRODUCTS',
       entityType:  'Product',
-      description: `Bulk imported ${inserted} new + ${updated} updated products`,
+      description: `Bulk import: ${inserted} new, ${updated} updated, ${batchesCreated} batches, ${failedRecords.length} issues`,
       req,
     });
 
-    return apiSuccess({
-      total_records:  validRows.length + rowErrors.length,
-      inserted,
-      updated,
-      failed:         rowErrors.length,
-      failed_records: rowErrors,
-    }, 200, `Import complete: ${inserted} created, ${updated} updated, ${rowErrors.length} failed`);
+    return apiSuccess(
+      {
+        total_records:             allRows.length + parseErrors.length,
+        inserted,
+        updated,
+        failed:                    failedRecords.length,
+        inventory_batches_created: batchesCreated,
+        failed_records:            failedRecords,
+      },
+      200,
+      `Import complete: ${inserted} created, ${updated} updated, ${batchesCreated} inventory batches recorded.`,
+    );
   } catch (err) {
     console.error('[POST /api/products/bulk-import]', err);
     return apiInternalError();

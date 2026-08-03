@@ -15,7 +15,7 @@
 
 import { cookies }                              from 'next/headers';
 import { type NextRequest, NextResponse }        from 'next/server';
-import { verifyAccessToken, type TokenPayload }  from './jwt.js';
+import { verifyAccessToken, type TokenPayload }  from './jwt';
 import type { SessionUser }                      from '@/types';
 
 // ─── Cookie names ──────────────────────────────────────────────────────────────

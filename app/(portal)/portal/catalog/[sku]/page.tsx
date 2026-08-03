@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getProductBySku } from '@/lib/data/dummy-products';
+import { getProductBySkuFromDB } from '@/lib/data/products.server';
 import { AddToBasket } from './AddToBasket';
 import { formatNaira } from '@/lib/utils';
 import { ArrowLeft, Shield, Pill, Building, Box } from '@/components/icons';
@@ -12,7 +12,7 @@ interface Props {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { sku } = await params;
-  const product = getProductBySku(sku);
+  const product = await getProductBySkuFromDB(sku);
   if (!product) notFound();
 
   const imageUrl      = product.images[0]?.url ?? '';

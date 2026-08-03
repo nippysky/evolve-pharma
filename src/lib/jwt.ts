@@ -136,3 +136,39 @@ export async function verifyRefreshToken(token: string): Promise<TokenPayload | 
     return null;
   }
 }
+
+// ─── Setup token (used between verify-OTP and create-password steps) ──────────
+
+export interface SetupTokenPayload {
+  userId: number;
+  email:  string;
+  type:   'setup';
+}
+
+/**
+ * Short-lived (30 min) token issued after OTP verification.
+ * Authorises the create-password step without issuing full session tokens yet.
+ */
+export async function signSetupToken(userId: number, email: string): Promise<string> {
+  return new SignJWT({ userId, email, type: 'setup' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30m')
+    .setIssuer('envolvepharm')
+    .setAudience('envolvepharm-setup')
+    .sign(getSecret('JWT_ACCESS_SECRET'));
+}
+
+export async function verifySetupToken(token: string): Promise<SetupTokenPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecret('JWT_ACCESS_SECRET'), {
+      issuer:   'envolvepharm',
+      audience: 'envolvepharm-setup',
+    });
+    const p = payload as unknown as SetupTokenPayload;
+    if (p.type !== 'setup') return null;
+    return p;
+  } catch {
+    return null;
+  }
+}

@@ -10,46 +10,46 @@ import { useToast } from '@/contexts/ToastContext';
 import { useLoginStaff } from '@/hooks/staff/useStaff';
 import { setStaffSessionAction } from '@/lib/actions';
 import { getMe } from '@/lib/api/services/auth.service';
+import { classifyLoginError } from '@/lib/errors';
 
-type StaffLoginData = { status: string; role: string; email: string; token?: string };
+type StaffLoginData = { status: string; role: string; email: string };
 
 export default function StaffSignInPage() {
   const router = useRouter();
-  const toast = useToast();
-  // Dev convenience — pre-filled with the seeded admin account.
-  // Clear the field to enter different credentials.
-  const [email, setEmail]       = useState('admin@gmail.com');
-  const [password, setPassword] = useState('admin');
+  const toast  = useToast();
+
+  const [email,       setEmail]       = useState('');
+  const [password,    setPassword]    = useState('');
   const [serverError, setServerError] = useState('');
 
   const loginMutation = useLoginStaff();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email.trim() || !password) return;
     setServerError('');
 
     loginMutation.mutate(
-      { email, password },
+      { email: email.trim().toLowerCase(), password },
       {
         onSuccess: async (data: StaffLoginData) => {
-          // Block inactive accounts before setting any cookie
+          // The API already gates INACTIVE/SUSPENDED accounts with a 403.
+          // This is a belt-and-suspenders check in case the status leaks through.
           if (data.status && data.status.toUpperCase() !== 'ACTIVE') {
             setServerError(
-              `Your account is ${data.status.toLowerCase()}. Contact your administrator.`,
+              `Your account is ${data.status.toLowerCase()}. Please contact your administrator for assistance.`,
             );
             return;
           }
 
-          // Fetch auth/me immediately while the JWT cookie is freshly set.
-          // Store the result so the sidebar shows the real name on every page
-          // load — even if the background auth/me call in UserContext fails.
+          // Prefetch auth/me while the JWT cookie is freshly set so the
+          // sidebar shows the real name immediately — even before UserContext resolves.
           let fullName = '';
           try {
             const me = await getMe();
             fullName = [me.first_name, me.last_name].filter(Boolean).join(' ');
           } catch {
-            // auth/me failed — name will still appear once UserContext resolves
+            // auth/me will resolve later through UserContext — not fatal
           }
 
           await setStaffSessionAction(data.role, {
@@ -57,41 +57,21 @@ export default function StaffSignInPage() {
             ...(fullName ? { full_name: fullName } : {}),
           });
 
-          toast.show({
-            tone: 'success',
-            title: 'Welcome back',
-            description: 'Opening the console…',
-          });
+          toast.success('Welcome back', 'Opening the console…');
 
-          const target =
-            data.role.toUpperCase() === 'DRIVER'
-              ? '/driver'
-              : '/admin/overview';
-
-          router.push(target);
+          router.push(data.role.toUpperCase() === 'DRIVER' ? '/driver' : '/admin/overview');
         },
+
         onError: (err: Error) => {
-          const msg = err.message?.toLowerCase() ?? '';
+          const { kind, message } = classifyLoginError(err);
 
-          if (msg.includes('incorrect') || msg.includes('invalid') || msg.includes('wrong') ||
-              msg.includes('password') || msg.includes('credential') ||
-              (err as Error & { status?: number }).status === 401) {
-            setServerError('Incorrect email or password. Please double-check and try again.');
+          // INACTIVE / SUSPENDED — the API returns these as 403 with a plain message
+          if (kind === 'suspended') {
+            setServerError(message);
             return;
           }
 
-          if (msg.includes('unavailable') || msg.includes('too long') ||
-              msg.includes('reach') || msg.includes('network') || msg.includes('connect')) {
-            setServerError('Our servers appear to be temporarily unavailable. Please try again in a moment.');
-            return;
-          }
-
-          if (msg.includes('too many') || msg.includes('429')) {
-            setServerError('Too many sign-in attempts. Please wait a few minutes and try again.');
-            return;
-          }
-
-          setServerError(err.message ?? 'Sign in failed. Please check your details and try again.');
+          setServerError(message);
         },
       },
     );
@@ -137,7 +117,7 @@ export default function StaffSignInPage() {
 
         <div className="mb-1 flex items-center justify-end">
           <Link
-            href="/forgot-password"
+            href="/staff/forgot-password"
             className="text-xs font-medium text-brand-600 hover:underline hover:underline-offset-2"
           >
             Forgot password?

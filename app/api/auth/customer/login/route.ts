@@ -19,6 +19,7 @@ import { writeLoginHistory }          from '@/lib/audit';
 import {
   apiError,
   apiInternalError,
+  handlePrismaError,
 } from '@/lib/api/response';
 import { issueTokensForUser } from '@/lib/api/issue-tokens';
 
@@ -95,6 +96,9 @@ export async function POST(req: NextRequest) {
 
     // Gate: customer-specific status
     const customerStatus = user.customer?.status;
+    if (customerStatus === 'PENDING_REVIEW' || customerStatus === 'OTP_CONFIRMED' || customerStatus === 'REGISTERED') {
+      return apiError('Your account is pending review by our team. You will receive an email once approved.', 403);
+    }
     if (customerStatus === 'REJECTED') {
       return apiError('Your account application has been rejected. Contact support for more information.', 403);
     }
@@ -123,6 +127,7 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (err) {
     console.error('[POST /api/auth/customer/login]', err);
+    return handlePrismaError(err) ?? apiInternalError();
     // Log the failed attempt
     void writeLoginHistory({
       userType: 'CUSTOMER',

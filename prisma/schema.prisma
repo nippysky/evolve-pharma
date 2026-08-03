@@ -246,7 +246,6 @@ model Product {
   product_strength    String?       @db.VarChar(100)
   pack_size           String?       @db.VarChar(100)
   quantity_per_carton Int?
-  description         String?       @db.Text
   allow_unit_sale     Boolean       @default(false)
   minimum_order       Int           @default(1)
   selling_price       Decimal       @db.Decimal(12, 2)

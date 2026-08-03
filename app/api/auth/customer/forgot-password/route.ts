@@ -16,6 +16,7 @@ import {
   apiSuccess,
   apiError,
   apiInternalError,
+  handlePrismaError,
 } from '@/lib/api/response';
 import { generateOtp, otpExpiresAt } from '@/lib/api/issue-tokens';
 
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
         type: 'PASSWORD_RESET',
       }).catch((err: unknown) => {
         console.error('[forgot-password] Failed to send OTP email:', err);
+    return handlePrismaError(err) ?? apiInternalError();
       });
     }
 
@@ -88,6 +90,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     console.error('[POST /api/auth/customer/forgot-password]', err);
+    return handlePrismaError(err) ?? apiInternalError();
     return apiInternalError();
   }
 }

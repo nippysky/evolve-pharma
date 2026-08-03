@@ -16,7 +16,8 @@ import {
   apiNotFound,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }       from '@/lib/audit';
+import { deleteFromCloudinary } from '@/lib/cloudinary';
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -28,7 +29,6 @@ const patchSchema = z.object({
   product_strength:    z.string().max(100).nullable().optional(),
   pack_size:           z.string().max(100).nullable().optional(),
   quantity_per_carton: z.number().int().positive().nullable().optional(),
-  description:         z.string().nullable().optional(),
   allow_unit_sale:     z.boolean().optional(),
   minimum_order:       z.number().int().positive().optional(),
   selling_price:       z.number().positive().optional(),
@@ -144,6 +144,14 @@ export async function PATCH(
 }
 
 // ─── DELETE ───────────────────────────────────────────────────────────────────
+//
+// Cascade behaviour:
+//   Images        → hard-deleted from Cloudinary + DB (no longer accessible; no audit value)
+//   InventoryBatches → archived in place (soft-delete of product hides them; stock history preserved)
+//   StockMovements   → untouched (full audit trail)
+//   OrderItems       → untouched (order history must remain intact)
+//
+// Only ADMIN can delete products.
 
 export async function DELETE(
   req: NextRequest,
@@ -156,9 +164,33 @@ export async function DELETE(
 
     const { sku } = await params;
 
-    const product = await db.product.findFirst({ where: { sku, deleted_at: null } });
+    // Load product + images + impact counts in one round-trip
+    const [product, batchCount, orderItemCount] = await Promise.all([
+      db.product.findFirst({
+        where:   { sku, deleted_at: null },
+        include: { images: { select: { id: true, cloudinary_public_id: true } } },
+      }),
+      db.inventoryBatch.count({ where: { product: { sku } } }),
+      db.orderItem.count({     where: { product: { sku } } }),
+    ]);
+
     if (!product) return apiNotFound('Product');
 
+    // 1. Remove images from Cloudinary (fire-and-forget; failures are non-fatal)
+    if (product.images.length > 0) {
+      void Promise.allSettled(
+        product.images.map(img =>
+          deleteFromCloudinary(img.cloudinary_public_id, 'image').catch(e =>
+            console.warn('[cloudinary delete warn]', img.cloudinary_public_id, e),
+          ),
+        ),
+      );
+
+      // Hard-delete image DB records — Cloudinary URLs are now broken anyway
+      await db.productImage.deleteMany({ where: { product_id: product.id } });
+    }
+
+    // 2. Soft-delete the product (sets deleted_at; hides from all catalog + admin queries)
     await db.product.update({
       where: { id: product.id },
       data:  {
@@ -176,11 +208,20 @@ export async function DELETE(
       action:      'DELETE_PRODUCT',
       entityType:  'Product',
       entityId:    String(product.id),
-      description: `Soft-deleted product ${product.brand_name} (${product.sku})`,
+      description: `Deleted product "${product.brand_name}" (${product.sku}) — ${product.images.length} images removed, ${batchCount} batches archived`,
       req,
     });
 
-    return apiSuccess({ deleted: true }, 200, 'Product deleted successfully');
+    return apiSuccess(
+      {
+        deleted:            true,
+        images_removed:     product.images.length,
+        batches_archived:   batchCount,
+        has_order_history:  orderItemCount > 0,
+      },
+      200,
+      `"${product.brand_name}" deleted. ${product.images.length} image${product.images.length !== 1 ? 's' : ''} removed, ${batchCount} inventory batch${batchCount !== 1 ? 'es' : ''} archived.`,
+    );
   } catch (err) {
     console.error('[DELETE /api/products/[sku]]', err);
     return apiInternalError();

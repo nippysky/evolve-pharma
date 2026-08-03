@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     const categories = await db.category.findMany({
       orderBy: { name: 'asc' },
-      include: { _count: { select: { products: true } } },
+      include: { _count: { select: { products: { where: { deleted_at: null } } } } },
     });
 
     return apiSuccess({

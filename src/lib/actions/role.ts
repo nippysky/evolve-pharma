@@ -21,12 +21,22 @@ export async function setCustomerSessionAction(): Promise<void> {
 }
 
 /**
- * Sign out — clears both JWT cookies and redirects to /sign-in.
- * Works for all roles (customer, staff, admin).
+ * Customer sign out — clears both JWT cookies and redirects to /sign-in.
  */
 export async function signOutAction(): Promise<void> {
   const store = await cookies();
   store.delete(ACCESS_COOKIE);
   store.delete(REFRESH_COOKIE);
   redirect('/sign-in');
+}
+
+/**
+ * Staff / admin sign out — clears both JWT cookies and redirects to /staff/sign-in.
+ * Use this in admin and staff-side components instead of signOutAction.
+ */
+export async function staffSignOutAction(): Promise<void> {
+  const store = await cookies();
+  store.delete(ACCESS_COOKIE);
+  store.delete(REFRESH_COOKIE);
+  redirect('/staff/sign-in');
 }

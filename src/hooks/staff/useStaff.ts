@@ -21,7 +21,10 @@ import {
   listCustomersByStage,
   reviewCustomer,
   bulkUploadCustomers,
-} from '@/lib/api/services/console.service';
+  createCustomer,
+  type CreateCustomerInput,
+  type CreateCustomerResult,
+} from '@/lib/api/services/customers.service';
 import type { LoginStaffPayload, RegisterStaffPayload, CustomerAdminRecord, StaffRecord } from '@/lib/api/types';
 
 // ---------- Query keys -----------------------------------------------------
@@ -203,6 +206,18 @@ export function useReviewCustomer() {
     }) => reviewCustomer(id, decision === 'APPROVE' ? 'approve' : 'reject', review_notes),
     onSuccess: () => {
       // Invalidate all customer tabs so counts + lists stay in sync
+      queryClient.invalidateQueries({ queryKey: ['customers-admin'] });
+    },
+  });
+}
+
+// ---------- Create single customer (admin invite) --------------------------
+
+export function useCreateCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation<CreateCustomerResult, Error, CreateCustomerInput>({
+    mutationFn: (input) => createCustomer(input),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers-admin'] });
     },
   });

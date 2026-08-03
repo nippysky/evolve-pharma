@@ -23,7 +23,7 @@
  */
 
 import { type NextRequest } from 'next/server';
-import { db } from './db.js';
+import { db } from './db';
 
 // ─── Audit log ────────────────────────────────────────────────────────────────
 

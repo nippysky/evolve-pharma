@@ -20,6 +20,7 @@ import { writeLoginHistory, writeAuditLog } from '@/lib/audit';
 import {
   apiError,
   apiInternalError,
+  handlePrismaError,
 } from '@/lib/api/response';
 import { issueTokensForUser } from '@/lib/api/issue-tokens';
 
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (err) {
     console.error('[POST /api/auth/staff/login]', err);
+    return handlePrismaError(err) ?? apiInternalError();
     return apiInternalError();
   }
 }

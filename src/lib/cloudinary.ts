@@ -39,30 +39,60 @@ export interface UploadResult {
 }
 
 /**
- * Upload a Buffer or base64 string to Cloudinary.
- * Returns the public_id and secure URL.
+ * Upload a Buffer to Cloudinary using upload_stream.
+ *
+ * upload_stream pipes the raw bytes directly — no base64 data-URI encoding.
+ * This avoids the 403 that certain Cloudinary account configurations return
+ * when they receive a data:...;base64,... string upload payload.
+ *
+ * resource_type 'auto' lets Cloudinary detect image (JPEG/PNG/WEBP) vs
+ * raw (PDF/XLSX) automatically — pass it explicitly for every call.
  */
 export async function uploadToCloudinary(
-  source: Buffer | string,
-  folder: UploadFolder,
+  source:   Buffer | string,
+  folder:   UploadFolder,
   options: {
     resourceType?: 'image' | 'raw' | 'auto';
     publicId?:     string;
+    mimeType?:     string; // kept for API compatibility, unused in stream path
   } = {},
 ): Promise<UploadResult> {
-  const resourceType = options.resourceType ?? 'image';
+  const resourceType = options.resourceType ?? 'auto';
 
-  // Convert Buffer to base64 data URI if needed
-  const uploadSource =
-    Buffer.isBuffer(source)
-      ? `data:application/octet-stream;base64,${source.toString('base64')}`
-      : source;
+  // If the source is already a URL/base64 string, fall back to the simple upload() call.
+  if (!Buffer.isBuffer(source)) {
+    const result = await cloudinary.uploader.upload(source, {
+      folder,
+      resource_type: resourceType,
+      ...(options.publicId ? { public_id: options.publicId, overwrite: true } : {}),
+    });
+    return {
+      publicId: result.public_id,
+      url:      result.secure_url,
+      format:   result.format,
+      bytes:    result.bytes,
+    };
+  }
 
-  const result = await cloudinary.uploader.upload(uploadSource, {
-    folder,
-    resource_type: resourceType,
-    public_id:     options.publicId,
-    overwrite:     !!options.publicId,
+  // Buffer → stream upload (no data-URI encoding, works with all account types)
+  type CloudResult = { public_id: string; secure_url: string; format: string; bytes: number };
+
+  const result = await new Promise<CloudResult>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: resourceType,
+        ...(options.publicId ? { public_id: options.publicId, overwrite: true } : {}),
+      },
+      (error, res) => {
+        if (error || !res) {
+          reject(error ?? new Error('Cloudinary upload_stream: no result returned'));
+        } else {
+          resolve(res as CloudResult);
+        }
+      },
+    );
+    stream.end(source);
   });
 
   return {

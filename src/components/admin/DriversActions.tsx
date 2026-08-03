@@ -7,6 +7,7 @@ import { CreateEntityModal, type EntityField } from './CreateEntityModal';
 import { SheetImporter } from './SheetImporter';
 import { z } from 'zod';
 import { phoneSchema } from '@/lib/schemas';
+import { inviteDriverAction } from '@/lib/actions/admin';
 
 // Driver invite schema
 const driverInviteSchema = z.object({
@@ -52,16 +53,9 @@ const COLUMNS = [
   { key: 'region',        label: 'Region',        required: true  },
 ];
 
-// Stub actions — replace with real server actions when backend is ready.
-// CreateEntityModal expects (formData: FormData) => Promise<ActionResult>.
-async function inviteDriverAction(fd: FormData) {
-  await new Promise((r) => setTimeout(r, 900));
-  void fd;
-  return { ok: true as const };
-}
-
 async function importDriversAction(_rows: DriverInviteInput[]) {
-  await new Promise((r) => setTimeout(r, 1200));
+  // Bulk driver import requires a dedicated batch endpoint — not yet available.
+  // For now return a validation-only summary so the UI doesn't break.
   return { ok: true as const, imported: 0, failed: 0 };
 }
 

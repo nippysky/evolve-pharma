@@ -207,7 +207,6 @@ export interface ProductDTO {
   product_strength?:        string | null;
   pack_size?:               string | null;
   quantity_per_carton?:     number | null;
-  description?:             string | null;
   allow_unit_sale:          boolean;
   minimum_order:            number;
   selling_price:            string; // Decimal → string
@@ -217,7 +216,10 @@ export interface ProductDTO {
   minimum_stock_level:      number;
   reorder_quantity:         number;
   status:                   ProductStatus;
-  total_quantity_available: number; // computed via SUM(inventory_batches)
+  /** Sum of all inventory batch quantities. Field name from GET /api/products list. */
+  total_stock:              number;
+  /** Primary image URL — present on list responses, absent on single-product fetch. */
+  primary_image?:           string | null;
   images:                   ProductImageDTO[];
   created_at:               string;
   updated_at:               string;
@@ -419,19 +421,26 @@ export interface StaffRecord {
  * Maps onto CustomerDTO + nested user fields for easy table rendering.
  */
 export interface CustomerAdminRecord {
-  id:               number;
-  user_id:          number;
-  company_name?:    string | null;
-  status:           CustomerStatus;
-  referral_code?:   string | null;
-  review_note?:     string | null;
-  pcn_verified:     boolean;
+  id:                   number;
+  uuid?:                string | null;
+  user_id:              number;
+  company_name?:        string | null;
+  address?:             string | null;
+  city?:                string | null;
+  state?:               string | null;
+  status:               CustomerStatus;
+  referral_code?:       string | null;
+  review_note?:         string | null;
+  reviewed_by?:         string | null; // "First Last" of the reviewing admin
+  reviewed_at?:         string | null;
+  pcn_verified:         boolean;
+  pcn_certificate_url?: string | null; // Cloudinary URL — may be PDF or image
   // Flattened from user relation
-  first_name:       string;
-  last_name:        string;
-  email:            string;
-  phone?:           string | null;
-  created_at:       string;
+  first_name:           string;
+  last_name:            string;
+  email:                string;
+  phone?:               string | null;
+  created_at:           string;
 }
 
 // ─── Customer auth payloads (used by useCustomerAuth.ts — will be wired in Module 6) ──

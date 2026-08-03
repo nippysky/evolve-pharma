@@ -1,20 +1,48 @@
 /**
- * GET /api/customers — paginated customer list (Admin/Staff)
+ * /api/customers
  *
- * Query params:
- *   page, limit
- *   status     — REGISTERED | OTP_CONFIRMED | PCN_CERT_UPLOADED | PENDING_REVIEW | APPROVED | REJECTED
- *   search     — name, email, company_name
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │  GET  — paginated customer list (Admin / Staff)                         │
+ * │  POST — admin-initiated customer invite (Admin / Staff)                 │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * GET query params:
+ *   page    — page number (default 1)
+ *   limit   — records per page (default 20)
+ *   status  — REGISTERED | OTP_CONFIRMED | PCN_CERT_UPLOADED | PENDING_REVIEW | APPROVED | REJECTED
+ *   search  — full-text on name, email, company_name
+ *
+ * POST body (JSON):
+ *   first_name    string  required
+ *   last_name     string  required
+ *   middle_name   string  optional
+ *   company_name  string  required
+ *   email         string  required
+ *   phone         string  required
+ *   address       string  required
+ *   city          string  required
+ *   state         string  required
+ *   referral_code string  optional
+ *
+ * POST response 201:
+ *   { customer_id, user_id, email, invite_url }
  */
 
 import { NextRequest } from 'next/server';
+import { z }           from 'zod';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
+import { sendCustomerInvitationEmail } from '@/lib/mail';
+import { generateOtp }                 from '@/lib/api/issue-tokens';
+import { customerOnboardSchema }       from '@/lib/schemas';
 import {
+  apiSuccess,
   apiPaginated,
+  apiError,
   apiUnauthorized,
   apiForbidden,
   apiInternalError,
+  handlePrismaError,
   parsePagination,
 } from '@/lib/api/response';
 
@@ -114,6 +142,119 @@ export async function GET(req: NextRequest) {
     return apiPaginated(customers, { page, limit, total }, 'Customers retrieved successfully');
   } catch (err) {
     console.error('[GET /api/customers]', err);
-    return apiInternalError();
+    return handlePrismaError(err) ?? apiInternalError();
+  }
+}
+
+// ─── POST /api/customers ──────────────────────────────────────────────────────
+
+/** 48-hour OTP expiry for admin-generated invitations. */
+function inviteOtpExpiresAt(): Date {
+  return new Date(Date.now() + 48 * 60 * 60 * 1000);
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getSession(req);
+    if (!session) return apiUnauthorized();
+    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
+
+    let body: unknown;
+    try { body = await req.json(); }
+    catch { return apiError('Invalid JSON body', 400); }
+
+    // Validate with the shared onboard schema (same fields as admin add-customer form)
+    const parsed = customerOnboardSchema.safeParse(body);
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string[]> = {};
+      for (const [f, msgs] of Object.entries(parsed.error.flatten().fieldErrors)) {
+        fieldErrors[f] = msgs as string[];
+      }
+      return apiError('Please review the fields below.', 422, fieldErrors);
+    }
+
+    const {
+      first_name, middle_name, last_name,
+      company_name, email, phone,
+      address, city, state,
+    } = parsed.data;
+
+    // Duplicate email guard
+    const existing = await db.user.findUnique({
+      where:  { email: email.toLowerCase() },
+      select: { id: true },
+    });
+    if (existing) return apiError('An account with this email already exists.', 409);
+
+    // Generate referral code, OTP
+    const referralCode = 'ENV' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    const otp          = generateOtp();
+    const otpExpiresAt = inviteOtpExpiresAt();
+
+    // Create User + Customer + OTP in one transaction
+    const { user, customer } = await db.$transaction(async (tx: any) => {
+      const u = await tx.user.create({
+        data: {
+          first_name,
+          middle_name: middle_name ?? null,
+          last_name,
+          email:         email.toLowerCase(),
+          phone:         phone ?? null,
+          password_hash: 'UNSET',
+          role:          'CUSTOMER',
+          status:        'INACTIVE',
+        },
+      });
+
+      const c = await tx.customer.create({
+        data: {
+          user_id:      u.id,
+          company_name,
+          address,
+          city,
+          state,
+          referral_code: referralCode,
+          status:        'REGISTERED',
+        },
+      });
+
+      await tx.otpToken.create({
+        data: {
+          user_id:    u.id,
+          token:      otp,
+          type:       'EMAIL_VERIFICATION',
+          expires_at: otpExpiresAt,
+        },
+      });
+
+      return { user: u, customer: c };
+    });
+
+    // Build invite URL
+    const siteUrl   = process.env.FRONTEND_URL ?? 'https://www.envolvepharm.com.ng';
+    const inviteUrl = `${siteUrl}/sign-up/invited?email=${encodeURIComponent(email.toLowerCase())}`;
+
+    // Fire invitation email (non-blocking — record is already persisted)
+    void sendCustomerInvitationEmail({
+      to:          email.toLowerCase(),
+      name:        first_name,
+      otp,
+      companyName: company_name,
+      inviteUrl,
+    }).catch((e) => console.error('[POST /api/customers] Invitation email failed:', e));
+
+    return apiSuccess(
+      {
+        customer_id: customer.id,
+        user_id:     user.id,
+        email:       email.toLowerCase(),
+        invite_url:  inviteUrl,
+      },
+      201,
+      'Customer created. An invitation email has been sent.',
+    );
+  } catch (err) {
+    console.error('[POST /api/customers]', err);
+    return handlePrismaError(err) ?? apiInternalError();
   }
 }

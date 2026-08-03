@@ -5,12 +5,12 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/shared/Logo';
 import { Icon, type IconName, Shield, Users as UsersIcon, Truck } from '@/components/icons';
 import { CONSOLE_NAV, DRIVER_NAV } from '@/lib/constants';
-import { LogoutButton } from '@/components/console/LogoutButton';
+import { LogoutButton } from '@/components/admin/LogoutButton';
 import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 import type { SessionUser } from '@/types';
 
-interface ConsoleSidebarProps {
+interface AdminSidebarProps {
   session: SessionUser;
 }
 
@@ -86,7 +86,7 @@ const DEFAULT_THEME = ROLE_THEME.ADMIN;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function ConsoleSidebar({ session }: ConsoleSidebarProps) {
+export function AdminSidebar({ session }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user } = useUser();
 

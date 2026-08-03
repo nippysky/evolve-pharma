@@ -18,6 +18,7 @@ import {
   apiUnauthorized,
   apiForbidden,
   apiInternalError,
+  handlePrismaError,
   parsePagination,
 } from '@/lib/api/response';
 import type { DeliveryStatus } from '@db/enums';
@@ -126,6 +127,7 @@ export async function GET(req: NextRequest) {
     return apiPaginated(deliveries, { page, limit, total }, 'Deliveries retrieved successfully');
   } catch (err) {
     console.error('[GET /api/deliveries]', err);
+    return handlePrismaError(err) ?? apiInternalError();
     return apiInternalError();
   }
 }

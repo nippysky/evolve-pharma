@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     const thirtyDays = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const where = {
+      product: { deleted_at: null },           // never show batches for soft-deleted products
       ...(productId  ? { product_id: productId }                          : {}),
       ...(nearExpiry ? { expiry_date: { not: null, lte: thirtyDays } }    : {}),
       ...(lowStock   ? { quantity: { gt: 0 } }                            : {}), // refined below
@@ -51,7 +52,6 @@ export async function GET(req: NextRequest) {
               brand_name:          true,
               generic_name:        true,
               minimum_stock_level: true,
-              status:              true,
               images:              { where: { is_primary: true }, take: 1 },
             },
           },
@@ -75,7 +75,6 @@ export async function GET(req: NextRequest) {
         brand_name:          b.product.brand_name,
         generic_name:        b.product.generic_name,
         minimum_stock_level: b.product.minimum_stock_level,
-        status:              b.product.status,
         primary_image:       b.product.images[0]?.url ?? null,
       },
     }));

@@ -14,6 +14,7 @@ import {
   apiUnauthorized,
   apiForbidden,
   apiInternalError,
+  handlePrismaError,
   parsePagination,
 } from '@/lib/api/response';
 import { writeAuditLog } from '@/lib/audit';
@@ -29,7 +30,6 @@ const createSchema = z.object({
   product_strength:   z.string().max(100).optional(),
   pack_size:          z.string().max(100).optional(),
   quantity_per_carton:z.number().int().positive().optional(),
-  description:        z.string().optional(),
   allow_unit_sale:    z.boolean().default(false),
   minimum_order:      z.number().int().positive().default(1),
   selling_price:      z.number().positive(),
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
         include: {
           category:     { select: { id: true, name: true } },
           manufacturer: { select: { id: true, name: true } },
-          images:       { where: { is_primary: true }, take: 1 },
+          images:       { orderBy: { is_primary: 'desc' } },
           inventoryBatches: {
             select: { quantity: true },
           },
@@ -103,7 +103,6 @@ export async function GET(req: NextRequest) {
       product_strength:     p.product_strength,
       pack_size:            p.pack_size,
       quantity_per_carton:  p.quantity_per_carton,
-      description:          p.description,
       allow_unit_sale:      p.allow_unit_sale,
       minimum_order:        p.minimum_order,
       selling_price:        Number(p.selling_price),
@@ -116,6 +115,7 @@ export async function GET(req: NextRequest) {
       category:             p.category,
       manufacturer:         p.manufacturer,
       primary_image:        p.images[0]?.url ?? null,
+      images:               p.images,
       total_stock:          p.inventoryBatches.reduce((s, b) => s + b.quantity, 0),
       created_at:           p.created_at,
       updated_at:           p.updated_at,
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
     return apiPaginated(products, { page, limit, total }, 'Products retrieved successfully');
   } catch (err) {
     console.error('[GET /api/products]', err);
-    return apiInternalError();
+    return handlePrismaError(err) ?? apiInternalError();
   }
 }
 
@@ -165,7 +165,6 @@ export async function POST(req: NextRequest) {
         product_strength:    data.product_strength,
         pack_size:           data.pack_size,
         quantity_per_carton: data.quantity_per_carton,
-        description:         data.description,
         allow_unit_sale:     data.allow_unit_sale,
         minimum_order:       data.minimum_order,
         selling_price:       data.selling_price,
@@ -195,6 +194,6 @@ export async function POST(req: NextRequest) {
     return apiSuccess({ product: { id: product.id, sku: product.sku, uuid: product.uuid } }, 201, 'Product created successfully');
   } catch (err) {
     console.error('[POST /api/products]', err);
-    return apiInternalError();
+    return handlePrismaError(err) ?? apiInternalError();
   }
 }

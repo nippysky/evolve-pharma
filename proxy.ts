@@ -38,7 +38,7 @@ const PROTECTED_ROUTES: Array<{
   roles:       UserRole[];
   loginPath:   string;
 }> = [
-  { prefix: '/admin',   roles: ['ADMIN'],                     loginPath: '/sign-in'        },
+  { prefix: '/admin',   roles: ['ADMIN'],                     loginPath: '/staff/sign-in'  },
   { prefix: '/staff',   roles: ['ADMIN', 'STAFF'],             loginPath: '/staff/sign-in'  },
   { prefix: '/driver',  roles: ['DRIVER'],                    loginPath: '/driver/sign-in' },
   { prefix: '/portal',  roles: ['CUSTOMER'],                  loginPath: '/sign-in'        },
@@ -67,10 +67,33 @@ function isMobileRequest(req: NextRequest): boolean {
   return accept.includes('application/json') || xrw === 'XMLHttpRequest';
 }
 
+// ─── Auth pages — never protected ────────────────────────────────────────────
+//
+// /staff/sign-in and /driver/sign-in share the /staff/* and /driver/* prefixes
+// that the matcher covers, which would cause an infinite redirect loop:
+//   visit /staff/sign-in → no token → redirect to /staff/sign-in?redirect=...
+//   → middleware fires again → loop → ERR_TOO_MANY_REDIRECTS
+//
+// Pass these through unconditionally before any token check.
+
+const BYPASS_PATHS = [
+  '/staff/sign-in',
+  '/staff/forgot-password',
+  '/staff/reset-password',
+  '/driver/sign-in',
+  '/driver/forgot-password',
+  '/driver/reset-password',
+];
+
 // ─── Proxy function ───────────────────────────────────────────────────────────
 
 export default async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
+
+  // Auth pages are always public — never run the token check on them
+  if (BYPASS_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next();
+  }
 
   // Find the matching protected route prefix
   const route = PROTECTED_ROUTES.find(r => pathname.startsWith(r.prefix));

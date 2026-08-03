@@ -20,8 +20,10 @@ import {
   apiForbidden,
   apiNotFound,
   apiInternalError,
+  handlePrismaError,
 } from '@/lib/api/response';
 import { writeAuditLog } from '@/lib/audit';
+import { sendCustomerApprovalEmail, sendCustomerRejectionEmail } from '@/lib/mail';
 
 const schema = z.object({
   decision:    z.enum(['approve', 'reject']),
@@ -47,9 +49,17 @@ export async function PATCH(
     });
     if (!customer) return apiNotFound('Customer');
 
-    if (customer.status !== 'PENDING_REVIEW') {
+    // Staff can only action PENDING_REVIEW customers.
+    // Admins can additionally re-review APPROVED or REJECTED customers.
+    const reviewableByStaff  = customer.status === 'PENDING_REVIEW';
+    const reviewableByAdmin  = ['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(customer.status);
+    const canReview          = session.role === 'ADMIN' ? reviewableByAdmin : reviewableByStaff;
+
+    if (!canReview) {
       return apiError(
-        `Cannot review a customer with status ${customer.status}. Only PENDING_REVIEW accounts can be reviewed.`,
+        session.role === 'ADMIN'
+          ? `Cannot review a customer with status ${customer.status}.`
+          : `Staff members can only review customers in PENDING_REVIEW status. This customer is ${customer.status}.`,
         422,
       );
     }
@@ -81,6 +91,8 @@ export async function PATCH(
       where: { id: customerId },
       data:  {
         status:          newStatus,
+        // Mark PCN as verified when approving, un-mark on rejection.
+        pcn_verified:    decision === 'approve',
         review_note:     review_note ?? null,
         reviewed_by_id:  session.userId,
         reviewed_at:     new Date(),
@@ -88,6 +100,20 @@ export async function PATCH(
     });
 
     const name = `${customer.user.first_name} ${customer.user.last_name}`;
+
+    // Send approval or rejection email (fire-and-forget)
+    if (decision === 'approve') {
+      void sendCustomerApprovalEmail({
+        to:   customer.user.email,
+        name: customer.user.first_name,
+      }).catch((e) => console.error('[review] approval email failed:', e));
+    } else {
+      void sendCustomerRejectionEmail({
+        to:         customer.user.email,
+        name:       customer.user.first_name,
+        reviewNote: review_note ?? 'No reason provided.',
+      }).catch((e) => console.error('[review] rejection email failed:', e));
+    }
 
     void writeAuditLog({
       userId:      session.userId,
@@ -108,6 +134,6 @@ export async function PATCH(
     );
   } catch (err) {
     console.error('[PATCH /api/customers/[id]/review]', err);
-    return apiInternalError();
+    return handlePrismaError(err) ?? apiInternalError();
   }
 }

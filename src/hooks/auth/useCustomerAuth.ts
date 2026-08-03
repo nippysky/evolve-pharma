@@ -71,7 +71,6 @@ export function useLoginCustomer() {
     mutationFn: (payload: LoginCustomerPayload) => loginCustomer(payload),
     onSuccess: (data: Awaited<ReturnType<typeof loginCustomer>>) => {
       // Pre-populate the me cache so the first portal load is instant
-      // Login response wraps the user under `data.customer`
       queryClient.setQueryData(AUTH_KEYS.me, data.customer);
     },
   });

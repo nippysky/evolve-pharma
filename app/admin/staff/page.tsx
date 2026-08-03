@@ -24,7 +24,7 @@ import {
 import { PageHead }   from '@/components/shared/PageHead';
 import { Avatar }     from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
-import { StaffActions } from '@/components/console/StaffActions';
+import { StaffActions } from '@/components/admin/StaffActions';
 import {
   useAllStaff,
   type StaffStatus,

@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * ENVOLVE PHARMACEUTICALS — Console Auth Provider
+ * ENVOLVE PHARMACEUTICALS — Admin Auth Provider
  *
- * Wraps /console/* routes. Renders a skeleton while auth/me is in-flight
+ * Wraps /admin/* routes. Renders a skeleton while auth/me is in-flight
  * so users never see a partially-loaded dashboard with dummy placeholder
  * names or missing role info. Once auth/me resolves the real layout mounts.
  *
@@ -13,27 +13,23 @@
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { UserProvider, useUser } from '@/contexts/UserContext';
-import { signOutAction } from '@/lib/actions/role';
 
 // ---------- Inner gate -------------------------------------------------------
 
 function AuthGate({ children }: { children: ReactNode }) {
   const { isLoading, user, error } = useUser();
-  const router = useRouter();
 
-  // Only redirect to sign-in once the UserContext has exhausted its own
-  // recovery attempt (refresh → retry auth/me). The context already masks
-  // the error while recovery is in flight, so by the time `error` is
-  // non-null here, there is nothing more we can do — the session is truly gone.
+  // Only redirect once the UserContext has exhausted its own recovery attempt
+  // (refresh → retry auth/me). By the time `error` is non-null here the
+  // session is truly gone. Hard-navigate so React state fully resets and
+  // the middleware re-evaluates — no server action needed, the cookies are
+  // already stale/absent and the middleware will gate the page correctly.
   useEffect(() => {
     if (!isLoading && error && !user) {
-      signOutAction().then(() => {
-        router.replace('/staff/sign-in');
-      });
+      window.location.href = '/staff/sign-in';
     }
-  }, [isLoading, error, user, router]);
+  }, [isLoading, error, user]);
 
   // Still fetching or mid-recovery — show a full-page skeleton that mirrors
   // the sidebar + content layout.
@@ -102,7 +98,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 // ---------- Provider ---------------------------------------------------------
 
-export function ConsoleAuthProvider({ children }: { children: ReactNode }) {
+export function AdminAuthProvider({ children }: { children: ReactNode }) {
   return (
     <UserProvider>
       <AuthGate>{children}</AuthGate>

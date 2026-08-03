@@ -31,14 +31,31 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
 // ─── Customer auth ────────────────────────────────────────────────────────────
 
 export async function registerCustomer(payload: RegisterCustomerPayload) {
-  return post<{ message: string }>('/api/auth/customer/register', payload);
+  // Must use FormData — payload includes a File (pcn_certificate)
+  const fd = new FormData();
+  (Object.entries(payload) as [string, unknown][]).forEach(([k, v]) => {
+    if (v == null) return;
+    if (v instanceof File) { fd.append(k === 'pcn_certificate' ? 'file' : k, v); }
+    else                   { fd.append(k, String(v)); }
+  });
+  const res  = await fetch('/api/auth/customer/register', {
+    method:      'POST',
+    credentials: 'include',
+    body:        fd,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.message ?? 'Registration failed');
+  return json?.data as { email: string };
 }
 
 export async function loginCustomer(payload: LoginCustomerPayload) {
-  return post<{ customer: SessionUser & { status: string } }>(
-    '/api/auth/customer/login',
-    payload,
-  );
+  // API returns data.user + data.tokens. We expose it as `customer` for clear
+  // DX — keeps customer sessions distinct from staff/admin sessions.
+  const raw = await post<{
+    user:   SessionUser;
+    tokens: { access_token: string; refresh_token: string; expires_in: number };
+  }>('/api/auth/customer/login', payload);
+  return { customer: raw.user, tokens: raw.tokens };
 }
 
 export async function verifyOtp(payload: VerifyOtpPayload) {

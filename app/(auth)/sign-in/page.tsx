@@ -8,11 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { ArrowRight, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { useLoginCustomer } from '@/hooks/auth/useCustomerAuth';
-import { setCustomerSessionAction } from '@/lib/actions/role';
-import type { SessionUser } from '@/lib/api/types';
-
-type LoginResult = { customer: Omit<SessionUser, "status"> & { status: string } };
-
 export default function SignInPage() {
   const router = useRouter();
   const toast = useToast();
@@ -31,31 +26,15 @@ export default function SignInPage() {
     loginMutation.mutate(
       { email, password },
       {
-        onSuccess: async (data: LoginResult) => {
-          const customer = data.customer;
-
-          // Account not yet approved — send to the pending page
-          if (customer.status !== 'APPROVED') {
-            toast.show({
-              tone: 'info',
-              title: 'Account pending review',
-              description: 'Our team will approve your account shortly.',
-            });
-            await setCustomerSessionAction();
-            router.push('/sign-up/pending');
-            return;
-          }
-
-          // Stamp role=customer cookie — overwrites any stale admin/staff cookie
-          // so the portal layout's getSession() always routes correctly.
-          await setCustomerSessionAction();
-
+        onSuccess: (data) => {
+          // If onSuccess fires, the API has cleared all status gates.
+          // (PENDING_REVIEW / OTP_CONFIRMED / REJECTED all return 403 — handled in onError.)
+          // Cookies are already set by the API route handler — no manual header needed.
           toast.show({
             tone: 'success',
-            title: `Welcome back, ${customer.first_name}`,
+            title: `Welcome back, ${data.customer.first_name}`,
             description: 'Routing you to your portal…',
           });
-
           router.push('/portal/catalog');
         },
         onError: (err: Error) => {
