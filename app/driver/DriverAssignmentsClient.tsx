@@ -1,3 +1,4 @@
+'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Truck, MapPin, Phone, Package, AlertTriangle, Check } from '@/components/icons';
 import { formatNaira, formatDate, cn } from '@/lib/utils';

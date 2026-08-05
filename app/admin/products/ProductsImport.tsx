@@ -1,3 +1,4 @@
+'use client';
 import { useState, useRef, useCallback }   from 'react';
 import { useQueryClient }                   from '@tanstack/react-query';
 import { Upload, X, AlertTriangle, CheckCircle, FileText, RotateCw, Download } from '@/components/icons';

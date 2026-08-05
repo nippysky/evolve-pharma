@@ -1,3 +1,4 @@
+'use client';
 import { useState, useTransition } from 'react';
 import { ChevronDown, CheckCircle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';

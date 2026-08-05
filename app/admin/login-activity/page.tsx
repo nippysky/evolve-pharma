@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useCallback, useTransition } from 'react';
 import {
   Shield, ClipboardList, CheckCircle, XCircle, AlertTriangle,

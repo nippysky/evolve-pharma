@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import { Logout, Spinner } from '@/components/icons';
 import { logoutUser } from '@/lib/api/services/auth.service';

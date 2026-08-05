@@ -1,3 +1,4 @@
+'use client';
 import { useState, useMemo, useRef, useCallback } from 'react';
 import Image         from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

@@ -1,3 +1,4 @@
+'use client';
 import { Printer } from '@/components/icons';
 import { formatNaira, formatDate } from '@/lib/utils';
 

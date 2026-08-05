@@ -1,3 +1,4 @@
+'use client';
 import type { ReactNode } from 'react';
 import { CheckCircle } from '@/components/icons';
 import { cn } from '@/lib/utils';

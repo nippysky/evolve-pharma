@@ -1,3 +1,4 @@
+'use client';
 import React, { useMemo, useState, useRef } from 'react';
 import {
   Truck,

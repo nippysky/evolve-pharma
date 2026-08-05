@@ -1,3 +1,4 @@
+'use client';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { UserProvider, useUser } from '@/contexts/UserContext';
