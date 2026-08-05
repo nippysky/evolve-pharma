@@ -1,15 +1,3 @@
-/**
- * POST /api/auth/staff/forgot-password
- *
- * Initiates password reset for internal users (ADMIN | STAFF | DRIVER).
- * Sends a 6-digit OTP to the staff member's registered email.
- *
- * Always returns 200 regardless of whether the email exists —
- * prevents user enumeration on the internal portal.
- *
- * No auth required.
- */
-
 import { NextRequest }       from 'next/server';
 import { z }                 from 'zod';
 import { db }                from '@/lib/db';
@@ -22,17 +10,11 @@ import {
 } from '@/lib/api/response';
 import { generateOtp, otpExpiresAt } from '@/lib/api/issue-tokens';
 
-// ─── Allowed internal roles ───────────────────────────────────────────────────
-
 const STAFF_ROLES = new Set(['ADMIN', 'STAFF', 'DRIVER']);
-
-// ─── Validation ───────────────────────────────────────────────────────────────
 
 const schema = z.object({
   email: z.email('Please enter a valid email address.'),
 });
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,7 +59,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Send OTP email (fire-and-forget — never expose mail errors to client)
       sendOtpEmail({
         to:   email,
         name: user.first_name,

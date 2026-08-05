@@ -1,12 +1,3 @@
-'use client';
-
-/**
- * Console · Product Categories
- *
- * Full CRUD: list, create, rename, delete categories.
- * Wired to GET/POST /api/products/categories and PATCH/DELETE /api/products/categories/[id].
- */
-
 import { useMemo, useState } from 'react';
 import Link                  from 'next/link';
 import { useQueryClient }    from '@tanstack/react-query';
@@ -18,8 +9,6 @@ import { Search, AlertTriangle, RotateCw, Tag, Plus, Trash, X, Edit } from '@/co
 import { useToast }          from '@/contexts/ToastContext';
 import { cn }                from '@/lib/utils';
 import type { CategoryDTO }  from '@/lib/api/types';
-
-// ─── API helpers ──────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res  = await fetch(path, { credentials: 'include', ...init });
@@ -41,8 +30,6 @@ async function deleteCategory(id: number): Promise<void> {
   await apiFetch(`/api/products/categories/${id}`, { method: 'DELETE' });
 }
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
-
 function GridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -56,8 +43,6 @@ function GridSkeleton() {
     </div>
   );
 }
-
-// ─── New Category Modal ───────────────────────────────────────────────────────
 
 interface NewCategoryModalProps {
   onClose: () => void;
@@ -133,8 +118,6 @@ function NewCategoryModal({ onClose, onCreated }: NewCategoryModalProps) {
   );
 }
 
-// ─── Delete Confirm Modal ─────────────────────────────────────────────────────
-
 interface DeleteModalProps {
   category: CategoryDTO & { product_count?: number };
   onClose: () => void;
@@ -197,8 +180,6 @@ function DeleteModal({ category, onClose, onDeleted }: DeleteModalProps) {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CategoriesPage() {
   const toast       = useToast();

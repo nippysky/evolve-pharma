@@ -1,18 +1,3 @@
-'use client';
-
-/**
- * Console · New Product
- *
- * API-first form: POST /api/products to create, then
- * POST /api/products/[sku]/images to upload images.
- *
- * Features:
- *   - All product fields from the template
- *   - Up to 6 images with drag-drop or click upload, inline previews
- *   - First image auto-marked as primary; user can reorder / remove
- *   - Category + Manufacturer auto-created if not found (inline input)
- */
-
 import { useState, useRef, useCallback } from 'react';
 import { useRouter }   from 'next/navigation';
 import Image           from 'next/image';
@@ -29,8 +14,6 @@ import { useToast }              from '@/contexts/ToastContext';
 import { useProductCategories }  from '@/hooks/admin/useAdminProducts';
 import { cn }                    from '@/lib/utils';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface FormErrors { [field: string]: string }
 
 interface ImagePreview {
@@ -40,8 +23,6 @@ interface ImagePreview {
   isPrimary: boolean;
 }
 
-// ─── Status options ───────────────────────────────────────────────────────────
-
 const STATUS_OPTIONS = [
   { value: 'DRAFT',        label: 'Draft — hidden from catalog'   },
   { value: 'ACTIVE',       label: 'Active — visible & orderable'  },
@@ -49,8 +30,6 @@ const STATUS_OPTIONS = [
 ];
 
 const MAX_IMAGES = 6;
-
-// ─── Image uploader sub-component ────────────────────────────────────────────
 
 function ImageUploader({
   images,
@@ -169,8 +148,6 @@ function ImageUploader({
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NewProductPage() {
   const router      = useRouter();

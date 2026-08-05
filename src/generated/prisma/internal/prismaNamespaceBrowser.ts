@@ -68,6 +68,7 @@ export const ModelName = {
   OtpToken: 'OtpToken',
   LoginHistory: 'LoginHistory',
   AuditLog: 'AuditLog',
+  AppSettings: 'AppSettings',
   Notification: 'Notification'
 } as const
 
@@ -121,6 +122,7 @@ export const CustomerScalarFieldEnum = {
   status: 'status',
   referral_code: 'referral_code',
   referred_by: 'referred_by',
+  referral_points: 'referral_points',
   review_note: 'review_note',
   reviewed_by_id: 'reviewed_by_id',
   reviewed_at: 'reviewed_at',
@@ -368,6 +370,15 @@ export const AuditLogScalarFieldEnum = {
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
 
 
+export const AppSettingsScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  updated_at: 'updated_at'
+} as const
+
+export type AppSettingsScalarFieldEnum = (typeof AppSettingsScalarFieldEnum)[keyof typeof AppSettingsScalarFieldEnum]
+
+
 export const NotificationScalarFieldEnum = {
   id: 'id',
   user_id: 'user_id',
@@ -561,6 +572,14 @@ export const AuditLogOrderByRelevanceFieldEnum = {
 } as const
 
 export type AuditLogOrderByRelevanceFieldEnum = (typeof AuditLogOrderByRelevanceFieldEnum)[keyof typeof AuditLogOrderByRelevanceFieldEnum]
+
+
+export const AppSettingsOrderByRelevanceFieldEnum = {
+  key: 'key',
+  value: 'value'
+} as const
+
+export type AppSettingsOrderByRelevanceFieldEnum = (typeof AppSettingsOrderByRelevanceFieldEnum)[keyof typeof AppSettingsOrderByRelevanceFieldEnum]
 
 
 export const NotificationOrderByRelevanceFieldEnum = {

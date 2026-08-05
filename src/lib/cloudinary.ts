@@ -1,17 +1,3 @@
-/**
- * Cloudinary configuration
- *
- * Used server-side in API route handlers only — never import in client components.
- * All uploads go through /api/upload which returns a secure URL + public_id.
- * The public_id is stored in the DB for future deletion/transforms.
- *
- * Folder structure on Cloudinary:
- *   evolve/products/          — product images
- *   evolve/pcn/               — customer PCN certificates (PDF)
- *   evolve/imports/           — bulk import files (xlsx/csv)
- *   evolve/avatars/           — user profile images
- */
-
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
@@ -22,8 +8,6 @@ cloudinary.config({
 });
 
 export { cloudinary };
-
-// ─── Upload helpers ────────────────────────────────────────────────────────────
 
 export type UploadFolder =
   | 'evolve/products'

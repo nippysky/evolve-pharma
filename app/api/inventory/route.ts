@@ -1,10 +1,3 @@
-/**
- * GET /api/inventory
- *
- * Returns all inventory batches grouped with product info.
- * Supports filtering by product_id, near_expiry, low_stock.
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
@@ -38,27 +31,25 @@ export async function GET(req: NextRequest) {
       ...(lowStock   ? { quantity: { gt: 0 } }                            : {}), // refined below
     };
 
-    const [batches, total] = await Promise.all([
-      db.inventoryBatch.findMany({
-        where,
-        orderBy:  { received_at: 'desc' },
-        skip,
-        take:     limit,
-        include:  {
-          product: {
-            select: {
-              id:                  true,
-              sku:                 true,
-              brand_name:          true,
-              generic_name:        true,
-              minimum_stock_level: true,
-              images:              { where: { is_primary: true }, take: 1 },
-            },
+    const batches = await db.inventoryBatch.findMany({
+      where,
+      orderBy:  { received_at: 'desc' },
+      skip,
+      take:     limit,
+      include:  {
+        product: {
+          select: {
+            id:                  true,
+            sku:                 true,
+            brand_name:          true,
+            generic_name:        true,
+            minimum_stock_level: true,
+            images:              { where: { is_primary: true }, take: 1 },
           },
         },
-      }),
-      db.inventoryBatch.count({ where }),
-    ]);
+      },
+    });
+    const total = await db.inventoryBatch.count({ where });
 
     const records = batches.map(b => ({
       id:            b.id,

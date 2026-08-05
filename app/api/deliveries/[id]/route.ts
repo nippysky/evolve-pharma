@@ -1,21 +1,7 @@
-/**
- * PATCH /api/deliveries/[id]
- *
- * Assign a driver or update delivery status.
- *
- * Admin/Staff can:
- *   - assign driver_id
- *   - change status to any valid next state
- *
- * Driver can:
- *   - update status of their own deliveries only
- *   - valid driver transitions: ASSIGNED → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED | FAILED
- */
-
-import { NextRequest } from 'next/server';
-import { z }           from 'zod';
-import { db }          from '@/lib/db';
-import { getSession }  from '@/lib/auth';
+import { NextRequest }        from 'next/server';
+import { z }                  from 'zod';
+import { db }                 from '@/lib/db';
+import { getSession }         from '@/lib/auth';
 import {
   apiSuccess,
   apiError,
@@ -24,15 +10,14 @@ import {
   apiNotFound,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
-
-// ─── Valid transitions ─────────────────────────────────────────────────────────
+import { writeAuditLog }        from '@/lib/audit';
+import { sendOrderStatusEmail } from '@/lib/mail';
 
 const ADMIN_TRANSITIONS: Record<string, string[]> = {
   AWAITING_DISPATCH: ['ASSIGNED'],
-  ASSIGNED:          ['IN_TRANSIT','FAILED','RETURNED'],
-  IN_TRANSIT:        ['OUT_FOR_DELIVERY','FAILED'],
-  OUT_FOR_DELIVERY:  ['DELIVERED','FAILED'],
+  ASSIGNED:          ['IN_TRANSIT', 'FAILED', 'RETURNED'],
+  IN_TRANSIT:        ['OUT_FOR_DELIVERY', 'FAILED'],
+  OUT_FOR_DELIVERY:  ['DELIVERED', 'FAILED'],
   DELIVERED:         [],
   FAILED:            ['ASSIGNED'],
   RETURNED:          [],
@@ -40,19 +25,15 @@ const ADMIN_TRANSITIONS: Record<string, string[]> = {
 
 const DRIVER_TRANSITIONS: Record<string, string[]> = {
   ASSIGNED:         ['IN_TRANSIT'],
-  IN_TRANSIT:       ['OUT_FOR_DELIVERY','FAILED'],
-  OUT_FOR_DELIVERY: ['DELIVERED','FAILED'],
+  IN_TRANSIT:       ['OUT_FOR_DELIVERY', 'FAILED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'FAILED'],
 };
 
-// ─── Validation ───────────────────────────────────────────────────────────────
-
 const schema = z.object({
-  status:    z.enum(['AWAITING_DISPATCH','ASSIGNED','IN_TRANSIT','OUT_FOR_DELIVERY','DELIVERED','FAILED','RETURNED']).optional(),
+  status:    z.enum(['AWAITING_DISPATCH', 'ASSIGNED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'FAILED', 'RETURNED']).optional(),
   driver_id: z.number().int().positive().nullable().optional(),
   notes:     z.string().optional(),
 });
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function PATCH(
   req: NextRequest,
@@ -67,18 +48,26 @@ export async function PATCH(
     const deliveryId = parseInt(id, 10);
     if (isNaN(deliveryId)) return apiNotFound('Delivery');
 
+    // Fetch delivery row (select only — no includes)
     const delivery = await db.delivery.findUnique({
-      where:   { id: deliveryId },
-      include: { driver: true, order: true },
+      where:  { id: deliveryId },
+      select: {
+        id: true, tracking_code: true, status: true,
+        driver_id: true, order_id: true,
+      },
     });
     if (!delivery) return apiNotFound('Delivery');
 
     // Drivers can only update their own deliveries
     if (session.role === 'DRIVER') {
-      const driver = await db.driver.findFirst({ where: { user_id: session.userId } });
+      const driver = await db.driver.findFirst({
+        where:  { user_id: session.userId },
+        select: { id: true },
+      });
       if (!driver || delivery.driver_id !== driver.id) return apiForbidden();
     }
 
+    // Parse + validate body
     let body: unknown;
     try { body = await req.json(); }
     catch { return apiError('Invalid JSON body', 400); }
@@ -103,31 +92,67 @@ export async function PATCH(
       }
     }
 
-    // Validate driver exists (if assigning)
+    // Validate driver exists (if assigning) — sequential
     if (driver_id !== undefined && driver_id !== null) {
-      const driverExists = await db.driver.findUnique({ where: { id: driver_id } });
+      const driverExists = await db.driver.findUnique({
+        where:  { id: driver_id },
+        select: { id: true },
+      });
       if (!driverExists) return apiNotFound('Driver');
     }
+
+    // Update delivery
+    // Auto-promote: if assigning a driver to an AWAITING_DISPATCH delivery,
+    // move the status to ASSIGNED automatically (no extra round-trip needed).
+    const autoPromote =
+      driver_id !== undefined && driver_id !== null &&
+      !newStatus &&
+      delivery.status === 'AWAITING_DISPATCH';
 
     const updated = await db.delivery.update({
       where: { id: deliveryId },
       data:  {
-        ...(newStatus !== undefined ? { status: newStatus }               : {}),
-        ...(driver_id !== undefined ? { driver_id }                      : {}),
-        ...(notes     !== undefined ? { notes }                          : {}),
-        ...(newStatus === 'DELIVERED' ? { delivered_at: new Date() }     : {}),
-        ...(newStatus === 'IN_TRANSIT'? { dispatched_at: new Date() }    : {}),
+        ...(newStatus  !== undefined ? { status: newStatus }                     : {}),
+        ...(autoPromote              ? { status: 'ASSIGNED' }                    : {}),
+        ...(driver_id  !== undefined ? { driver_id }                             : {}),
+        ...(notes      !== undefined ? { notes }                                 : {}),
+        ...(newStatus === 'DELIVERED'  ? { delivered_at:  new Date() }           : {}),
+        ...(newStatus === 'IN_TRANSIT' ? { dispatched_at: new Date() }           : {}),
       },
     });
 
-    // Sync order status with delivery status
+    // On DELIVERED: sync order status
     if (newStatus === 'DELIVERED') {
       await db.order.update({
         where: { id: delivery.order_id },
         data:  { status: 'DELIVERED' },
       });
+
+      // Fetch order + customer for delivery confirmation email
+      const orderData = await db.order.findUnique({
+        where:  { id: delivery.order_id },
+        select: { order_number: true, total: true, customer_id: true },
+      });
+      if (orderData) {
+        const customerData = await db.customer.findUnique({
+          where:  { id: orderData.customer_id },
+          select: { user: { select: { email: true, first_name: true } } },
+        });
+        if (customerData?.user) {
+          void sendOrderStatusEmail({
+            to:           customerData.user.email,
+            name:         customerData.user.first_name,
+            orderNumber:  orderData.order_number,
+            orderId:      delivery.order_id,
+            newStatus:    'DELIVERED',
+            total:        Number(orderData.total),
+            trackingCode: delivery.tracking_code,
+          }).catch(err => console.error('[delivery DELIVERED email]', err));
+        }
+      }
     }
 
+    // Audit log
     void writeAuditLog({
       userId:      session.userId,
       userType:    session.role,
@@ -138,11 +163,17 @@ export async function PATCH(
       entityId:    String(deliveryId),
       description: newStatus
         ? `Delivery ${delivery.tracking_code}: ${delivery.status} → ${newStatus}`
-        : `Updated delivery ${delivery.tracking_code}`,
+        : driver_id !== undefined
+          ? `Assigned driver ${driver_id} to delivery ${delivery.tracking_code}`
+          : `Updated delivery ${delivery.tracking_code}`,
       req,
     });
 
-    return apiSuccess({ delivery: { id: updated.id, status: updated.status } }, 200, 'Delivery updated');
+    return apiSuccess(
+      { delivery: { id: updated.id, status: updated.status, driver_id: updated.driver_id } },
+      200,
+      'Delivery updated',
+    );
   } catch (err) {
     console.error('[PATCH /api/deliveries/[id]]', err);
     return apiInternalError();

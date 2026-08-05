@@ -1,13 +1,3 @@
-/**
- * ToastProvider + useToast — global toast notifications.
- *
- * Usage:
- *   const toast = useToast();
- *   toast.show({ tone: 'success', title: 'Order placed' });
- *
- * Tones: success | error | warning | info
- */
-
 'use client';
 
 import {

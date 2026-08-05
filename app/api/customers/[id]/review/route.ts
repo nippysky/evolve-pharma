@@ -1,14 +1,3 @@
-/**
- * PATCH /api/customers/[id]/review
- *
- * Approve or reject a customer's account application.
- * Only callable on customers in PENDING_REVIEW status.
- *
- * Body:
- *   decision    — 'approve' | 'reject'
- *   review_note — optional notes (required on rejection)
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -101,7 +90,6 @@ export async function PATCH(
 
     const name = `${customer.user.first_name} ${customer.user.last_name}`;
 
-    // Send approval or rejection email (fire-and-forget)
     if (decision === 'approve') {
       void sendCustomerApprovalEmail({
         to:   customer.user.email,

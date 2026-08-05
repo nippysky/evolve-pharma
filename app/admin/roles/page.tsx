@@ -1,11 +1,3 @@
-/**
- * Console · Roles & Permissions (admin-only)
- *
- * Documents what each staff permission preset grants. Admin can see
- * the full permission matrix at a glance. Individual role changes are
- * done on the Staff page (per-person dropdown).
- */
-
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';

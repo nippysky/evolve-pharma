@@ -1,25 +1,5 @@
-/**
- * Next.js 16 Proxy (formerly middleware.ts)
- *
- * Runs on the NODE.JS runtime (not Edge) — required for jose JWT verification.
- * Protects /admin, /staff, /driver, and /portal routes based on the JWT
- * stored in the ep_access httpOnly cookie or the Authorization: Bearer header.
- *
- * Route → Required role:
- *   /admin/*   → ADMIN
- *   /staff/*   → ADMIN | STAFF
- *   /driver/*  → DRIVER
- *   /portal/*  → CUSTOMER
- *
- * Unauthenticated or wrong-role requests are redirected to the appropriate
- * sign-in page. Mobile clients will receive a 401 JSON response instead
- * (detected via Accept: application/json or X-Requested-With: XMLHttpRequest).
- */
-
 import { type NextRequest, NextResponse } from 'next/server';
 import { jwtVerify, SignJWT }             from 'jose';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCESS_COOKIE  = 'ep_access';
 const REFRESH_COOKIE = 'ep_refresh';
@@ -39,8 +19,6 @@ interface TokenPayload {
   jti?:        string;
 }
 
-// ─── Route protection map ─────────────────────────────────────────────────────
-
 const PROTECTED_ROUTES: Array<{
   prefix:      string;
   roles:       UserRole[];
@@ -51,8 +29,6 @@ const PROTECTED_ROUTES: Array<{
   { prefix: '/driver',  roles: ['DRIVER'],                    loginPath: '/driver/sign-in' },
   { prefix: '/portal',  roles: ['CUSTOMER'],                  loginPath: '/sign-in'        },
 ];
-
-// ─── JWT verification ─────────────────────────────────────────────────────────
 
 async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
@@ -98,15 +74,11 @@ async function mintAccessToken(p: TokenPayload): Promise<string> {
     .sign(secret);
 }
 
-// ─── Helper: detect mobile / API clients ─────────────────────────────────────
-
 function isMobileRequest(req: NextRequest): boolean {
   const accept = req.headers.get('Accept') ?? '';
   const xrw    = req.headers.get('X-Requested-With') ?? '';
   return accept.includes('application/json') || xrw === 'XMLHttpRequest';
 }
-
-// ─── Auth pages — never protected ────────────────────────────────────────────
 //
 // /staff/sign-in and /driver/sign-in share the /staff/* and /driver/* prefixes
 // that the matcher covers, which would cause an infinite redirect loop:
@@ -124,8 +96,6 @@ const BYPASS_PATHS = [
   '/driver/forgot-password',
   '/driver/reset-password',
 ];
-
-// ─── Proxy function ───────────────────────────────────────────────────────────
 
 export default async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
@@ -220,8 +190,6 @@ export default async function proxy(req: NextRequest): Promise<NextResponse> {
 
   return NextResponse.next({ request: { headers: reqHeaders } });
 }
-
-// ─── Matcher — only run on protected route prefixes ───────────────────────────
 
 export const config = {
   matcher: ['/admin/:path*', '/staff/:path*', '/driver/:path*', '/portal/:path*'],

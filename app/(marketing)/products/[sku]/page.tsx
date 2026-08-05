@@ -1,11 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Container } from '@/components/ui/Layout';
 import { ButtonLink } from '@/components/ui/Button';
 import {
   ArrowLeft, ArrowRight, Shield, Pill, Box,
-  Lock, ShoppingCart,
+  Lock, ShoppingCart, InfoCircle,
 } from '@/components/icons';
 import { getSession } from '@/lib/auth';
 import { getProductBySkuFromDB } from '@/lib/data/products.server';
@@ -22,15 +22,12 @@ export default async function MarketingProductDetail({ params }: Props) {
 
   const session = await getSession();
 
-  // Logged-in users go straight to the real portal product page
-  if (session) {
-    const dest = session.role === 'CUSTOMER'
-      ? `/portal/catalog/${sku}`
-      : '/admin/overview';
-    redirect(dest);
-  }
+  // Role flags — everyone sees the product; CTA varies by role
+  const role         = session?.role ?? null;
+  const isCustomer   = role === 'CUSTOMER';
+  const isAdminStaff = role === 'ADMIN' || role === 'STAFF';
+  const isGuest      = !session;
 
-  const isLoggedIn = false;
   const portalHref = `/portal/catalog/${product.sku}`;
 
   const imageUrl     = product.images[0]?.url ?? '';
@@ -120,8 +117,10 @@ export default async function MarketingProductDetail({ params }: Props) {
               <p className="mt-1.5 text-xs text-ink-3">Pack size: {product.pack_size ?? '—'} · VAT inclusive</p>
             </div>
 
-            {/* CTA — session-aware */}
-            {isLoggedIn ? (
+            {/* ── Session-aware CTA ── */}
+
+            {/* Customer: signed-in, go to portal */}
+            {isCustomer && (
               <div className="rounded-2xl border border-teal-200 bg-teal-50 p-5">
                 <p className="text-xs font-semibold text-teal-700">You&apos;re signed in — order directly from your portal</p>
                 <Link
@@ -133,18 +132,40 @@ export default async function MarketingProductDetail({ params }: Props) {
                   <ArrowRight size={14} />
                 </Link>
               </div>
-            ) : (
+            )}
+
+            {/* Admin / Staff: view-only notice */}
+            {isAdminStaff && (
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                <div className="flex items-start gap-2.5">
+                  <InfoCircle size={15} className="mt-0.5 shrink-0 text-blue-500" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800">Staff / Admin account</p>
+                    <p className="mt-1 text-xs leading-relaxed text-blue-700">
+                      Purchasing requires a registered customer account.
+                      Sign in with a pharmacy buyer account to place orders.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/admin/overview"
+                  className="mt-4 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+                >
+                  <ArrowLeft size={13} />
+                  Back to admin dashboard
+                </Link>
+              </div>
+            )}
+
+            {/* Guest: not signed in */}
+            {isGuest && (
               <div className="rounded-2xl border border-line-subtle bg-white p-5 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
                 <div className="mb-4 flex items-center gap-2">
                   <Lock size={14} className="text-ink-3" />
                   <p className="text-sm text-ink-2">Create a buyer account to place orders</p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <ButtonLink
-                    href="/sign-up"
-                    fullWidth
-                    trailingIcon={<ArrowRight size={14} />}
-                  >
+                  <ButtonLink href="/sign-up" fullWidth trailingIcon={<ArrowRight size={14} />}>
                     Create account to order
                   </ButtonLink>
                   <ButtonLink href="/sign-in" variant="secondary" fullWidth>

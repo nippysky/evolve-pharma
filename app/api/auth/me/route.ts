@@ -1,12 +1,3 @@
-/**
- * GET /api/auth/me
- *
- * Returns the authenticated user's session data decoded from the access token.
- * No DB query — display fields are embedded in the JWT at sign-in time.
- *
- * Auth required: Bearer / ep_access cookie.
- */
-
 import { NextRequest } from 'next/server';
 import { getTokenPayload } from '@/lib/auth';
 import {

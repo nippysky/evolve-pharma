@@ -1,24 +1,3 @@
-/**
- * POST /api/auth/refresh
- *
- * Rotates the refresh token and issues a new access token.
- *
- * Security model (refresh token rotation):
- *   1. Read ep_refresh cookie (or Authorization: Bearer)
- *   2. Verify JWT signature + expiry
- *   3. Check jti exists in DB (not revoked)
- *   4. Delete old jti from DB (single-use token)
- *   5. Issue brand-new access token + refresh token
- *   6. Store new jti in DB
- *   7. Set both new tokens as httpOnly cookies
- *
- * This prevents refresh token replay attacks — a stolen refresh token
- * becomes invalid the moment the legitimate client rotates it.
- *
- * No auth (access token) required — this route is used precisely when
- * the access token has expired.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { db }                         from '@/lib/db';
 import {
@@ -40,7 +19,7 @@ import type { UserRole }              from '@/lib/api/types';
 
 export async function POST(req: NextRequest) {
   try {
-    // ── 1. Extract refresh token ──────────────────────────────────────────
+    // Extract refresh token
     const tokenFromCookie = req.cookies.get(REFRESH_COOKIE)?.value;
     const tokenFromHeader = req.headers
       .get('Authorization')
@@ -51,14 +30,14 @@ export async function POST(req: NextRequest) {
       return apiUnauthorized('No refresh token provided.');
     }
 
-    // ── 2. Verify JWT signature + expiry ───────────────────────────────────
+    // Verify JWT signature + expiry
     const payload = await verifyRefreshToken(rawToken);
 
     if (!payload || payload.type !== 'refresh' || !payload.jti) {
       return apiUnauthorized('Invalid or expired refresh token.');
     }
 
-    // ── 3. Verify jti exists in DB (revocation check) ─────────────────────
+    // Verify jti exists in DB (revocation check)
     const storedToken = await db.refreshToken.findUnique({
       where:  { jti: payload.jti },
       select: { jti: true, user_id: true, expires_at: true },
@@ -75,7 +54,7 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
-    // ── 4. Delete old jti (single-use rotation) ───────────────────────────
+    // Delete old jti (single-use rotation)
     await db.refreshToken.delete({ where: { jti: payload.jti } });
 
     // ── 5-6. Issue new token pair + store new jti ─────────────────────────
@@ -106,7 +85,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ── 7. Return new tokens ───────────────────────────────────────────────
+    // Return new tokens
     const res = NextResponse.json({
       status:  'success',
       message: 'Token refreshed.',

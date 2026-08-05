@@ -1,17 +1,3 @@
-'use client';
-
-/**
- * Console · Product Edit
- *
- * Fetches a product by SKU, pre-populates all fields, and submits
- * edits via PATCH /api/products/[sku].
- *
- * Image management:
- *   - Existing Cloudinary images: set-primary (PATCH) and delete (DELETE)
- *     are applied immediately (no need to save the form).
- *   - New images: uploaded to POST /api/products/[sku]/images on save.
- */
-
 import React, { use, useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter }      from 'next/navigation';
 import Image              from 'next/image';
@@ -29,8 +15,6 @@ import { useProductCategories } from '@/hooks/admin/useAdminProducts';
 import { cn }                   from '@/lib/utils';
 import type { ProductDTO, ProductImageDTO } from '@/lib/api/types';
 
-// ─── Local types ──────────────────────────────────────────────────────────────
-
 interface FormErrors { [field: string]: string }
 
 /** A pending (not-yet-uploaded) image selected by the user. */
@@ -40,8 +24,6 @@ interface NewImage {
   objectUrl: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const STATUS_OPTIONS = [
   { value: 'DRAFT',        label: 'Draft — hidden from catalog'  },
   { value: 'ACTIVE',       label: 'Active — visible & orderable' },
@@ -49,8 +31,6 @@ const STATUS_OPTIONS = [
 ];
 
 const MAX_IMAGES = 6;
-
-// ─── Existing images panel ────────────────────────────────────────────────────
 
 /**
  * Shows Cloudinary images that are already saved for this product.
@@ -164,8 +144,6 @@ function ExistingImagesPanel({
   );
 }
 
-// ─── New images uploader ──────────────────────────────────────────────────────
-
 /** Drag-drop zone for selecting new images to upload on form save. */
 function NewImagesUploader({
   images,
@@ -270,8 +248,6 @@ function NewImagesUploader({
   );
 }
 
-// ─── Page skeleton ────────────────────────────────────────────────────────────
-
 function EditSkeleton() {
   return (
     <div className="max-w-3xl space-y-4 animate-pulse">
@@ -284,8 +260,6 @@ function EditSkeleton() {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProductEditPage({
   params,

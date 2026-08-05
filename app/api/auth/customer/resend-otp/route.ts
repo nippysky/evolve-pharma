@@ -1,11 +1,3 @@
-/**
- * POST /api/auth/customer/resend-otp
- *
- * Re-sends the EMAIL_VERIFICATION OTP for a given email.
- * Rate-limited implicitly: marks old tokens used before generating a new one.
- * No auth required.
- */
-
 import { NextRequest }               from 'next/server';
 import { z }                         from 'zod';
 import { db }                        from '@/lib/db';

@@ -1,23 +1,9 @@
-'use client';
-
-/**
- * Settings form — ADMIN only.
- *
- * Two real sections:
- *   1. Company information — saved to app_settings table via PATCH /api/admin/settings
- *   2. Security — session timeout + weekly audit email, also persisted
- *
- * Every section submits independently; toast feedback on success/error.
- */
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Building, Shield, ArrowRight, CheckCircle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SettingsDefaults {
   company_name:        string;
@@ -29,8 +15,6 @@ export interface SettingsDefaults {
   email_audit_summary: string; // 'true' | 'false'
   auto_logout:         string; // 'true' | 'false'
 }
-
-// ─── Section wrapper ───────────────────────────────────────────────────────────
 
 function Section({
   icon,
@@ -56,8 +40,6 @@ function Section({
   );
 }
 
-// ─── Save helper ──────────────────────────────────────────────────────────────
-
 async function saveSettings(payload: Record<string, string>): Promise<void> {
   const res  = await fetch('/api/admin/settings', {
     method:      'PATCH',
@@ -68,8 +50,6 @@ async function saveSettings(payload: Record<string, string>): Promise<void> {
   const json = await res.json() as { message?: string };
   if (!res.ok) throw new Error(json.message ?? 'Save failed.');
 }
-
-// ─── Form ─────────────────────────────────────────────────────────────────────
 
 export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
   const toast  = useToast();

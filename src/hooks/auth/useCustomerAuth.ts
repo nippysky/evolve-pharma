@@ -1,14 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Customer Auth Hooks
- *
- * TanStack Query mutations and queries for the customer auth flow.
- * Components import these hooks — they never import the service directly.
- *
- * Error shape:
- *   error.message           — human-readable message
- *   error.fieldErrors       — Laravel validation errors (Record<string, string[]>)
- */
-
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,13 +18,9 @@ import type {
   CreatePasswordPayload,
 } from '@/lib/api/types';
 
-// ---------- Query keys (centralised so cache invalidations are consistent) --
-
 export const AUTH_KEYS = {
   me: ['auth', 'me'] as const,
 } as const;
-
-// ---------- useMe -----------------------------------------------------------
 
 /**
  * Returns the currently authenticated user from the session cookie.
@@ -54,16 +39,12 @@ export function useMe() {
   });
 }
 
-// ---------- useRegisterCustomer ---------------------------------------------
-
 export function useRegisterCustomer() {
   return useMutation({
     mutationFn: (payload: RegisterCustomerPayload) => registerCustomer(payload),
     // onSuccess / onError handled by the calling component
   });
 }
-
-// ---------- useLoginCustomer ------------------------------------------------
 
 export function useLoginCustomer() {
   const queryClient = useQueryClient();
@@ -76,23 +57,17 @@ export function useLoginCustomer() {
   });
 }
 
-// ---------- useVerifyOtp ----------------------------------------------------
-
 export function useVerifyOtp() {
   return useMutation({
     mutationFn: (payload: VerifyOtpPayload) => verifyOtp(payload),
   });
 }
 
-// ---------- useCreatePassword -----------------------------------------------
-
 export function useCreatePassword() {
   return useMutation({
     mutationFn: (payload: CreatePasswordPayload) => createPassword(payload),
   });
 }
-
-// ---------- useUploadPcn ----------------------------------------------------
 
 export function useUploadPcn() {
   const queryClient = useQueryClient();
@@ -105,15 +80,11 @@ export function useUploadPcn() {
   });
 }
 
-// ---------- useResendOtp ----------------------------------------------------
-
 export function useResendOtp() {
   return useMutation({
     mutationFn: (email: string) => resendOtp(email),
   });
 }
-
-// ---------- useLogout -------------------------------------------------------
 
 export function useLogout() {
   const queryClient = useQueryClient();

@@ -1,20 +1,3 @@
-/**
- * PATCH  /api/products/categories/[id] — rename a category (Admin/Staff)
- * DELETE /api/products/categories/[id] — delete a category (Admin only)
- *
- * Deleting a category sets category_id = NULL on all products in that category
- * (handled by Prisma's onDelete: SetNull on the Product → Category relation).
- *
- * Responses:
- *   200  { category }
- *   400  validation error
- *   401  unauthenticated
- *   403  forbidden
- *   404  category not found
- *   409  name already taken (PATCH)
- *   500  server error
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -34,8 +17,6 @@ type RouteContext = { params: Promise<{ id: string }> };
 const renameSchema = z.object({
   name: z.string().min(1, 'Category name is required').max(150, 'Name is too long'),
 });
-
-// ─── PATCH ────────────────────────────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
@@ -85,8 +66,6 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     return handlePrismaError(err) ?? apiInternalError();
   }
 }
-
-// ─── DELETE ───────────────────────────────────────────────────────────────────
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {

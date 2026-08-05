@@ -1,15 +1,3 @@
-'use client';
-
-/**
- * Console · Customer Detail
- *
- * Full profile for a single customer — personal info, company & address,
- * PCN certificate viewer, review history, and quick-action buttons.
- *
- * Route: /admin/customers/[id]
- * Auth:  ADMIN | STAFF (enforced by proxy.ts + admin layout)
- */
-
 import React, { use, useState, useEffect, useCallback } from 'react';
 import Link          from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,8 +12,6 @@ import {
   Clock, XCircle, FileText, RotateCw, AlertTriangle, User, Calendar,
   Tag, ArrowUpRight, Eye,
 } from '@/components/icons';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CustomerDetail {
   id:                   number;
@@ -58,8 +44,6 @@ interface CustomerDetail {
   reviewed_by?: { id: number; name: string; email: string } | null;
   order_count:  number;
 }
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
@@ -100,8 +84,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Info row ─────────────────────────────────────────────────────────────────
-
 function InfoRow({
   icon,
   label,
@@ -125,8 +107,6 @@ function InfoRow({
   );
 }
 
-// ─── Section card ─────────────────────────────────────────────────────────────
-
 function Card({
   title,
   icon,
@@ -146,8 +126,6 @@ function Card({
     </div>
   );
 }
-
-// ─── PCN Viewer ───────────────────────────────────────────────────────────────
 
 function PcnViewer({
   customerId,
@@ -279,8 +257,6 @@ function PcnViewer({
   );
 }
 
-// ─── Review panel ─────────────────────────────────────────────────────────────
-
 function ReviewPanel({
   customer,
   isAdmin,
@@ -403,8 +379,6 @@ function ReviewPanel({
   );
 }
 
-// ─── Lifecycle tracker ────────────────────────────────────────────────────────
-
 const LIFECYCLE_STEPS = [
   { key: 'REGISTERED',        label: 'Registered'    },
   { key: 'OTP_CONFIRMED',     label: 'Email verified' },
@@ -464,8 +438,6 @@ function LifecycleTracker({ status }: { status: string }) {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CustomerDetailPage({
   params,

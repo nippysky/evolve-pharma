@@ -1,8 +1,3 @@
-/**
- * GET  /api/products — paginated product list (Admin/Staff)
- * POST /api/products — create a new product (Admin/Staff)
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -18,8 +13,6 @@ import {
   parsePagination,
 } from '@/lib/api/response';
 import { writeAuditLog } from '@/lib/audit';
-
-// ─── Validation ───────────────────────────────────────────────────────────────
 
 const createSchema = z.object({
   sku:                z.string().min(1).max(100),
@@ -40,8 +33,6 @@ const createSchema = z.object({
   reorder_quantity:   z.number().int().min(0).default(0),
   status:             z.enum(['ACTIVE', 'DRAFT', 'DISCONTINUED']).default('DRAFT'),
 });
-
-// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -127,8 +118,6 @@ export async function GET(req: NextRequest) {
     return handlePrismaError(err) ?? apiInternalError();
   }
 }
-
-// ─── POST ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {

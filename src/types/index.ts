@@ -1,13 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Domain Types
- *
- * These types mirror the backend ERD (users, customer_profiles, products,
- * inventories, orders, order_items, payments, deliveries, notifications,
- * reviews) and are the single source of truth shared between server and
- * client code.
- */
-
-// ---------- Common ---------------------------------------------------------
 
 export type UUID = string;
 export type ISODate = string;
@@ -20,8 +10,6 @@ export type Role = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
 export type LegacyRole = 'admin' | 'sales_agent' | 'driver' | 'customer';
 
 export type Status = 'active' | 'inactive' | 'pending' | 'suspended';
-
-// ---------- Staff Permissions (sales_agent / staff) -----------------------
 //
 // Admin can grant/revoke individual permissions per staff member.
 // Presets (sales_rep, product_manager, operations_lead, senior_staff) are
@@ -54,8 +42,6 @@ export const STAFF_PRESET_LABELS: Record<StaffPermissionPreset, string> = {
   senior_staff:    'Senior Staff',
 };
 
-// ---------- User ----------------------------------------------------------
-
 export interface User {
   id: number;
   uuid: UUID;
@@ -74,8 +60,6 @@ export interface User {
   /** Convenience preset label (derived from permissions on backend) */
   permission_preset?: StaffPermissionPreset | null;
 }
-
-// ---------- Customer Profile ----------------------------------------------
 
 export interface CustomerProfile {
   id: number;
@@ -97,8 +81,6 @@ export interface CustomerWithUser extends CustomerProfile {
   total_spent: Money;
   last_order_at?: ISODate | null;
 }
-
-// ---------- Product -------------------------------------------------------
 
 export type ProductStatus = 'active' | 'draft' | 'discontinued';
 
@@ -144,8 +126,6 @@ export interface Product {
   updated_at: ISODate;
 }
 
-// ---------- Inventory ----------------------------------------------------
-
 export interface InventoryBatch {
   id: number;
   uuid: UUID;
@@ -165,8 +145,6 @@ export interface InventorySnapshot {
   is_low_stock: boolean;
   is_expiring_soon: boolean;
 }
-
-// ---------- Orders --------------------------------------------------------
 
 export type OrderStatus =
   | 'pending'
@@ -209,8 +187,6 @@ export interface Order {
   updated_at?: ISODate;
 }
 
-// ---------- Payment -------------------------------------------------------
-
 export type PaymentMethod = 'paystack' | 'bank_transfer' | 'cash_on_delivery';
 
 export interface Payment {
@@ -223,8 +199,6 @@ export interface Payment {
   payment_method: PaymentMethod;
   paid_at?: ISODate | null;
 }
-
-// ---------- Delivery ------------------------------------------------------
 
 export type DeliveryStatus =
   | 'awaiting_dispatch'  // admin assigned a driver; driver hasn't acknowledged yet
@@ -259,8 +233,6 @@ export interface Delivery {
   updated_at: ISODate;
 }
 
-// ---------- Driver --------------------------------------------------------
-
 export type DriverStatus = 'available' | 'on_delivery' | 'off_duty' | 'suspended';
 
 export interface Driver {
@@ -277,8 +249,6 @@ export interface Driver {
   created_at: ISODate;
   updated_at: ISODate;
 }
-
-// ---------- Notification --------------------------------------------------
 
 export type NotificationType =
   | 'order'
@@ -300,8 +270,6 @@ export interface Notification {
   created_at: ISODate;
 }
 
-// ---------- Review --------------------------------------------------------
-
 export interface Review {
   id: number;
   uuid: UUID;
@@ -313,16 +281,15 @@ export interface Review {
   created_at: ISODate;
 }
 
-// ---------- Basket (client-side) ------------------------------------------
-
 export interface BasketItem {
-  product_id: number;
-  sku: string;
-  name: string;
-  price: Money;
-  image: string;
-  quantity: number;
-  pack_size: string;
+  product_id:    number;
+  sku:           string;
+  name:          string;
+  price:         Money;
+  image:         string;
+  quantity:      number;
+  pack_size:     string;
+  minimum_order: number;
 }
 
 export interface Basket {
@@ -330,8 +297,6 @@ export interface Basket {
   subtotal: Money;
   item_count: number;
 }
-
-// ---------- Session -------------------------------------------------------
 
 /**
  * Session user — matches the TokenPayload embedded in the JWT.
@@ -354,8 +319,6 @@ export interface SessionUser {
   pcn_uploaded?: boolean;
   pcn_verified?: boolean;
 }
-
-// ---------- Permission helpers --------------------------------------------
 
 export function hasPermission(
   session: SessionUser | null,

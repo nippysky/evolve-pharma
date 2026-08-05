@@ -1,8 +1,3 @@
-/**
- * Timeline — vertical step list with done/current/pending states.
- * Used for order progress and delivery shipment events.
- */
-
 import type { ReactNode } from 'react';
 import { CheckCircle } from '@/components/icons';
 import { cn } from '@/lib/utils';

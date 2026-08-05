@@ -1,17 +1,5 @@
-/**
- * Admin dashboard data fetchers.
- *
- * Each KPI is individually cached so a single stat update (e.g. new order)
- * only invalidates that one cache entry, not the whole dashboard.
- *
- * TTLs are kept short (60–120 s) because admins expect near-real-time data.
- * Call revalidateTag('dashboard') after any write that affects these numbers.
- */
-
 import { unstable_cache } from 'next/cache';
 import { db }            from '@/lib/db';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DashboardKpis {
   totalCustomers:     number;
@@ -23,8 +11,6 @@ export interface DashboardKpis {
   pendingOrders:      number;
   activeDeliveries:   number;
 }
-
-// ─── Raw fetchers ─────────────────────────────────────────────────────────────
 
 async function _fetchKpis(): Promise<DashboardKpis> {
   const now       = new Date();
@@ -102,8 +88,6 @@ async function _fetchKpis(): Promise<DashboardKpis> {
   }
 }
 
-// ─── Recent orders for dashboard feed ─────────────────────────────────────────
-
 async function _fetchRecentOrders(limit: number) {
   try {
     return await db.order.findMany({
@@ -129,8 +113,6 @@ async function _fetchRecentOrders(limit: number) {
     return [];
   }
 }
-
-// ─── Cached public API ────────────────────────────────────────────────────────
 
 /** Admin KPIs — refreshes every 2 minutes. */
 export const getDashboardKpis = () =>

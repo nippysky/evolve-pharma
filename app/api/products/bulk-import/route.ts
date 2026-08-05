@@ -1,41 +1,3 @@
-/**
- * POST /api/products/bulk-import
- *
- * Accepts multipart/form-data with an Excel (.xlsx / .xls) or CSV file.
- *
- * ─── Query architecture (O(1) — fixed DB calls for any file size) ────────────
- *
- *   1. Parse + validate entire file in memory        (0 DB calls)
- *   2. Deduplicate within-file SKUs                  (0 DB calls)
- *   3. createMany unique categories                  (1 query, INSERT IGNORE)
- *   4. createMany unique manufacturers               (1 query, INSERT IGNORE)
- *   5. findMany cats + findMany mfrs                 (2 queries — IN clause)
- *   6. findMany existing products by derived SKU     (1 query — IN clause)
- *   7. createMany new products                       (1 query)
- *   8. Serial update for already-existing products   (N_existing queries, usually 0)
- *   9. findMany all products by SKU → id map         (1 query — IN clause)
- *  10. findMany already-existing batch_numbers       (1 query — IN clause)
- *  11. createMany new inventory batches              (1 query)
- *  12. findMany those batches back by batch_number   (1 query — to get auto-inc IDs)
- *  13. createMany stock movements                    (1 query)
- *
- *   Total: ~13 fixed queries for any N (vs. 6 × N with the serial approach).
- *
- * Template columns (case-insensitive, spaces / hyphens → underscores):
- *   manufacturer, brand_name, generic_name, product_strength, pack_size,
- *   product_category, batch_no, expiry_date, minimum_order, quantity_per_carton,
- *   quantity_received, shelf_location, cost_price, selling_price,
- *   minimum_stock_level, reorder_quantity
- *
- * Responses:
- *   200  { total_records, inserted, updated, failed,
- *          inventory_batches_created, failed_records }
- *   400  validation / file errors
- *   401  unauthenticated
- *   403  forbidden
- *   500  server error
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
@@ -48,12 +10,8 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog } from '@/lib/audit';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_ROWS       = 1_000;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ParsedRow {
   // row metadata (not stored)
@@ -85,8 +43,6 @@ interface RowError {
   errors: string[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function headerKey(h: string): string {
   return String(h).toLowerCase().trim().replace(/[\s-]+/g, '_');
 }
@@ -116,8 +72,6 @@ function parseDate(raw: string): Date | null {
   const d = new Date(raw);
   return isNaN(d.getTime()) ? null : d;
 }
-
-// ─── Phase 1: Parse file → memory ────────────────────────────────────────────
 
 function parseRows(rawRows: unknown[][]): {
   rows:   ParsedRow[];
@@ -190,8 +144,6 @@ function parseRows(rawRows: unknown[][]): {
 
   return { rows, errors };
 }
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -319,7 +271,7 @@ export async function POST(req: NextRequest) {
           reorder_quantity:    row.reorder_quantity,
           category_id:         catMap.get(row.product_category) ?? null,
           manufacturer_id:     mfrMap.get(row.manufacturer)     ?? null,
-          status:              'ACTIVE' as const,
+          status:              'DRAFT' as const,
           created_by_id:       session.userId,
           updated_by_id:       session.userId,
         })),
@@ -354,7 +306,7 @@ export async function POST(req: NextRequest) {
             reorder_quantity:    row.reorder_quantity,
             category_id:         catMap.get(row.product_category) ?? null,
             manufacturer_id:     mfrMap.get(row.manufacturer)     ?? null,
-            status:              'ACTIVE' as const,
+            // status intentionally omitted — re-importing must not downgrade ACTIVE → DRAFT
             updated_by_id:       session.userId,
           },
         });

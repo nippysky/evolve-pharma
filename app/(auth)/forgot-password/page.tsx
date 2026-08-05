@@ -1,16 +1,3 @@
-'use client';
-
-/**
- * /forgot-password — 3-step password reset flow
- *
- *  Step "email"  Enter email → POST /api/auth/customer/forgot-password
- *  Step "reset"  Enter 6-digit OTP + new password → POST /api/auth/customer/reset-password
- *  Step "done"   Success screen → redirect to /sign-in
- *
- * The API always returns 200 for step 1 regardless of whether the email
- * exists — this prevents account enumeration attacks.
- */
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -162,8 +149,6 @@ export default function ForgotPasswordPage() {
       setSubmitting(false);
     }
   };
-
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="w-full max-w-[28rem]">

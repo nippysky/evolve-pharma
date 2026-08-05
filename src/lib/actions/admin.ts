@@ -1,18 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Admin Server Actions
- *
- * People management + catalog/inventory mutations.
- * Every action re-checks session role server-side before touching anything.
- *
- * Single-record mutating actions (invite, review, create, receive) call the
- * real Next.js API routes via internalFetch() — this reuses all validation,
- * email-sending, and audit-logging logic already in the route handlers.
- *
- * Bulk import actions validate rows client-side and return a summary;
- * dedicated batch-import endpoints can be wired later without changing
- * the action signatures.
- */
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -35,11 +20,7 @@ import {
 import type { ActionResult } from '@/lib/actions';
 import type { Role, SessionUser } from '@/types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const NOT_AUTHORIZED: ActionResult = { ok: false, message: 'You are not authorized to do this.' };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fail(err: unknown, fallback = 'Something went wrong. Please try again.'): ActionResult {
   if (err && typeof err === 'object' && 'flatten' in err) {
@@ -100,8 +81,6 @@ function fromApiResult(result: Awaited<ReturnType<typeof internalFetch>>): Actio
   return { ok: false, message, ...(fieldErrors ? { fieldErrors } : {}) };
 }
 
-// ─── Sales agents (DRIVER role — field reps) ─────────────────────────────────
-
 export async function inviteAgentAction(formData: FormData): Promise<ActionResult> {
   if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
 
@@ -132,8 +111,6 @@ export async function importAgentsAction(rows: unknown[]): Promise<ActionResult>
   revalidatePath('/admin/staff');
   return { ok: true, data: summarize(rows, agentImportRowSchema) };
 }
-
-// ─── Internal staff ───────────────────────────────────────────────────────────
 
 export async function inviteStaffAction(formData: FormData): Promise<ActionResult> {
   if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
@@ -168,10 +145,8 @@ export async function importStaffAction(rows: unknown[]): Promise<ActionResult> 
   return { ok: true, data: summarize(rows, staffImportRowSchema) };
 }
 
-// ─── Drivers ─────────────────────────────────────────────────────────────────
-
 export async function inviteDriverAction(formData: FormData): Promise<ActionResult> {
-  if (!(await guard(['ADMIN']))) return NOT_AUTHORIZED;
+  if (!(await guard(['ADMIN', 'STAFF']))) return NOT_AUTHORIZED;
 
   const firstName    = (formData.get('first_name')    as string | null)?.trim();
   const lastName     = (formData.get('last_name')     as string | null)?.trim();
@@ -205,8 +180,6 @@ export async function inviteDriverAction(formData: FormData): Promise<ActionResu
   revalidatePath('/admin/drivers');
   return { ok: true };
 }
-
-// ─── Customers ────────────────────────────────────────────────────────────────
 
 export async function onboardCustomerAction(formData: FormData): Promise<ActionResult> {
   const session = await guard(['ADMIN', 'STAFF']);
@@ -305,8 +278,6 @@ export async function reviewCustomerAction(
   revalidatePath('/admin/customers');
   return { ok: true };
 }
-
-// ─── Products (catalog) ───────────────────────────────────────────────────────
 
 function parseProductForm(formData: FormData) {
   return productSchema.safeParse({
@@ -449,8 +420,6 @@ export async function importProductsAction(rows: unknown[]): Promise<ActionResul
   revalidatePath('/admin/products');
   return { ok: true, data: summarize(rows, productImportRowSchema) };
 }
-
-// ─── Inventory (stock) ────────────────────────────────────────────────────────
 
 export async function receiveStockAction(formData: FormData): Promise<ActionResult> {
   const session = await guard(['ADMIN', 'STAFF']);

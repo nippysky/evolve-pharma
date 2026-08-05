@@ -1,13 +1,3 @@
-/**
- * GET  /api/admin/settings  — fetch all settings as a key→value object
- * PATCH /api/admin/settings  — upsert one or more settings
- *
- * Auth: ADMIN only.
- *
- * Uses raw SQL so it works before/after `prisma generate`.
- * The table is created automatically on first request.
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -20,8 +10,6 @@ import {
   apiInternalError,
 } from '@/lib/api/response';
 
-// ─── Ensure table exists (idempotent) ────────────────────────────────────────
-
 async function ensureTable() {
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS app_settings (
@@ -33,15 +21,11 @@ async function ensureTable() {
   `);
 }
 
-// ─── Allowed keys ─────────────────────────────────────────────────────────────
-
 const ALLOWED_KEYS = new Set([
   'company_name', 'company_email', 'company_phone',
   'hq_address', 'currency', 'timezone',
   'email_audit_summary', 'auto_logout',
 ]);
-
-// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -64,8 +48,6 @@ export async function GET(req: NextRequest) {
     return apiInternalError();
   }
 }
-
-// ─── PATCH ────────────────────────────────────────────────────────────────────
 
 const patchSchema = z.record(z.string(), z.string());
 

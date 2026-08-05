@@ -1,18 +1,3 @@
-/**
- * ProductCard — premium display card for products in lists/grids.
- *
- * Important:
- * This component intentionally does NOT wrap the entire card in a Link.
- * That prevents invalid nested <a> tags when `action` contains ButtonLink/Link.
- *
- * Props:
- *   - product: ProductDTO (required)
- *   - href?: string (optional - links the media/title/default CTA)
- *   - action?: ReactNode (optional - rendered in the price row, right side)
- *
- * Used by both the marketing /products grid and the portal /portal/catalog.
- */
-
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
@@ -21,12 +6,13 @@ import { ArrowRight, Pill } from '@/components/icons';
 import { formatNaira, cn } from '@/lib/utils';
 
 interface ProductCardProps {
-  product: ProductDTO;
-  href?: string;
-  action?: ReactNode;
+  product:  ProductDTO;
+  href?:    string;
+  action?:  ReactNode;
+  priority?: boolean;
 }
 
-export function ProductCard({ product, href, action }: ProductCardProps) {
+export function ProductCard({ product, href, action, priority = false }: ProductCardProps) {
   const imageUrl     = product.images[0]?.url ?? '';
   const categoryName = product.category?.name ?? '';
   const strength     = product.product_strength ?? '';
@@ -37,6 +23,8 @@ export function ProductCard({ product, href, action }: ProductCardProps) {
       alt={product.brand_name}
       width={720}
       height={540}
+      priority={priority}
+      loading={priority ? 'eager' : 'lazy'}
       className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
     />
   ) : (

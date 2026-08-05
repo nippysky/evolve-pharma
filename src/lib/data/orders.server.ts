@@ -1,19 +1,6 @@
-/**
- * Order data fetchers — server-side only.
- *
- * Portal orders (per-user) are cached with a user-specific key and a short
- * 30-second TTL — orders change frequently so we don't cache long.
- * Admin order lists are cached 60 seconds.
- *
- * Call revalidateTag('orders') after any write that creates/updates orders.
- * Call revalidateTag(`orders-user-${userId}`) to clear one user's order cache.
- */
-
 import { unstable_cache } from 'next/cache';
 import { db }            from '@/lib/db';
 import type { Order, OrderItem } from '@/types';
-
-// ─── Mapper ───────────────────────────────────────────────────────────────────
 
 function mapOrderItem(i: any): OrderItem {
   return {
@@ -47,8 +34,6 @@ function mapOrder(o: any): Order {
     items:          (o.items ?? []).map((i: any) => mapOrderItem({ ...i, order: o })),
   };
 }
-
-// ─── Raw fetchers ─────────────────────────────────────────────────────────────
 
 const ORDER_INCLUDE = {
   customer: { select: { company_name: true } },
@@ -111,8 +96,6 @@ async function _fetchOrderById(orderId: number, userId?: number): Promise<Order 
   }
 }
 
-// ─── Cached public API ────────────────────────────────────────────────────────
-
 /**
  * Orders for the logged-in customer portal user.
  * Cached per-user for 30 seconds — short TTL so status updates feel live.
@@ -144,3 +127,105 @@ export const getOrderById = (orderId: number, userId?: number) =>
     [`order-${orderId}`],
     { tags: ['orders', `order-${orderId}`], revalidate: 30 },
   )();
+//
+// A single findFirst with nested includes causes Prisma to fan out into
+// We break it into 4 sequential awaits — one connection at a time.
+
+export async function getOrderDetail(orderId: number, userId?: number) {
+  try {
+    // 1. Order row (with customer_id for subsequent queries)
+    const o = await db.order.findFirst({
+      where: {
+        id: orderId,
+        ...(userId ? { customer: { user_id: userId } } : {}),
+      },
+      select: {
+        id: true, order_number: true, status: true, payment_status: true,
+        payment_reference: true, subtotal: true, delivery_fee: true, total: true,
+        delivery_address: true, delivery_city: true, delivery_state: true,
+        notes: true, created_at: true, customer_id: true,
+      },
+    });
+    if (!o) return null;
+
+    // 2. Customer + user profile
+    const cust = await db.customer.findUnique({
+      where:  { id: o.customer_id },
+      select: {
+        company_name: true,
+        user: { select: { first_name: true, last_name: true, email: true, phone: true } },
+      },
+    });
+
+    // 3. Order items + product snapshots
+    const rawItems = await db.orderItem.findMany({
+      where:   { order_id: o.id },
+      orderBy: { id: 'asc' },
+      select: {
+        id: true, quantity: true, unit_price: true, subtotal: true,
+        product: {
+          select: {
+            sku: true, brand_name: true, generic_name: true, pack_size: true,
+            images: { where: { is_primary: true }, take: 1, select: { url: true } },
+          },
+        },
+      },
+    });
+
+    // 4. Delivery record (if any)
+    const delivery = await db.delivery.findFirst({
+      where:  { order_id: o.id },
+      select: { status: true, tracking_code: true, dispatched_at: true, delivered_at: true },
+    });
+
+    // Parse notes JSON (stores contact_phone, po_number, delivery_notes, vat)
+    let parsedNotes: { contact_phone?: string; po_number?: string; delivery_notes?: string; vat?: number } = {};
+    try { parsedNotes = o.notes ? JSON.parse(o.notes as string) : {}; } catch { /* noop */ }
+
+    return {
+      id:                o.id,
+      order_number:      o.order_number,
+      status:            o.status.toLowerCase() as Order['status'],
+      payment_status:    o.payment_status.toLowerCase() as Order['payment_status'],
+      payment_reference: (o.payment_reference as string | null) ?? null,
+      subtotal:          Number(o.subtotal),
+      delivery_fee:      Number(o.delivery_fee),
+      vat:               parsedNotes.vat ?? 0,
+      total:             Number(o.total),
+      delivery_address:  o.delivery_address ?? '',
+      delivery_city:     o.delivery_city    ?? '',
+      delivery_state:    o.delivery_state   ?? '',
+      contact_phone:     parsedNotes.contact_phone  ?? '',
+      po_number:         parsedNotes.po_number       ?? null,
+      delivery_notes:    parsedNotes.delivery_notes  ?? null,
+      created_at:        o.created_at.toISOString(),
+      customer: {
+        company_name: cust?.company_name                   ?? '',
+        first_name:   cust?.user?.first_name               ?? '',
+        last_name:    cust?.user?.last_name                ?? '',
+        email:        cust?.user?.email                    ?? '',
+        phone:        (cust?.user?.phone as string | null) ?? '',
+      },
+      items: rawItems.map((i: any) => ({
+        id:           i.id,
+        quantity:     i.quantity,
+        unit_price:   Number(i.unit_price),
+        subtotal:     Number(i.subtotal),
+        brand_name:   i.product.brand_name,
+        generic_name: i.product.generic_name,
+        sku:          i.product.sku,
+        pack_size:    i.product.pack_size ?? null,
+        image:        i.product.images[0]?.url ?? null,
+      })),
+      delivery: delivery ? {
+        status:        delivery.status,
+        tracking_code: delivery.tracking_code,
+        dispatched_at: delivery.dispatched_at?.toISOString() ?? null,
+        delivered_at:  delivery.delivered_at?.toISOString()  ?? null,
+      } : null,
+    };
+  } catch (err) {
+    console.error('[orders.server] getOrderDetail error:', err);
+    return null;
+  }
+}

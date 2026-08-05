@@ -1,15 +1,3 @@
-/**
- * POST /api/auth/customer/create-password
- *
- * Step 3 of customer sign-up — sets the account password:
- *   1. Verify the setup_token issued by /verify-otp
- *   2. Hash + store the new password
- *   3. Move customer status to PENDING_REVIEW
- *   4. Return success — client redirects to /sign-up/pending
- *
- * No auth cookie required — uses the setup_token from the OTP step.
- */
-
 import { NextRequest }       from 'next/server';
 import { z }                 from 'zod';
 import bcrypt                from 'bcryptjs';
@@ -74,7 +62,6 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    // Notify customer their account is under compliance review (fire-and-forget)
     void sendPcnUnderReviewEmail({
       to:   payload.email,
       name: user.first_name,

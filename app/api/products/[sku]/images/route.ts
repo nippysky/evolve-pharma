@@ -1,23 +1,3 @@
-/**
- * GET    /api/products/[sku]/images — list images for a product
- * POST   /api/products/[sku]/images — upload up to 6 images (multipart)
- *
- * POST accepts:
- *   files[]  — one or more image files (JPEG, PNG, WEBP, max 8 MB each)
- *   set_primary — optional index (0-based) of which uploaded image to mark primary
- *                 defaults to first uploaded if product has no existing primary
- *
- * Responses:
- *   200  { images: ProductImageDTO[] }
- *   201  { images: ProductImageDTO[] }  (upload success)
- *   400  validation error
- *   401  unauthenticated
- *   403  forbidden
- *   404  product not found
- *   422  file errors
- *   500  server error
- */
-
 import { NextRequest }          from 'next/server';
 import { db }                   from '@/lib/db';
 import { getSession }           from '@/lib/auth';
@@ -34,8 +14,6 @@ import {
 const MAX_IMAGES_PER_PRODUCT = 6;
 const MAX_IMAGE_BYTES        = 8 * 1024 * 1024; // 8 MB
 const ALLOWED_MIME           = new Set(['image/jpeg', 'image/png', 'image/webp']);
-
-// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET(
   req: NextRequest,
@@ -61,8 +39,6 @@ export async function GET(
     return apiInternalError();
   }
 }
-
-// ─── POST ─────────────────────────────────────────────────────────────────────
 
 export async function POST(
   req: NextRequest,

@@ -1,10 +1,3 @@
-/**
- * Console · Settings (ADMIN only).
- *
- * Server component — reads persisted settings from DB and hydrates the form.
- * Uses raw SQL so it works before `prisma generate` is re-run after schema change.
- */
-
 import { redirect }    from 'next/navigation';
 import { getSession }  from '@/lib/auth';
 import { db }          from '@/lib/db';

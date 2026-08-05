@@ -1,10 +1,6 @@
-/**
- * Portal — My Orders
- *
- * Server component fetches real orders for the logged-in customer (cached 30 s)
- * and streams them into the client filter/tab UI.
- * Shell renders instantly; data appears < 1 s on cache hit.
- */
+// Always render fresh — skip client-side router cache so a new order
+// appears immediately after checkout without a manual refresh.
+export const dynamic = 'force-dynamic';
 
 import { Suspense }           from 'react';
 import { redirect }           from 'next/navigation';

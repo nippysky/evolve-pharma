@@ -1,8 +1,3 @@
-/**
- * PageHead — standard portal/console page header.
- * Pairs a title (and optional subtitle) with optional right-aligned actions.
- */
-
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 

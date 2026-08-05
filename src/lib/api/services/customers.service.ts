@@ -1,8 +1,3 @@
-/**
- * Customers service — real API calls
- * All functions call Next.js API routes; httpOnly cookies are sent automatically.
- */
-
 import type { CustomerAdminRecord, CustomerStatus } from '@/lib/api/types';
 
 interface ListResponse<T> { records: T[]; total: number }
@@ -18,8 +13,6 @@ const STAGE_TO_STATUS: Record<CustomerStage, CustomerStatus> = {
   approved:   'APPROVED',
   rejected:   'REJECTED',
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res  = await fetch(path, { credentials: 'include', ...init });
@@ -70,8 +63,6 @@ function mapRecord(raw: Record<string, unknown>): CustomerAdminRecord {
   };
 }
 
-// ─── Exported service functions ───────────────────────────────────────────────
-
 export async function listCustomersByStage(
   stage: CustomerStage,
 ): Promise<ListResponse<CustomerAdminRecord>> {
@@ -90,7 +81,7 @@ export async function listCustomersByStage(
 /**
  * Fetch ALL customers in a single request — no stage filter.
  * Used by useAllCustomers() to avoid 6 parallel DB connections
- * exhausting the Hostinger shared-hosting pool (limit=2).
+ * exhausting the DB connection pool.
  */
 export async function listAllCustomers(): Promise<ListResponse<CustomerAdminRecord>> {
   const data = await apiFetch<{
@@ -148,8 +139,6 @@ export async function bulkUploadCustomers(file: File): Promise<{
   }
   return json?.data as ReturnType<typeof bulkUploadCustomers> extends Promise<infer T> ? T : never;
 }
-
-// ─── Admin — create single customer ──────────────────────────────────────────
 
 export interface CreateCustomerInput {
   first_name:    string;

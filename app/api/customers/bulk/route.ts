@@ -1,34 +1,3 @@
-/**
- * POST /api/customers/bulk
- *
- * Bulk-import customers from an Excel or CSV file (Admin / Staff).
- *
- * ─── Processing pipeline ──────────────────────────────────────────────────────
- *   1. Parse XLSX / XLS / CSV with the `xlsx` package (server-side)
- *   2. Validate every row with `customerImportRowSchema` (Zod)
- *   3. Skip rows that fail validation — collect them in `failed_records`
- *   4. For every valid row:
- *        a. Check email uniqueness (already-imported rows are skipped)
- *        b. Create User + Customer + 48-hour OTP in one DB transaction
- *        c. Fire invitation email (non-blocking, errors logged not thrown)
- *   5. Return a structured summary — callers can display per-row error detail
- *
- * ─── Concurrency ──────────────────────────────────────────────────────────────
- *   Rows are processed in batches of MAX_CONCURRENCY to avoid overwhelming
- *   the DB connection pool and SMTP server on large imports.
- *
- * Body: multipart/form-data
- *   file — .xlsx / .xls / .csv (max 5 MB)
- *
- * Response 200:
- *   {
- *     total_records : number,
- *     successful    : number,
- *     failed        : number,
- *     failed_records: Array<{ row: number; email?: string; errors: string[] }>
- *   }
- */
-
 import { NextRequest }                 from 'next/server';
 import * as XLSX                       from 'xlsx';
 import { db }                          from '@/lib/db';
@@ -45,8 +14,6 @@ import {
   handlePrismaError,
 } from '@/lib/api/response';
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_CONCURRENCY     = 5;                // parallel DB+email ops
 const INVITE_OTP_TTL_MS   = 48 * 60 * 60 * 1000; // 48 hours
@@ -61,8 +28,6 @@ const ACCEPTED_MIME_TYPES = new Set([
 
 const ACCEPTED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface BulkFailRecord {
   row:    number;
   email?: string;
@@ -75,8 +40,6 @@ interface BulkResult {
   failed:         number;
   failed_records: BulkFailRecord[];
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function inviteOtpExpiresAt(): Date {
   return new Date(Date.now() + INVITE_OTP_TTL_MS);
@@ -227,7 +190,6 @@ async function processBatch(
       void sendCustomerInvitationEmail({
         to:          normalEmail,
         name:        first_name,
-        otp,
         companyName: company_name,
         inviteUrl,
       }).catch((e) => console.error(`[bulk] Email failed for row ${rowIndex} (${normalEmail}):`, e));
@@ -238,8 +200,6 @@ async function processBatch(
 
   return { successCount, fails };
 }
-
-// ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {

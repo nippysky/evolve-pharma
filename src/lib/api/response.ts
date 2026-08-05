@@ -1,21 +1,4 @@
-/**
- * Standardised API response helpers
- *
- * All API routes return the same envelope:
- *   { status: "success" | "error", message: "...", data: {...} }
- *
- * Paginated list responses use:
- *   { status: "success", message: "...", data: { records: [...], pagination: {...} } }
- *
- * Usage (in route handlers):
- *   return apiSuccess({ user }, 201);
- *   return apiError('Email already exists', 409);
- *   return apiPaginated(records, { current_page: 1, per_page: 20, total: 100 });
- */
-
 import { NextResponse } from 'next/server';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PaginationMeta {
   current_page: number;
@@ -41,8 +24,6 @@ export interface PaginatedData<T> {
   pagination: PaginationMeta;
 }
 
-// ─── Success ──────────────────────────────────────────────────────────────────
-
 export function apiSuccess<T>(
   data:    T,
   status = 200,
@@ -50,8 +31,6 @@ export function apiSuccess<T>(
 ): NextResponse<ApiSuccessBody<T>> {
   return NextResponse.json({ status: 'success', message, data }, { status });
 }
-
-// ─── Paginated success ────────────────────────────────────────────────────────
 
 export function apiPaginated<T>(
   records: T[],
@@ -77,8 +56,6 @@ export function apiPaginated<T>(
   });
 }
 
-// ─── Error ────────────────────────────────────────────────────────────────────
-
 export function apiError(
   message: string,
   status  = 400,
@@ -88,8 +65,6 @@ export function apiError(
   if (errors) body.errors = errors;
   return NextResponse.json(body, { status });
 }
-
-// ─── Common error shortcuts ───────────────────────────────────────────────────
 
 export const apiUnauthorized = (msg = 'Your session has expired. Please sign in again.') =>
   apiError(msg, 401);
@@ -103,8 +78,6 @@ export const apiNotFound = (entity = 'Resource') =>
 export const apiInternalError = (
   msg = 'Something went wrong on our end. Please try again, or contact support if this keeps happening.',
 ) => apiError(msg, 500);
-
-// ─── Prisma runtime error interception ───────────────────────────────────────
 
 /**
  * Maps known Prisma error codes to user-readable API errors.
@@ -159,8 +132,6 @@ export function handlePrismaError(err: unknown): NextResponse<ApiErrorBody> | nu
       return null;
   }
 }
-
-// ─── Parse pagination query params ───────────────────────────────────────────
 
 export function parsePagination(
   searchParams: URLSearchParams,

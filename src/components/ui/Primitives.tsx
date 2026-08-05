@@ -1,12 +1,5 @@
-/**
- * UI Primitives — Card, Badge, Skeleton, Avatar, Stat, Divider, EmptyState.
- * All Tailwind-based; no external libraries.
- */
-
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { cn, initials } from '@/lib/utils';
-
-// ---------- Card --------------------------------------------------------
 
 export function Card({
   className,
@@ -50,8 +43,6 @@ export function CardFooter({ className, children }: { className?: string; childr
   );
 }
 
-// ---------- Badge -------------------------------------------------------
-
 type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand' | 'accent';
 
 const BADGE: Record<BadgeTone, { wrap: string; dot: string }> = {
@@ -90,8 +81,6 @@ export function Badge({
   );
 }
 
-// ---------- Skeleton ----------------------------------------------------
-
 export function Skeleton({
   className,
   height,
@@ -125,13 +114,9 @@ export function SkeletonAvatar({ size = 40 }: { size?: number }) {
   return <Skeleton className="rounded-full" height={size} width={size} />;
 }
 
-// ---------- Divider -----------------------------------------------------
-
 export function Divider({ className }: { className?: string }) {
   return <hr className={cn('border-0 border-t border-line-subtle', className)} />;
 }
-
-// ---------- Stat --------------------------------------------------------
 
 export function Stat({
   label,
@@ -155,8 +140,6 @@ export function Stat({
   );
 }
 
-// ---------- Avatar ------------------------------------------------------
-
 export function Avatar({
   name,
   size = 36,
@@ -179,8 +162,6 @@ export function Avatar({
     </span>
   );
 }
-
-// ---------- EmptyState --------------------------------------------------
 
 interface EmptyProps {
   icon?: ReactNode;

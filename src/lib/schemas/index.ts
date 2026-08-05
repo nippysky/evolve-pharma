@@ -1,11 +1,4 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Zod Schemas
- * Same schemas validate on the client AND the server. One contract.
- */
-
 import { z } from 'zod';
-
-// ---------- Primitives ----------------------------------------------------
 
 export const emailSchema = z
   .string()
@@ -28,16 +21,12 @@ export const phoneSchema = z
   .min(10, 'Phone number is too short — enter a 10 or 11-digit number (e.g. 08012345678)')
   .max(11, 'Phone number is too long — enter a 10 or 11-digit number (e.g. 08012345678)');
 
-// ---------- Auth ----------------------------------------------------------
-
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Password is required'),
   remember: z.boolean().optional().default(false),
 });
 export type SignInInput = z.infer<typeof signInSchema>;
-
-// ---------- Self-onboarding (Customer) -----------------------------------
 
 const nameField = (label: string) =>
   z.string().trim()
@@ -84,8 +73,6 @@ export const customerRegistrationSchema = customerRegistrationFields.refine(
 );
 export type CustomerRegistrationInput = z.infer<typeof customerRegistrationSchema>;
 
-// ---------- Sales agent (admin invite + import) --------------------------
-
 export const agentInviteSchema = z.object({
   first_name: nameField('First name'),
   last_name: nameField('Last name'),
@@ -95,8 +82,6 @@ export const agentInviteSchema = z.object({
 });
 export type AgentInviteInput = z.infer<typeof agentInviteSchema>;
 export const agentImportRowSchema = agentInviteSchema;
-
-// ---------- Internal staff (admin invite + import) -----------------------
 
 export const staffInviteSchema = z.object({
   first_name: nameField('First name'),
@@ -109,8 +94,6 @@ export const staffInviteSchema = z.object({
 });
 export type StaffInviteInput = z.infer<typeof staffInviteSchema>;
 export const staffImportRowSchema = staffInviteSchema;
-
-// ---------- Customer (admin / agent onboarding + import) -----------------
 
 export const customerOnboardSchema = z.object({
   first_name:   nameField('First name'),
@@ -136,8 +119,6 @@ export const customerOnboardSchema = z.object({
 export type CustomerOnboardInput = z.infer<typeof customerOnboardSchema>;
 export const customerImportRowSchema = customerOnboardSchema;
 
-// ---------- Agent-led onboarding (legacy form) ---------------------------
-
 export const agentOnboardSchema = z.object({
   company_name: z.string().min(2).max(120),
   company_address: z.string().min(8).max(240),
@@ -150,8 +131,6 @@ export const agentOnboardSchema = z.object({
 });
 export type AgentOnboardInput = z.infer<typeof agentOnboardSchema>;
 
-// ---------- Profile -------------------------------------------------------
-
 export const updateProfileSchema = z.object({
   fname: z.string().min(1).max(60),
   lname: z.string().min(1).max(60),
@@ -159,8 +138,6 @@ export const updateProfileSchema = z.object({
   company_address: z.string().min(8).max(240).optional(),
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-
-// ---------- Product (Admin CRUD) -----------------------------------------
 
 export const productSchema = z.object({
   name: z.string().min(2, 'Brand name is required').max(160),
@@ -222,8 +199,6 @@ export const productImportRowSchema = z.object({
 });
 export type ProductImportRow = z.infer<typeof productImportRowSchema>;
 
-// ---------- Inventory (Admin) --------------------------------------------
-
 export const inventoryBatchSchema = z.object({
   product_id: z.coerce.number().int().positive(),
   batch_no: z.string().min(1).max(40),
@@ -251,8 +226,6 @@ export const batchReceiveSchema = z.object({
 export type BatchReceiveInput = z.infer<typeof batchReceiveSchema>;
 export const batchImportRowSchema = batchReceiveSchema;
 
-// ---------- Basket / Order -----------------------------------------------
-
 export const basketItemSchema = z.object({
   product_id: z.number().int().positive(),
   sku: z.string(),
@@ -279,16 +252,12 @@ export const checkoutSchema = z.object({
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
-// ---------- Review --------------------------------------------------------
-
 export const reviewSchema = z.object({
   product_id: z.coerce.number().int().positive(),
   rating: z.coerce.number().int().min(1).max(5),
   comment: z.string().min(8, 'Comment must be at least 8 characters').max(1000),
 });
 export type ReviewInput = z.infer<typeof reviewSchema>;
-
-// ---------- Contact -------------------------------------------------------
 
 export const contactSchema = z.object({
   name: z.string().min(2).max(80),

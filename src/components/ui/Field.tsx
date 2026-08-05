@@ -1,9 +1,3 @@
-/**
- * Field — input primitives.
- * Input | Textarea | Select | Checkbox + a Field shell that renders
- * label, hint, and error states uniformly.
- */
-
 'use client';
 
 import {
@@ -17,8 +11,6 @@ import {
 } from 'react';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Eye, EyeOff } from '@/components/icons';
-
-// ---------- Field shell --------------------------------------------------
 
 interface FieldProps {
   label?: string;
@@ -57,8 +49,6 @@ export function Field({ label, hint, error, required, htmlFor, children }: Field
     </div>
   );
 }
-
-// ---------- Input -------------------------------------------------------
 
 const inputBase = cn(
   'w-full rounded-md border border-line bg-white px-3 text-sm text-ink',
@@ -105,8 +95,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   );
 });
 
-// ---------- Textarea ----------------------------------------------------
-
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   function Textarea({ className, ...rest }, ref) {
     return (
@@ -118,8 +106,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
     );
   },
 );
-
-// ---------- Select ------------------------------------------------------
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   function Select({ className, children, ...rest }, ref) {
@@ -148,8 +134,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
     );
   },
 );
-
-// ---------- Checkbox ----------------------------------------------------
 
 interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'children'> {
   children?: ReactNode;

@@ -1,15 +1,3 @@
-/**
- * Home page — premium e-commerce landing for the Envolve online store.
- *
- * Sections:
- *   1. Hero with product preview (wired to DUMMY_PRODUCTS)
- *   2. Trust band
- *   3. Shop by category
- *   4. Featured products grid
- *   5. How to order
- *   6. Closing CTA (session-aware)
- */
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Layout';

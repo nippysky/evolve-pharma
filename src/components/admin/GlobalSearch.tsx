@@ -1,10 +1,3 @@
-'use client';
-
-/**
- * GlobalSearch — command-palette search for Products, Customers, Orders.
- * ⌘K / Ctrl+K to open. Arrow keys to navigate, Enter to go, Escape to close.
- */
-
 import {
   useState, useEffect, useRef, useCallback, useMemo,
 } from 'react';
@@ -12,8 +5,6 @@ import Image    from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search, X, Box, Users, Basket } from '@/components/icons';
 import { cn, formatNaira } from '@/lib/utils';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ProductResult {
   id:            number;
@@ -46,14 +37,10 @@ interface SearchResults {
   orders:    OrderResult[];
 }
 
-// ─── Flat result for keyboard navigation ─────────────────────────────────────
-
 type FlatResult =
   | { kind: 'product';  data: ProductResult  }
   | { kind: 'customer'; data: CustomerResult }
   | { kind: 'order';    data: OrderResult    };
-
-// ─── Client-side result cache (stale-while-revalidate) ───────────────────────
 // Lives outside the component so it persists across opens within the same session.
 const clientCache = new Map<string, SearchResults>();
 
@@ -98,8 +85,6 @@ function useSearch(query: string) {
   return { results, loading };
 }
 
-// ─── Status pill ─────────────────────────────────────────────────────────────
-
 function StatusPill({ value }: { value: string }) {
   const v = value.toUpperCase();
   const cls =
@@ -113,8 +98,6 @@ function StatusPill({ value }: { value: string }) {
     </span>
   );
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function GlobalSearch() {
   const [open,    setOpen]    = useState(false);

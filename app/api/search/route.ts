@@ -1,24 +1,3 @@
-/**
- * GET /api/search?q=…
- *
- * Global command-palette search — Products, Customers, Orders.
- *
- * Speed strategy (two layers):
- *
- *  1. Server-side in-process LRU cache (TTL 30 s, max 200 entries).
- *     The same query within 30 s returns from memory — zero DB round-trips.
- *     Entries are evicted LRU-style so the map never grows unbounded.
- *
- *  2. HTTP Cache-Control: private, max-age=10
- *     The browser caches identical GET requests for 10 s so the network
- *     round-trip is also skipped for tabs / rapid reloads.
- *
- * The client further adds a stale-while-revalidate layer (see GlobalSearch.tsx).
- *
- * Minimum query length: 2 characters.
- * Max results per category: 5.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { db }         from '@/lib/db';
 import { getSession } from '@/lib/auth';
@@ -27,8 +6,6 @@ import {
   apiForbidden,
   apiInternalError,
 } from '@/lib/api/response';
-
-// ─── In-process LRU cache ─────────────────────────────────────────────────────
 
 const CACHE_TTL     = 30_000;   // 30 seconds
 const CACHE_MAX     = 200;      // max distinct queries cached
@@ -58,8 +35,6 @@ function cacheSet(key: string, data: SearchData) {
   }
   cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
 }
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SearchData {
   products:  ProductHit[];
@@ -91,8 +66,6 @@ interface OrderHit {
   total:         number;
   customer_name: string;
 }
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 const MAX_PER = 5;
 
@@ -134,7 +107,6 @@ export async function GET(req: NextRequest) {
     // The `pat` template-tag variable is used as a single Prisma
     // interpolation point (becomes one `?` placeholder), keeping the
     // query fully parameterised.
-    // ──────────────────────────────────────────────────────────────────────
 
     const pat = `%${q}%`;
 

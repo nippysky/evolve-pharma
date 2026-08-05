@@ -1,13 +1,4 @@
-/**
- * ENVOLVE PHARMACEUTICALS — App Constants
- *
- * Central registry for all site-wide static config: site metadata, nav,
- * status labels, formatting maps. Edit one file to retheme/rebrand.
- */
-
 import type { OrderStatus, PaymentStatus, DeliveryStatus, Role } from '@/types';
-
-// ---------- Site ---------------------------------------------------------
 
 export const SITE = {
   name: 'EnvolveCare Express',
@@ -26,15 +17,13 @@ export const SITE = {
   },
 } as const;
 
-// ---------- Portal navigation (customer) --------------------------------
-
 export const PORTAL_NAV = [
-  { label: 'Catalog',   href: '/portal/catalog', icon: 'Pill' as const },
-  { label: 'My Orders', href: '/portal/orders',  icon: 'Box' as const },
-  { label: 'Profile',   href: '/portal/profile', icon: 'User' as const },
+  { label: 'Catalog',     href: '/portal/catalog',   icon: 'Pill'  as const },
+  { label: 'My Orders',   href: '/portal/orders',    icon: 'Box'   as const },
+  { label: 'Track Order', href: '/portal/track',     icon: 'Truck' as const },
+  { label: 'Referrals',   href: '/portal/referral',  icon: 'Star'  as const },
+  { label: 'Profile',     href: '/portal/profile',   icon: 'User'  as const },
 ] as const;
-
-// ---------- Console navigation (admin + staff + driver) -----------------
 //
 // `roles` gates which top-level roles see the item.
 // `permission` (optional) gates sales_agent items by StaffPermissionKey.
@@ -157,8 +146,6 @@ export const CONSOLE_NAV = [
   },
 ] as const;
 
-// ---------- Driver navigation (driver role only) -------------------------
-
 export const DRIVER_NAV = [
   {
     section: 'Deliveries',
@@ -168,8 +155,6 @@ export const DRIVER_NAV = [
     ],
   },
 ] as const;
-
-// ---------- Status maps --------------------------------------------------
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pending:    'Pending',
@@ -225,10 +210,6 @@ export const DELIVERY_STATUS_TONE: Record<DeliveryStatus, 'neutral' | 'info' | '
   returned:          'warning',
 };
 
-// ---------- Categories --------------------------------------------------
-
-// ---------- Nigerian States -----------------------------------------------
-
 export const NIGERIAN_STATES = [
   'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa',
   'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti',
@@ -239,8 +220,6 @@ export const NIGERIAN_STATES = [
 ] as const;
 
 export type NigerianState = (typeof NIGERIAN_STATES)[number];
-
-// ---------- Categories ---------------------------------------------------
 
 export const PRODUCT_CATEGORIES = [
   'Antibiotics',
@@ -271,7 +250,12 @@ export const PRODUCT_FORMS = [
   'Patch',
 ] as const;
 
-// ---------- Thresholds --------------------------------------------------
-
 export const LOW_STOCK_THRESHOLD = 50;
 export const EXPIRY_WARNING_DAYS = 90;
+
+/** Fallback `referred_by` value stored when no referral code is entered at signup.
+ *  No points are awarded for this code — it's just a sentinel for analytics. */
+export const DEFAULT_REFERRAL_CODE = 'ENV-PLATFORM';
+
+/** Points credited to a referrer each time their code is used at signup. */
+export const REFERRAL_POINTS_PER_SIGNUP = 100;

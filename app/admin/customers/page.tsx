@@ -1,8 +1,3 @@
-/**
- * Console · Customers
- * Server guard only — all data fetching happens client-side in CustomersView.
- */
-
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { CustomersView } from '@/components/admin/CustomersView';

@@ -1,30 +1,16 @@
-'use client';
-
-/**
- * Console · Inventory View
- *
- * Full implementation:
- *   - Summary strip (Total SKUs, Low stock, Expiring soon, Total stock units)
- *   - Paginated batch table with filter tabs (All / Low stock / Expiring soon)
- *   - "Receive stock" modal (search SKU by name, enter batch details)
- *   - Bulk receive modal (xlsx/csv upload with preview)
- */
-
 import { useState, useMemo, useRef, useCallback } from 'react';
 import Image         from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Box, Plus, Upload, Search, AlertTriangle,
+  Box, Plus, Minus, Upload, Search, AlertTriangle,
   RotateCw, ChevronLeft, ChevronRight,
-  CheckCircle, X, Download, FileText,
+  CheckCircle, X, Download, FileText, Edit, Sliders,
 } from '@/components/icons';
 import { Button }    from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { PageHead }  from '@/components/shared/PageHead';
 import { useToast }  from '@/contexts/ToastContext';
 import { formatNaira, cn } from '@/lib/utils';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface InventoryBatch {
   id:             number;
@@ -60,8 +46,6 @@ interface ProductOption {
 
 type Tab = 'all' | 'low_stock' | 'expiring';
 
-// ─── API ──────────────────────────────────────────────────────────────────────
-
 async function fetchInventory(params: { page: number; tab: Tab }): Promise<{ records: InventoryBatch[]; pagination: { total: number } }> {
   const sp = new URLSearchParams({ page: String(params.page), limit: '30' });
   if (params.tab === 'low_stock')  sp.set('low_stock',   'true');
@@ -90,8 +74,6 @@ async function fetchProducts(): Promise<ProductOption[]> {
   }));
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
 function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
     <div className="rounded-xl border border-line bg-white p-4">
@@ -102,8 +84,6 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
     </div>
   );
 }
-
-// ─── Table skeleton ───────────────────────────────────────────────────────────
 
 function TableSkeleton() {
   return (
@@ -138,8 +118,6 @@ function TableSkeleton() {
     </div>
   );
 }
-
-// ─── Receive Stock Modal ──────────────────────────────────────────────────────
 
 function ReceiveModal({ onClose }: { onClose: () => void }) {
   const toast       = useToast();
@@ -297,8 +275,6 @@ function ReceiveModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
-
-// ─── Bulk Receive Modal ───────────────────────────────────────────────────────
 
 interface BulkRow {
   rowNum:   number;
@@ -524,7 +500,288 @@ function BulkReceiveModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Main view ────────────────────────────────────────────────────────────────
+interface EditBatchModalProps {
+  batch: InventoryBatch;
+  onClose: () => void;
+}
+
+function EditBatchModal({ batch, onClose }: EditBatchModalProps) {
+  const toast       = useToast();
+  const queryClient = useQueryClient();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const defaultExpiry = batch.expiry_date
+    ? new Date(batch.expiry_date).toISOString().split('T')[0]
+    : '';
+
+  const editMut = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res  = await fetch(`/api/inventory/batches/${batch.id}`, {
+        method:      'PATCH',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        const err: Error & { fieldErrors?: Record<string, string[]> } = new Error(json?.message ?? 'Failed');
+        err.fieldErrors = json?.errors;
+        throw err;
+      }
+      return json;
+    },
+    onSuccess: () => {
+      void queryClient.refetchQueries({ queryKey: ['inventory'] });
+      toast.show({ tone: 'success', title: 'Batch updated' });
+      onClose();
+    },
+    onError: (err: Error & { fieldErrors?: Record<string, string[]> }) => {
+      if (err.fieldErrors) {
+        const mapped: Record<string, string> = {};
+        for (const [k, v] of Object.entries(err.fieldErrors)) mapped[k] = v[0] ?? 'Invalid';
+        setErrors(mapped);
+      } else {
+        toast.show({ tone: 'error', title: 'Update failed', description: err.message });
+      }
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrors({});
+    const fd = new FormData(e.currentTarget);
+    const payload: Record<string, unknown> = {};
+    const batchNum = fd.get('batch_number') as string;
+    const costStr  = fd.get('cost_price')   as string;
+    const expiry   = fd.get('expiry_date')  as string;
+    if (batchNum) payload.batch_number = batchNum;
+    if (costStr)  payload.cost_price   = parseFloat(costStr);
+    payload.expiry_date = expiry || null;
+    editMut.mutate(payload);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-sm rounded-2xl border border-line bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-line-subtle px-6 py-5">
+          <div>
+            <h2 className="text-base font-semibold text-ink">Edit batch metadata</h2>
+            <p className="mt-0.5 text-xs text-ink-3">
+              <span className="font-mono font-medium text-ink-2">{batch.batch_number}</span>
+              {' · '}{batch.product.brand_name}
+            </p>
+          </div>
+          <button type="button" onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-4 hover:bg-bg-muted hover:text-ink transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <Field label="Batch number" required error={errors.batch_number}>
+            <Input name="batch_number" defaultValue={batch.batch_number} />
+          </Field>
+          <Field label="Cost price (₦)" required error={errors.cost_price}>
+            <Input name="cost_price" type="number" step="0.01" min="0.01"
+              defaultValue={batch.cost_price} />
+          </Field>
+          <Field label="Expiry date" hint="Leave blank to clear">
+            <Input name="expiry_date" type="date" defaultValue={defaultExpiry} />
+          </Field>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
+            <Button type="submit" size="sm" loading={editMut.isPending}
+              leadingIcon={<CheckCircle size={13} />}>
+              Save changes
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const ADJUST_REASONS = [
+  'Damaged / spoiled units',
+  'Counting discrepancy — correction',
+  'Expired units removed',
+  'Returned to supplier',
+  'Write-off',
+  'Found additional stock',
+  'Internal transfer',
+  'Other',
+];
+
+interface AdjustModalProps {
+  batch: InventoryBatch;
+  onClose: () => void;
+}
+
+function AdjustModal({ batch, onClose }: AdjustModalProps) {
+  const toast       = useToast();
+  const queryClient = useQueryClient();
+
+  // deltaStr holds raw input (allows "-", "-0", partial typing); delta is the parsed integer
+  const [deltaStr, setDeltaStr] = useState('0');
+  const [reason,   setReason]   = useState('');
+  const [custom,   setCustom]   = useState('');
+  const [error,    setError]    = useState('');
+
+  const delta      = parseInt(deltaStr, 10) || 0;
+  const newQty     = batch.quantity + delta;
+  const isNegative = newQty < 0;
+
+  const adjustMut = useMutation({
+    mutationFn: async () => {
+      const finalReason = reason === 'Other' ? custom.trim() : reason;
+      const res = await fetch('/api/inventory/adjust', {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify({ batch_id: batch.id, delta, reason: finalReason }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message ?? 'Adjustment failed');
+      return json;
+    },
+    onSuccess: (json) => {
+      // Refetch both inventory list and stats so totals update immediately
+      void queryClient.refetchQueries({ queryKey: ['inventory'] });
+      void queryClient.refetchQueries({ queryKey: ['inventory-stats'] });
+      toast.show({ tone: 'success', title: 'Stock adjusted', description: json.message });
+      onClose();
+    },
+    onError: (err: Error) => {
+      setError(err.message);
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (delta === 0)     { setError('Delta cannot be zero.'); return; }
+    if (!reason)         { setError('Select a reason.'); return; }
+    if (reason === 'Other' && !custom.trim()) { setError('Enter a custom reason.'); return; }
+    if (isNegative)      { setError(`Cannot remove more than current stock (${batch.quantity} units).`); return; }
+    adjustMut.mutate();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-sm rounded-2xl border border-line bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-line-subtle px-6 py-5">
+          <div>
+            <h2 className="text-base font-semibold text-ink">Adjust stock quantity</h2>
+            <p className="mt-0.5 text-xs text-ink-3">
+              <span className="font-mono font-medium text-ink-2">{batch.batch_number}</span>
+              {' · '}current: <span className="font-semibold text-ink">{batch.quantity}</span> units
+            </p>
+          </div>
+          <button type="button" onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-4 hover:bg-bg-muted hover:text-ink transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Delta input */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-ink-2">
+              Adjustment (+ add · − remove)
+            </label>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setDeltaStr(String(delta - 1))}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-red-300 hover:text-red-600 transition-colors">
+                <Minus size={13} />
+              </button>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={deltaStr}
+                onChange={e => {
+                  // Allow: digits, a leading minus, partial "-" while typing
+                  const v = e.target.value;
+                  if (v === '' || v === '-' || /^-?\d+$/.test(v)) setDeltaStr(v);
+                }}
+                onBlur={() => {
+                  // Normalise on blur — blank or bare "-" → "0"
+                  if (deltaStr === '' || deltaStr === '-') setDeltaStr('0');
+                }}
+                className="h-9 w-full rounded-lg border border-line px-3 text-center text-sm font-semibold text-ink focus:border-brand-500 focus:outline-none"
+              />
+              <button type="button" onClick={() => setDeltaStr(String(delta + 1))}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-teal-300 hover:text-teal-600 transition-colors">
+                <Plus size={13} />
+              </button>
+            </div>
+
+            {/* Live preview */}
+            <div className={cn(
+              'mt-2 flex items-center justify-between rounded-lg px-3 py-2 text-sm',
+              isNegative
+                ? 'border border-red-200 bg-red-50 text-red-700'
+                : delta === 0
+                  ? 'border border-line bg-bg-subtle text-ink-3'
+                  : 'border border-teal-200 bg-teal-50 text-teal-700',
+            )}>
+              <span>New quantity</span>
+              <span className={cn('num font-bold', isNegative ? 'text-red-700' : 'text-ink')}>
+                {newQty}
+              </span>
+            </div>
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-ink-2">
+              Reason <span className="text-danger">*</span>
+            </label>
+            <select
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              className="h-9 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink focus:border-brand-500 focus:outline-none">
+              <option value="">Select a reason…</option>
+              {ADJUST_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          {reason === 'Other' && (
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-ink-2">
+                Describe the reason <span className="text-danger">*</span>
+              </label>
+              <textarea
+                value={custom}
+                onChange={e => setCustom(e.target.value)}
+                rows={2}
+                className="w-full rounded-lg border border-line px-3 py-2 text-sm text-ink placeholder:text-ink-4 focus:border-brand-500 focus:outline-none resize-none"
+                placeholder="Describe the reason for this adjustment…"
+              />
+            </div>
+          )}
+
+          {error && (
+            <div className="flex gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" />{error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
+            <Button type="submit" size="sm" loading={adjustMut.isPending}
+              disabled={delta === 0 || isNegative}
+              leadingIcon={<CheckCircle size={13} />}>
+              Apply adjustment
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 const TABS: { value: Tab; label: string }[] = [
   { value: 'all',       label: 'All'           },
@@ -541,11 +798,13 @@ function formatExpiry(dateStr: string | null): { label: string; urgent: boolean 
 }
 
 export function InventoryView() {
-  const [tab,      setTab]      = useState<Tab>('all');
-  const [page,     setPage]     = useState(1);
-  const [receive,  setReceive]  = useState(false);
-  const [bulk,     setBulk]     = useState(false);
-  const [query,    setQuery]    = useState('');
+  const [tab,         setTab]         = useState<Tab>('all');
+  const [page,        setPage]        = useState(1);
+  const [receive,     setReceive]     = useState(false);
+  const [bulk,        setBulk]        = useState(false);
+  const [query,       setQuery]       = useState('');
+  const [editBatch,   setEditBatch]   = useState<InventoryBatch | null>(null);
+  const [adjustBatch, setAdjustBatch] = useState<InventoryBatch | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['inventory-stats'],
@@ -660,7 +919,7 @@ export function InventoryView() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line-subtle bg-bg-subtle text-left">
-                  {['Product', 'Batch', 'Qty', 'Cost price', 'Expiry'].map(h => (
+                  {['Product', 'Batch', 'Qty', 'Cost price', 'Expiry', 'Actions'].map(h => (
                     <th key={h} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-ink-3">{h}</th>
                   ))}
                 </tr>
@@ -699,6 +958,26 @@ export function InventoryView() {
                           {exp.urgent && b.expiry_date && <span className="ml-1.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">SOON</span>}
                         </span>
                       </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            title="Edit metadata"
+                            onClick={() => setEditBatch(b)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-line text-ink-3 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          >
+                            <Edit size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            title="Adjust quantity"
+                            onClick={() => setAdjustBatch(b)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-line text-ink-3 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                          >
+                            <Sliders size={12} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -728,8 +1007,10 @@ export function InventoryView() {
         </div>
       )}
 
-      {receive && <ReceiveModal onClose={() => setReceive(false)} />}
-      {bulk    && <BulkReceiveModal onClose={() => setBulk(false)} />}
+      {receive     && <ReceiveModal onClose={() => setReceive(false)} />}
+      {bulk        && <BulkReceiveModal onClose={() => setBulk(false)} />}
+      {editBatch   && <EditBatchModal   batch={editBatch}   onClose={() => setEditBatch(null)} />}
+      {adjustBatch && <AdjustModal      batch={adjustBatch} onClose={() => setAdjustBatch(null)} />}
     </>
   );
 }

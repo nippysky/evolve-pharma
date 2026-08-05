@@ -1,21 +1,3 @@
-/**
- * GET /api/auth/staff/verify-email?token=UUID
- *
- * Staff email verification — called when a staff member clicks
- * the verification link in their invitation email.
- *
- * Flow:
- *   1. Find valid, unused EMAIL_VERIFICATION OTP matching the UUID token
- *   2. Mark token used + set user.email_verified_at
- *   3. Issue a short-lived setup_token (30 min, audience: envolvepharm-setup)
- *   4. Return the setup token → client shows the create-password form
- *
- * The account stays INACTIVE until the staff sets their password
- * via POST /api/auth/staff/create-password.
- *
- * No auth required.
- */
-
 import { NextRequest }    from 'next/server';
 import { db }             from '@/lib/db';
 import { signSetupToken } from '@/lib/jwt';
@@ -34,7 +16,7 @@ export async function GET(req: NextRequest) {
       return apiError('Verification token is missing.', 400);
     }
 
-    // Find user via the OTP token
+    // Find OTP token (select only — no includes)
     const otpRecord = await db.otpToken.findFirst({
       where: {
         token,
@@ -42,11 +24,7 @@ export async function GET(req: NextRequest) {
         used_at:    null,
         expires_at: { gt: new Date() },
       },
-      include: {
-        user: {
-          select: { id: true, email: true, first_name: true, role: true, status: true },
-        },
-      },
+      select: { id: true, user_id: true },
     });
 
     if (!otpRecord) {
@@ -55,27 +33,33 @@ export async function GET(req: NextRequest) {
         400,
       );
     }
+    const user = await db.user.findUnique({
+      where:  { id: otpRecord.user_id },
+      select: { id: true, email: true, first_name: true, role: true, status: true },
+    });
 
-    const { user } = otpRecord;
+    if (!user) {
+      return apiError('Account not found.', 400);
+    }
 
     // Only staff/driver roles can use this endpoint
     if (!['STAFF', 'DRIVER', 'ADMIN'].includes(user.role)) {
       return apiError('This link is not valid for this account type.', 403);
     }
+    await db.otpToken.update({
+      where: { id: otpRecord.id },
+      data:  { used_at: new Date() },
+    });
 
-    // Mark token used + record email verified at
-    await db.$transaction([
-      db.otpToken.update({
-        where: { id: otpRecord.id },
-        data:  { used_at: new Date() },
-      }),
-      db.user.update({
-        where: { id: user.id },
-        data:  { email_verified_at: new Date() },
-      }),
-    ]);
+    // Record email_verified_at
+    void db.user.update({
+      where: { id: user.id },
+      data:  { email_verified_at: new Date() },
+    }).catch(err =>
+      console.error('[verify-email] email_verified_at update failed:', err)
+    );
 
-    // Issue a 30-min setup token for the password-creation step
+    // Issue 30-min setup token for the password-creation step
     const setupToken = await signSetupToken(user.id, user.email);
 
     return apiSuccess(
@@ -84,7 +68,7 @@ export async function GET(req: NextRequest) {
       'Email verified. Please set your password to continue.',
     );
   } catch (err) {
-    console.error('[GET /api/auth/staff/verify-email]', err);
+    console.error('[GET /api/auth/staff/verify-email] FULL ERROR:', err);
     return handlePrismaError(err) ?? apiInternalError();
   }
 }

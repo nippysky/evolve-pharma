@@ -1,13 +1,8 @@
-/**
- * GET    /api/products/[sku] — single product detail
- * PATCH  /api/products/[sku] — partial update
- * DELETE /api/products/[sku] — soft delete
- */
-
-import { NextRequest } from 'next/server';
-import { z }           from 'zod';
-import { db }          from '@/lib/db';
-import { getSession }  from '@/lib/auth';
+import { NextRequest }    from 'next/server';
+import { z }              from 'zod';
+import { revalidateTag }  from 'next/cache';
+import { db }             from '@/lib/db';
+import { getSession }     from '@/lib/auth';
 import {
   apiSuccess,
   apiError,
@@ -16,10 +11,8 @@ import {
   apiNotFound,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog }       from '@/lib/audit';
+import { writeAuditLog }        from '@/lib/audit';
 import { deleteFromCloudinary } from '@/lib/cloudinary';
-
-// ─── Validation ───────────────────────────────────────────────────────────────
 
 const patchSchema = z.object({
   brand_name:          z.string().min(1).max(255).optional(),
@@ -39,8 +32,6 @@ const patchSchema = z.object({
   reorder_quantity:    z.number().int().min(0).optional(),
   status:              z.enum(['ACTIVE', 'DRAFT', 'DISCONTINUED']).optional(),
 });
-
-// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET(
   req: NextRequest,
@@ -90,8 +81,6 @@ export async function GET(
   }
 }
 
-// ─── PATCH ────────────────────────────────────────────────────────────────────
-
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ sku: string }> },
@@ -136,20 +125,22 @@ export async function PATCH(
       req,
     });
 
+    // Bust the public catalog cache so frontend reflects the change immediately
+    revalidateTag('products', 'default');
+    revalidateTag('catalog', 'default');
+
     return apiSuccess({ product: { id: updated.id, sku: updated.sku } }, 200, 'Product updated successfully');
   } catch (err) {
     console.error('[PATCH /api/products/[sku]]', err);
     return apiInternalError();
   }
 }
-
-// ─── DELETE ───────────────────────────────────────────────────────────────────
 //
-// Cascade behaviour:
-//   Images        → hard-deleted from Cloudinary + DB (no longer accessible; no audit value)
-//   InventoryBatches → archived in place (soft-delete of product hides them; stock history preserved)
-//   StockMovements   → untouched (full audit trail)
-//   OrderItems       → untouched (order history must remain intact)
+//   1. StockMovements → hard-deleted (references product_id + batch_id)
+//   2. InventoryBatches → hard-deleted (references product_id)
+//   4. Product → soft-deleted (deleted_at set; preserves FK targets for OrderItems)
+//
+//   OrderItems are intentionally untouched — order history must remain intact.
 //
 // Only ADMIN can delete products.
 
@@ -164,20 +155,30 @@ export async function DELETE(
 
     const { sku } = await params;
 
-    // Load product + images + impact counts in one round-trip
-    const [product, batchCount, orderItemCount] = await Promise.all([
+    // Load product + images in one query; count order items for the response
+    const [product, orderItemCount] = await Promise.all([
       db.product.findFirst({
         where:   { sku, deleted_at: null },
         include: { images: { select: { id: true, cloudinary_public_id: true } } },
       }),
-      db.inventoryBatch.count({ where: { product: { sku } } }),
-      db.orderItem.count({     where: { product: { sku } } }),
+      db.orderItem.count({ where: { product: { sku } } }),
     ]);
 
     if (!product) return apiNotFound('Product');
 
-    // 1. Remove images from Cloudinary (fire-and-forget; failures are non-fatal)
+    // 1. Hard-delete stock movements for this product
+    const { count: movementsDeleted } = await db.stockMovement.deleteMany({
+      where: { product_id: product.id },
+    });
+
+    // 2. Hard-delete inventory batches
+    const { count: batchesDeleted } = await db.inventoryBatch.deleteMany({
+      where: { product_id: product.id },
+    });
+
     if (product.images.length > 0) {
+      await db.productImage.deleteMany({ where: { product_id: product.id } });
+
       void Promise.allSettled(
         product.images.map(img =>
           deleteFromCloudinary(img.cloudinary_public_id, 'image').catch(e =>
@@ -185,12 +186,9 @@ export async function DELETE(
           ),
         ),
       );
-
-      // Hard-delete image DB records — Cloudinary URLs are now broken anyway
-      await db.productImage.deleteMany({ where: { product_id: product.id } });
     }
 
-    // 2. Soft-delete the product (sets deleted_at; hides from all catalog + admin queries)
+    // 4. Soft-delete the product (preserves FK target for any order items)
     await db.product.update({
       where: { id: product.id },
       data:  {
@@ -208,19 +206,20 @@ export async function DELETE(
       action:      'DELETE_PRODUCT',
       entityType:  'Product',
       entityId:    String(product.id),
-      description: `Deleted product "${product.brand_name}" (${product.sku}) — ${product.images.length} images removed, ${batchCount} batches archived`,
+      description: `Deleted "${product.brand_name}" (${product.sku}) — ${product.images.length} images, ${batchesDeleted} batches, ${movementsDeleted} stock movements removed`,
       req,
     });
 
     return apiSuccess(
       {
-        deleted:            true,
-        images_removed:     product.images.length,
-        batches_archived:   batchCount,
-        has_order_history:  orderItemCount > 0,
+        deleted:           true,
+        images_removed:    product.images.length,
+        batches_deleted:   batchesDeleted,
+        movements_deleted: movementsDeleted,
+        has_order_history: orderItemCount > 0,
       },
       200,
-      `"${product.brand_name}" deleted. ${product.images.length} image${product.images.length !== 1 ? 's' : ''} removed, ${batchCount} inventory batch${batchCount !== 1 ? 'es' : ''} archived.`,
+      `"${product.brand_name}" and all associated data deleted.`,
     );
   } catch (err) {
     console.error('[DELETE /api/products/[sku]]', err);

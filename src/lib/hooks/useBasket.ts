@@ -1,16 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Basket Store
- *
- * Why "basket"? In a pharmacy context, "cart" feels retail; "basket"
- * reads as professional procurement. The model also supports renaming
- * to "Order Sheet" later — that's a label change, not a refactor.
- *
- * Implementation: zustand + localStorage (persist) so that an order in
- * progress survives a tab refresh. Server actions on /portal/checkout
- * will read this through props from the page (basket is hydrated
- * client-side).
- */
-
 'use client';
 
 import { create } from 'zustand';
@@ -20,12 +7,10 @@ import type { ProductDTO } from '@/lib/api/types';
 
 interface BasketState {
   items: BasketItem[];
-  // ----- selectors -----
   itemCount: () => number;
   subtotal: () => number;
   hasItem: (productId: number) => boolean;
   getQuantity: (productId: number) => number;
-  // ----- mutations -----
   add: (product: ProductDTO, quantity?: number) => void;
   setQuantity: (productId: number, quantity: number) => void;
   increment: (productId: number) => void;
@@ -56,13 +41,14 @@ export const useBasket = create<BasketState>()(
             };
           }
           const item: BasketItem = {
-            product_id: product.id,
-            sku: product.sku,
-            name: product.brand_name,
-            price: parseFloat(product.selling_price),
-            image: product.images[0]?.url ?? '',
+            product_id:    product.id,
+            sku:           product.sku,
+            name:          product.brand_name,
+            price:         parseFloat(product.selling_price),
+            image:         product.images[0]?.url ?? '',
             quantity,
-            pack_size: product.pack_size ?? '',
+            pack_size:     product.pack_size ?? '',
+            minimum_order: Math.max(1, product.minimum_order ?? 1),
           };
           return { items: [...state.items, item] };
         }),
@@ -86,11 +72,11 @@ export const useBasket = create<BasketState>()(
 
       decrement: (productId) =>
         set((state) => ({
-          items: state.items
-            .map((i) =>
-              i.product_id === productId ? { ...i, quantity: i.quantity - 1 } : i,
-            )
-            .filter((i) => i.quantity > 0),
+          items: state.items.map((i) => {
+            if (i.product_id !== productId) return i;
+            const floor = Math.max(1, i.minimum_order ?? 1);
+            return { ...i, quantity: Math.max(floor, i.quantity - 1) };
+          }),
         })),
 
       remove: (productId) =>

@@ -1,21 +1,3 @@
-'use client';
-
-/**
- * /staff/verify?token=UUID
- *
- * Shown when a staff member clicks the verification link in their
- * invitation email. Two stages:
- *
- *  "verifying" → calls GET /api/auth/staff/verify-email?token=...
- *                On success: receives a setup_token, shows the create-password form.
- *
- *  "password"  → shows the create-password form, calls POST /api/auth/staff/create-password
- *                On success: redirects to /staff/sign-in.
- *
- *  "error"     → shows a clear error with a contact instruction.
- *  "done"      → success screen before redirect.
- */
-
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Field, Input } from '@/components/ui/Field';

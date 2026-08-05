@@ -52,11 +52,7 @@ type CustomerBulkResult = {
   failed_records: Array<{ row: number; email?: string; errors: string[] }>;
 };
 
-// ---------- Constants -------------------------------------------------------
-
 const PAGE_SIZE = 15;
-
-// ---------- Stage filter types & config ------------------------------------
 
 type StageFilter = CustomerStage | 'all';
 
@@ -144,8 +140,6 @@ const STAGE_CONFIG: Record<StageFilter, StageConfig> = {
 const STAGE_ORDER: StageFilter[] = [
   'all', 'registered', 'unverified', 'verified', 'pending', 'approved', 'rejected',
 ];
-
-// ---------- Invite customer modal ------------------------------------------
 //
 // Admin enters customer details → POST /api/customers → invitation email sent.
 // Customer receives email with OTP + link to /sign-up/invited to upload PCN
@@ -375,8 +369,6 @@ function InviteCustomerModal({ open, onClose }: { open: boolean; onClose: () => 
   );
 }
 
-// ---------- Stage badge (table column) ------------------------------------
-
 function StageBadge({ stage }: { stage: CustomerStage }) {
   const cfg = STAGE_CONFIG[stage];
   return (
@@ -389,8 +381,6 @@ function StageBadge({ stage }: { stage: CustomerStage }) {
     </span>
   );
 }
-
-// ---------- Raw status badge (review modal — maps backend string) ----------
 
 function RawStatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
@@ -430,8 +420,6 @@ function RawStatusBadge({ status }: { status: string }) {
     </span>
   );
 }
-
-// ---------- Stage filter card -----------------------------------------------
 
 function StageCard({
   stage,
@@ -512,8 +500,6 @@ function StageCard({
     </button>
   );
 }
-
-// ---------- Review modal ---------------------------------------------------
 
 /** Returns true when the Cloudinary URL is a raw/PDF upload. */
 function isCldPdf(url: string): boolean {
@@ -882,8 +868,6 @@ function ReviewModal({ customer, initialDecision = 'APPROVE', onClose, onSuccess
   );
 }
 
-// ---------- Pagination ------------------------------------------------------
-
 function Pagination({
   page,
   totalPages,
@@ -951,8 +935,6 @@ function Pagination({
   );
 }
 
-// ---------- Table skeleton --------------------------------------------------
-
 function TableSkeleton() {
   return (
     <div className="rounded-2xl border border-line overflow-hidden">
@@ -978,8 +960,6 @@ function TableSkeleton() {
     </div>
   );
 }
-
-// ---------- Main customer table --------------------------------------------
 
 function CustomerTable({
   records,
@@ -1172,8 +1152,6 @@ function CustomerTable({
   );
 }
 
-// ---------- File type helpers -----------------------------------------------
-
 const ACCEPTED_IMPORT_TYPES = '.xlsx,.xls,.csv';
 const ACCEPTED_IMPORT_MIME  = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -1188,8 +1166,6 @@ function isAcceptedImportFile(file: File) {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   return ['xlsx', 'xls', 'csv'].includes(ext);
 }
-
-// ---------- Customer import row types & validation -------------------------
 
 const CUSTOMER_REQUIRED = ['first_name', 'last_name', 'email', 'phone', 'company_name', 'address', 'city', 'state'] as const;
 const CUSTOMER_OPTIONAL = ['middle_name', 'referral_code'] as const;
@@ -1259,8 +1235,6 @@ async function parseCustomerFile(file: File): Promise<CustomerPreviewRow[]> {
     return { index: i, cells, errors, valid: errors.length === 0 };
   });
 }
-
-// ---------- Bulk upload modal -----------------------------------------------
 
 function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast     = useToast();
@@ -1597,8 +1571,6 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
     </div>
   );
 }
-
-// ---------- Main view -------------------------------------------------------
 
 export function CustomersView({ role }: { role: Role }) {
   const isAdmin = role === 'ADMIN';

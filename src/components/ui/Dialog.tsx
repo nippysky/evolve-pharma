@@ -1,8 +1,3 @@
-/**
- * Dialog — accessible modal with focus trap, escape key, scroll lock,
- * and focus return on close. Custom-built (no external lib).
- */
-
 'use client';
 
 import {

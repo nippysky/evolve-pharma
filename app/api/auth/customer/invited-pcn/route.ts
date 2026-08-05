@@ -1,26 +1,3 @@
-/**
- * POST /api/auth/customer/invited-pcn
- *
- * Unauthenticated PCN upload step for admin-invited customers.
- *
- * Flow:
- *   1. Customer receives invitation email → clicks link → lands on /sign-up/invited
- *   2. Step 1 of the invited page calls this endpoint with their email + PCN file
- *   3. Validates the customer is in REGISTERED status (no PCN yet, not self-registered)
- *   4. Uploads PCN to Cloudinary
- *   5. Updates customer.pcn_certificate_url + customer.status → PCN_CERT_UPLOADED
- *
- * No session required. Email acts as the lookup key — the OTP step that follows
- * provides the identity proof.
- *
- * Body: multipart/form-data
- *   email  — customer's email address
- *   file   — PCN certificate (PDF / JPG / PNG, max 8 MB)
- *
- * Response 200:
- *   { url: string }   — public Cloudinary URL (for display in the UI)
- */
-
 import { NextRequest }        from 'next/server';
 import { db }                 from '@/lib/db';
 import { uploadToCloudinary } from '@/lib/cloudinary';

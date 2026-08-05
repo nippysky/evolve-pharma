@@ -1,15 +1,3 @@
-'use client';
-
-/**
- * StaffRoleRow — Inline permission preset selector for the staff table.
- *
- * Admin clicks the dropdown → picks a preset → fires updateStaffPermissionAction.
- * The badge updates optimistically; a toast confirms the change.
- *
- * Permissions implied by each preset are shown as a tooltip-like pill list
- * beneath the dropdown so admins understand the impact without guessing.
- */
-
 import { useState, useTransition } from 'react';
 import { ChevronDown, CheckCircle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';

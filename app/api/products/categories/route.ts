@@ -1,8 +1,3 @@
-/**
- * GET  /api/products/categories — list all categories
- * POST /api/products/categories — create category (Admin/Staff)
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';

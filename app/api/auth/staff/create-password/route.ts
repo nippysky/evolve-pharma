@@ -1,20 +1,3 @@
-/**
- * POST /api/auth/staff/create-password
- *
- * Staff password creation — final step of the email verification flow.
- *
- * Flow:
- *   1. Verify the setup_token issued by GET /api/auth/staff/verify-email
- *   2. Ensure user is a staff/driver/admin role
- *   3. Hash + set the new password
- *   4. Set user.status → ACTIVE
- *   5. Set staff.verification_status → VERIFIED
- *   6. Send account activation email
- *   7. Return success → client redirects to /staff/sign-in
- *
- * No auth required — uses the setup_token from the verification step.
- */
-
 import { NextRequest }          from 'next/server';
 import { z }                    from 'zod';
 import bcrypt                   from 'bcryptjs';
@@ -68,22 +51,23 @@ export async function POST(req: NextRequest) {
     // Hash + set password, activate account
     const password_hash = await bcrypt.hash(password, 12);
 
-    await db.$transaction(async (tx: any) => {
-      await tx.user.update({
+    const ops: any[] = [
+      db.user.update({
         where: { id: user.id },
         data:  { password_hash, status: 'ACTIVE' },
-      });
-
-      // Mark staff as VERIFIED (if STAFF role)
-      if (user.role === 'STAFF') {
-        await tx.staff.updateMany({
+      }),
+    ];
+    // Mark staff as VERIFIED (STAFF role only; DRIVER has no verification_status)
+    if (user.role === 'STAFF') {
+      ops.push(
+        db.staff.updateMany({
           where: { user_id: user.id },
           data:  { verification_status: 'VERIFIED' },
-        });
-      }
-    });
+        }),
+      );
+    }
+    await db.$transaction(ops);
 
-    // Send activation email (fire-and-forget)
     void sendStaffActivationEmail({
       to:   payload.email,
       name: user.first_name,

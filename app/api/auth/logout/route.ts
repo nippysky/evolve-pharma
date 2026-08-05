@@ -1,21 +1,3 @@
-/**
- * POST /api/auth/logout
- *
- * Signs the user out:
- *   1. Read ep_refresh cookie (or Authorization: Bearer)
- *   2. Verify JWT → extract jti
- *   3. Delete the DB row for this jti (revoke this device's session)
- *   4. Clear both httpOnly cookies on the response
- *
- * Returns 200 even if the token is already gone or invalid — logout should
- * always succeed from the client's perspective.
- *
- * Scoped logout: only revokes the current device's refresh token.
- * "Sign out everywhere" (revoke all refresh tokens) is a separate admin action.
- *
- * Auth: accepts expired/missing access token — only the refresh token is needed.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { db }                         from '@/lib/db';
 import { verifyRefreshToken }         from '@/lib/jwt';
@@ -53,7 +35,6 @@ export async function POST(req: NextRequest) {
           // Token was already rotated or never in DB — safe to ignore
         });
 
-      // Audit trail (fire-and-forget)
       void writeAuditLog({
         userId:      payload.userId,
         userType:    payload.role,

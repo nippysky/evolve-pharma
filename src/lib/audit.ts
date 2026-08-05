@@ -1,31 +1,5 @@
-/**
- * Audit log + login history helpers
- *
- * Every significant admin/staff action should call writeAuditLog().
- * Every login attempt (success or failure) should call writeLoginHistory().
- *
- * These writes are fire-and-forget (no await required at the call site) —
- * they use Promise.catch to swallow DB errors so a failed audit write never
- * breaks the main request.
- *
- * Usage in a route handler:
- *   void writeAuditLog({
- *     userId:      session.userId,
- *     userType:    session.role,
- *     userName:    `${user.first_name} ${user.last_name}`,
- *     email:       user.email,
- *     action:      'APPROVE_CUSTOMER',
- *     entityType:  'Customer',
- *     entityId:    String(customerId),
- *     description: `Approved customer ${company_name}`,
- *     req,
- *   });
- */
-
 import { type NextRequest } from 'next/server';
 import { db } from './db';
-
-// ─── Audit log ────────────────────────────────────────────────────────────────
 
 interface AuditLogParams {
   userId?:      number;
@@ -60,8 +34,6 @@ export function writeAuditLog(params: AuditLogParams): void {
     },
   }).catch((err: unknown) => console.error('[audit] write failed:', err));
 }
-
-// ─── Login history ────────────────────────────────────────────────────────────
 
 type LoginEvent = 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOGOUT' | 'TOKEN_REFRESHED';
 

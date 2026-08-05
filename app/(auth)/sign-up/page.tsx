@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { OtpInput } from '@/components/ui/OtpInput';
@@ -42,12 +42,17 @@ const emptyDetails = {
 };
 
 export default function SignUpPage() {
-  const router = useRouter();
-  const toast = useToast();
+  const router       = useRouter();
+  const toast        = useToast();
+  const searchParams = useSearchParams();
 
   // ── State ────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>(1);
-  const [details, setDetails] = useState(emptyDetails);
+  // Pre-fill referral code from ?ref= query param (used by share links)
+  const [details, setDetails] = useState(() => ({
+    ...emptyDetails,
+    referral_code: searchParams.get('ref') ?? '',
+  }));
   const [certFile, setCertFile] = useState<File | null>(null);
   const [code, setCode] = useState('');
   const [resendIn, setResendIn] = useState(0);

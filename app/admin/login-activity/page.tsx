@@ -1,12 +1,3 @@
-'use client';
-
-/**
- * Console · Login Activity
- *
- * Real-time feed of all sign-in events across admin, staff, and customer accounts.
- * Filters: role, event type, actor search, date range.
- */
-
 import React, { useState, useCallback, useTransition } from 'react';
 import {
   Shield, ClipboardList, CheckCircle, XCircle, AlertTriangle,
@@ -19,8 +10,6 @@ import { useToast } from '@/contexts/ToastContext';
 import { cn, formatDateTime, timeAgo } from '@/lib/utils';
 import type { LoginHistoryRecord, PaginationMeta } from '@/lib/api/types';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function fmtDateTime(raw: string) {
   try { return formatDateTime(raw.replace(' ', 'T')); } catch { return raw; }
 }
@@ -30,8 +19,6 @@ function fmtAgo(raw: string) {
 function isRecent(raw: string, ms = 60 * 60_000): boolean {
   try { return Date.now() - new Date(raw.replace(' ', 'T')).getTime() < ms; } catch { return false; }
 }
-
-// ─── Event styles ─────────────────────────────────────────────────────────────
 
 function eventTone(event: string): 'success' | 'danger' | 'warn' | 'neutral' {
   const e = event.toUpperCase();
@@ -73,8 +60,6 @@ function EventBadge({ event }: { event: string }) {
   );
 }
 
-// ─── User type pill ───────────────────────────────────────────────────────────
-
 const USER_TYPE_STYLE: Record<string, string> = {
   ADMIN:    'bg-brand-50 text-brand-700 ring-brand-200',
   STAFF:    'bg-violet-50 text-violet-700 ring-violet-200',
@@ -90,8 +75,6 @@ function UserTypePill({ type }: { type: string }) {
     </span>
   );
 }
-
-// ─── Skeletons / states ───────────────────────────────────────────────────────
 
 function FeedSkeleton() {
   return (
@@ -134,8 +117,6 @@ function EmptyFeed() {
   );
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
 function StatCard({ label, value, icon, color, isLoading }: {
   label: string; value: number; icon: React.ReactNode; color: string; isLoading: boolean;
 }) {
@@ -151,8 +132,6 @@ function StatCard({ label, value, icon, color, isLoading }: {
     </div>
   );
 }
-
-// ─── Pagination ───────────────────────────────────────────────────────────────
 
 function PaginationBar({ meta, page, onPage }: { meta: PaginationMeta; page: number; onPage: (p: number) => void }) {
   if (meta.total_pages <= 1) return null;
@@ -192,8 +171,6 @@ function PaginationBar({ meta, page, onPage }: { meta: PaginationMeta; page: num
     </div>
   );
 }
-
-// ─── Filter bar ───────────────────────────────────────────────────────────────
 
 const USER_TYPES  = ['ADMIN', 'STAFF', 'CUSTOMER', 'DRIVER'] as const;
 const LOGIN_EVENTS = ['LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'TOKEN_REFRESHED'] as const;
@@ -256,8 +233,6 @@ function FilterBar({ value, onChange, onReset, activeCount }: {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LoginActivityPage() {
   const toast  = useToast();

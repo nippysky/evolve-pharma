@@ -2,18 +2,48 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Box, MapPin } from '@/components/icons';
-import { Badge, EmptyState } from '@/components/ui/Primitives';
+import { Search, Box, Eye } from '@/components/icons';
+import { EmptyState } from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { ButtonLink } from '@/components/ui/Button';
-import {
-  ORDER_STATUS_LABEL,
-  ORDER_STATUS_TONE,
-  PAYMENT_STATUS_LABEL,
-  PAYMENT_STATUS_TONE,
-} from '@/lib/constants';
 import { formatNaira, formatDate, cn } from '@/lib/utils';
-import type { Order, OrderStatus } from '@/types';
+import type { Order, OrderStatus, PaymentStatus } from '@/types';
+
+const ORDER_STATUS_STYLE: Record<OrderStatus, { bg: string; dot: string; text: string; label: string }> = {
+  pending:    { bg: 'bg-amber-50 border border-amber-200',   dot: 'bg-amber-400',  text: 'text-amber-800',  label: 'Pending'    },
+  confirmed:  { bg: 'bg-blue-50 border border-blue-200',     dot: 'bg-blue-500',   text: 'text-blue-800',   label: 'Confirmed'  },
+  processing: { bg: 'bg-indigo-50 border border-indigo-200', dot: 'bg-indigo-500', text: 'text-indigo-800', label: 'Processing' },
+  dispatched: { bg: 'bg-teal-50 border border-teal-200',     dot: 'bg-teal-500',   text: 'text-teal-800',   label: 'Dispatched' },
+  delivered:  { bg: 'bg-green-50 border border-green-200',   dot: 'bg-green-500',  text: 'text-green-800',  label: 'Delivered'  },
+  cancelled:  { bg: 'bg-red-50 border border-red-200',       dot: 'bg-red-400',    text: 'text-red-800',    label: 'Cancelled'  },
+};
+
+const PAYMENT_STATUS_STYLE: Record<PaymentStatus, { bg: string; text: string; label: string }> = {
+  unpaid:   { bg: 'bg-orange-50 border border-orange-200',   text: 'text-orange-800', label: 'Unpaid'   },
+  partial:  { bg: 'bg-yellow-50 border border-yellow-200',   text: 'text-yellow-800', label: 'Partial'  },
+  paid:     { bg: 'bg-emerald-50 border border-emerald-200', text: 'text-emerald-800',label: 'Paid'     },
+  refunded: { bg: 'bg-purple-50 border border-purple-200',   text: 'text-purple-800', label: 'Refunded' },
+  failed:   { bg: 'bg-red-50 border border-red-200',         text: 'text-red-800',    label: 'Failed'   },
+};
+
+function OrderStatusBadge({ status }: { status: OrderStatus }) {
+  const s = ORDER_STATUS_STYLE[status] ?? ORDER_STATUS_STYLE.pending;
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold', s.bg, s.text)}>
+      <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
+      {s.label}
+    </span>
+  );
+}
+
+function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  const s = PAYMENT_STATUS_STYLE[status] ?? PAYMENT_STATUS_STYLE.unpaid;
+  return (
+    <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', s.bg, s.text)}>
+      {s.label}
+    </span>
+  );
+}
 
 type Tab = 'all' | 'pending' | 'processing' | 'dispatch' | 'delivered' | 'cancelled';
 
@@ -21,7 +51,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'all',        label: 'All' },
   { value: 'pending',    label: 'Pending' },
   { value: 'processing', label: 'Processing' },
-  { value: 'dispatch',   label: 'Dispatch' },
+  { value: 'dispatch',   label: 'In Transit' },
   { value: 'delivered',  label: 'Delivered' },
   { value: 'cancelled',  label: 'Cancelled' },
 ];
@@ -65,13 +95,13 @@ export function PortalOrdersClient({ orders }: Props) {
 
   return (
     <>
-      {/* Stats strip */}
+      {/* Stats strip — mirrors the order flow: Total → Pending → In Transit → Delivered */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total orders',  value: orders.length,                                             color: 'text-ink' },
-          { label: 'In transit',    value: orders.filter((o) => o.status === 'dispatched').length,    color: 'text-blue-600' },
-          { label: 'Processing',    value: orders.filter((o) => o.status === 'processing').length,    color: 'text-amber-600' },
-          { label: 'Delivered',     value: orders.filter((o) => o.status === 'delivered').length,     color: 'text-teal-600' },
+          { label: 'Total orders',  value: orders.length,                                                                              color: 'text-ink'       },
+          { label: 'Pending',       value: orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length,            color: 'text-amber-600' },
+          { label: 'In transit',    value: orders.filter((o) => o.status === 'dispatched').length,                                     color: 'text-teal-600'  },
+          { label: 'Delivered',     value: orders.filter((o) => o.status === 'delivered').length,                                      color: 'text-green-600' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-xl border border-line bg-white px-4 py-3.5">
             <p className="text-xs font-medium text-ink-3">{label}</p>
@@ -128,7 +158,7 @@ export function PortalOrdersClient({ orders }: Props) {
           description={
             tab === 'all'
               ? "When you place orders, they'll show up here."
-              : `No ${tab === 'dispatch' ? 'dispatched' : tab} orders found.`
+              : `No ${tab === 'dispatch' ? 'in-transit' : tab} orders found.`
           }
           action={tab === 'all' ? <ButtonLink href="/portal/catalog">Browse catalogue</ButtonLink> : undefined}
         />
@@ -143,21 +173,14 @@ export function PortalOrdersClient({ orders }: Props) {
                 <Th>Status</Th>
                 <Th>Payment</Th>
                 <Th align="right">Total</Th>
+                <Th align="right">View</Th>
               </tr>
             </Thead>
             <Tbody>
               {filtered.map((o) => (
                 <Tr key={o.id}>
                   <Td>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-xs font-medium text-ink">{o.order_number}</span>
-                      {o.notes && (
-                        <span className="flex items-center gap-1 text-[11px] text-ink-3">
-                          <MapPin size={10} />
-                          {String(o.notes).split(',').slice(-2).join(',').trim()}
-                        </span>
-                      )}
-                    </div>
+                    <span className="font-mono text-xs font-medium text-ink">{o.order_number}</span>
                   </Td>
                   <Td>
                     <div className="flex items-center gap-1.5">
@@ -172,16 +195,21 @@ export function PortalOrdersClient({ orders }: Props) {
                   </Td>
                   <Td muted>{formatDate(o.created_at)}</Td>
                   <Td>
-                    <Badge tone={ORDER_STATUS_TONE[o.status.toUpperCase() as keyof typeof ORDER_STATUS_TONE] ?? 'neutral'}>
-                      {ORDER_STATUS_LABEL[o.status.toUpperCase() as keyof typeof ORDER_STATUS_LABEL] ?? o.status}
-                    </Badge>
+                    <OrderStatusBadge status={o.status} />
                   </Td>
                   <Td>
-                    <Badge tone={PAYMENT_STATUS_TONE[o.payment_status.toUpperCase() as keyof typeof PAYMENT_STATUS_TONE] ?? 'neutral'} noDot>
-                      {PAYMENT_STATUS_LABEL[o.payment_status.toUpperCase() as keyof typeof PAYMENT_STATUS_LABEL] ?? o.payment_status}
-                    </Badge>
+                    <PaymentStatusBadge status={o.payment_status} />
                   </Td>
                   <Td right num>{formatNaira(o.total_amount)}</Td>
+                  <Td right>
+                    <Link
+                      href={`/portal/orders/${o.id}`}
+                      className="inline-flex items-center gap-1 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-ink-2 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                    >
+                      <Eye size={12} />
+                      View
+                    </Link>
+                  </Td>
                 </Tr>
               ))}
             </Tbody>

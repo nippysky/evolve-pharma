@@ -1,11 +1,3 @@
-/**
- * Footer — minimal e-commerce footer.
- *
- * Marketing pages (About, FAQ, Contact) live on the main brand site
- * (envolvepharm.com.ng) and link out via the "Company" section.
- * Legal pages stay on this domain since they govern transactions.
- */
-
 import Link from 'next/link';
 import { Logo } from '@/components/shared/Logo';
 import { Container } from '@/components/ui/Layout';

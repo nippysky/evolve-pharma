@@ -1,29 +1,10 @@
-/**
- * Auth helpers — cookie management + session reading
- *
- * Cookie names:
- *   ep_access   — httpOnly, Secure, SameSite=Lax, 15 min
- *   ep_refresh  — httpOnly, Secure, SameSite=Lax, 7 days
- *
- * Web clients: cookies are set automatically by the browser on every request.
- * Mobile clients: tokens returned in JSON body, sent as Authorization: Bearer.
- *
- * getSession() returns SessionUser (with display fields) so layouts/sidebars
- * can render the user's name and email without an extra DB query — the data
- * is verified via JWT signature on every token validation.
- */
-
 import { cookies }                              from 'next/headers';
 import { type NextRequest, NextResponse }        from 'next/server';
 import { verifyAccessToken, type TokenPayload }  from './jwt';
 import type { SessionUser }                      from '@/types';
 
-// ─── Cookie names ──────────────────────────────────────────────────────────────
-
 export const ACCESS_COOKIE  = 'ep_access';
 export const REFRESH_COOKIE = 'ep_refresh';
-
-// ─── Cookie options ────────────────────────────────────────────────────────────
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -47,8 +28,6 @@ export function refreshCookieOptions() {
   };
 }
 
-// ─── Set / clear tokens on a NextResponse ─────────────────────────────────────
-
 export function setAuthCookies(
   res: NextResponse,
   accessToken: string,
@@ -63,8 +42,6 @@ export function clearAuthCookies(res: NextResponse): void {
   res.cookies.set(REFRESH_COOKIE, '', { ...refreshCookieOptions(), maxAge: 0 });
 }
 
-// ─── Map TokenPayload → SessionUser ──────────────────────────────────────────
-
 function toSessionUser(payload: TokenPayload): SessionUser {
   return {
     userId:     payload.userId,
@@ -75,8 +52,6 @@ function toSessionUser(payload: TokenPayload): SessionUser {
     full_name:  `${payload.first_name} ${payload.last_name}`.trim(),
   };
 }
-
-// ─── Read session ─────────────────────────────────────────────────────────────
 
 /**
  * Returns the authenticated user's SessionUser from either:
@@ -128,8 +103,6 @@ export async function getTokenPayload(req?: NextRequest): Promise<TokenPayload |
   if (!token) return null;
   return verifyAccessToken(token);
 }
-
-// ─── Role guard ───────────────────────────────────────────────────────────────
 
 export function requireRole(
   session: SessionUser | null,

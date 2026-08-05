@@ -1,23 +1,3 @@
-/**
- * POST /api/staff/bulk-upload
- *
- * Accepts a multipart/form-data Excel (.xlsx) or CSV file.
- * Creates staff/driver accounts in bulk using the invitation flow —
- * identical to single invite: accounts start INACTIVE, an email is sent
- * with a verification link, and the user sets their own password.
- *
- * Query param: ?force_role=STAFF|DRIVER
- *   When set, every row is treated as that role regardless of any role
- *   column in the sheet.  Staff page passes force_role=STAFF; Drivers
- *   page passes force_role=DRIVER.
- *
- * Required columns: first_name, last_name, email
- * Optional columns: middle_name, phone, department, job_title,
- *                   vehicle_plate, vehicle_type, employee_code
- *   employee_code: auto-generated if absent (same as single invite)
- *   role:          ignored when force_role is set
- */
-
 import { NextRequest }   from 'next/server';
 import { v4 as uuidv4 }  from 'uuid';
 import { db }            from '@/lib/db';
@@ -53,8 +33,6 @@ interface RowError {
   errors: string[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 /** Build a header-name → column-index map (lowercase, underscored). */
 function buildHeaderMap(headers: string[]): Record<string, number> {
   const map: Record<string, number> = {};
@@ -72,8 +50,6 @@ function cellStr(row: unknown[], headers: Record<string, number>, col: string): 
   const v = (row as (string | number | boolean | null | undefined)[])[i];
   return v != null ? String(v).trim() : '';
 }
-
-// ─── Parse rows ───────────────────────────────────────────────────────────────
 
 function parseRows(
   rows: unknown[][],
@@ -131,8 +107,6 @@ function parseRows(
 
   return { data, errors };
 }
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -238,7 +212,6 @@ export async function POST(req: NextRequest) {
           });
         });
 
-        // Send invitation email (fire-and-forget — don't let one failure abort the batch)
         const verificationUrl = `${frontendUrl}/staff/verify?token=${verifyToken}`;
         void sendStaffVerificationEmail({
           to:              row.email,

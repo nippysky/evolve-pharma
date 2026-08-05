@@ -1,35 +1,3 @@
-/**
- * POST /api/inventory/bulk-receive
- *
- * Accepts a multipart/form-data Excel (.xlsx / .xls) or CSV file.
- * Each row is a stock receipt for an existing product (looked up by SKU).
- *
- * ─── Query architecture (O(1) — fixed DB calls for any file size) ────────────
- *
- *   1. Parse + validate entire file in memory          (0 DB calls)
- *   2. findMany products by SKU                        (1 query — IN clause)
- *   3. findMany already-existing batch_numbers         (1 query — IN clause)
- *   4. createMany new inventory batches                (1 query)
- *   5. findMany those batches back to get IDs          (1 query — IN clause)
- *   6. createMany stock movements                      (1 query)
- *   7. Serial last_cost_price updates (1 per unique product with batches)
- *
- *   Total: ~7 fixed queries for any N rows.
- *
- * Required columns (case-insensitive):
- *   sku, batch_no, quantity, cost_price
- *
- * Optional columns:
- *   expiry_date (YYYY-MM-DD or Excel date), notes
- *
- * Responses:
- *   200  { total_records, successful, failed, failed_records }
- *   400  file errors
- *   401  unauthenticated
- *   403  forbidden
- *   500  server error
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
@@ -42,12 +10,8 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog } from '@/lib/audit';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_ROWS       = 500;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BatchRow {
   rowNum:      number;
@@ -64,8 +28,6 @@ interface RowError {
   sku:    string;
   errors: string[];
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function headerKey(h: string): string {
   return String(h).toLowerCase().trim().replace(/[\s-]+/g, '_');
@@ -87,8 +49,6 @@ function parseDate(raw: string): Date | null {
   const d = new Date(raw);
   return isNaN(d.getTime()) ? null : d;
 }
-
-// ─── Phase 1: Parse file → memory ────────────────────────────────────────────
 
 function parseRows(rawRows: unknown[][]): {
   rows:   BatchRow[];
@@ -142,8 +102,6 @@ function parseRows(rawRows: unknown[][]): {
 
   return { rows, errors };
 }
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {

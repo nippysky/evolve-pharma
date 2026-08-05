@@ -1,15 +1,3 @@
-/**
- * GET /api/customers/[id]/pcn-url
- *
- * Returns a short-lived signed Cloudinary URL for the customer's PCN certificate.
- * Signed URLs bypass Cloudinary's delivery restrictions (strict transformations,
- * authenticated delivery, etc.) that cause 401s when the raw CDN URL is opened
- * directly in a browser.
- *
- * Auth: ADMIN or STAFF only.
- * Expiry: 2 hours (the admin review session should not take longer than that).
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { db }           from '@/lib/db';
 import { cloudinary }   from '@/lib/cloudinary';

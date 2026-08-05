@@ -1,11 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Staff Service
- *
- * Client-side service functions for staff management.
- * All functions call Next.js API routes — credentials (httpOnly cookies) are
- * sent automatically by the browser.
- */
-
 import type {
   LoginStaffPayload,
   RegisterStaffPayload,
@@ -16,8 +8,6 @@ import type {
 } from '@/lib/api/types';
 
 interface ListResponse<T> { records: T[]; total: number }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(
   path:    string,
@@ -36,8 +26,6 @@ async function apiFetch<T>(
   }
   return json?.data as T;
 }
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
 
 /**
  * Authenticates a staff member (ADMIN | STAFF | DRIVER).
@@ -68,8 +56,6 @@ export async function loginStaff(
     email:  user.email,
   };
 }
-
-// ─── Staff management ─────────────────────────────────────────────────────────
 
 /**
  * Invite a staff member — sends a verification email with a 24-hour link.
@@ -118,8 +104,6 @@ export async function bulkUploadStaff(file: File): Promise<StaffBulkUploadResult
   return json.data as StaffBulkUploadResult;
 }
 
-// ─── Staff lists ──────────────────────────────────────────────────────────────
-
 export async function listVerifiedStaff(): Promise<ListResponse<StaffRecord>> {
   return apiFetch<ListResponse<StaffRecord>>('/api/staff?verification=VERIFIED&limit=200');
 }
@@ -127,8 +111,6 @@ export async function listVerifiedStaff(): Promise<ListResponse<StaffRecord>> {
 export async function listUnverifiedStaff(): Promise<ListResponse<StaffRecord>> {
   return apiFetch<ListResponse<StaffRecord>>('/api/staff?verification=UNVERIFIED&limit=200');
 }
-
-// ─── Driver lists ─────────────────────────────────────────────────────────────
 
 export async function listDrivers(): Promise<ListResponse<DriverRecord>> {
   return apiFetch<ListResponse<DriverRecord>>('/api/staff?role=DRIVER&limit=500');

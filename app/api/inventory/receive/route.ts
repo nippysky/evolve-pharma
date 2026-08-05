@@ -1,13 +1,3 @@
-/**
- * POST /api/inventory/receive
- *
- * Records a stock receipt (new inventory batch).
- * Creates an InventoryBatch + StockMovement, updates product's last_cost_price.
- *
- * Body:
- *   product_id, batch_number, quantity, cost_price, expiry_date?
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';

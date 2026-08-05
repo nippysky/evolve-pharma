@@ -1,17 +1,3 @@
-/**
- * POST /api/auth/customer/register
- *
- * Step 1 of customer sign-up (multipart/form-data):
- *   1. Validate fields, check email uniqueness
- *   2. Upload PCN certificate to Cloudinary
- *   3. Create User (CUSTOMER, INACTIVE) + Customer (REGISTERED) — no password yet
- *   4. Generate OTP → store → send email
- *   5. Return { email }
- *
- * Password is set later via /create-password after OTP is verified.
- * No auth required.
- */
-
 import { NextRequest }               from 'next/server';
 import { db }                        from '@/lib/db';
 import { sendOtpEmail }              from '@/lib/mail';
@@ -23,6 +9,10 @@ import {
   handlePrismaError,
 } from '@/lib/api/response';
 import { generateOtp, otpExpiresAt } from '@/lib/api/issue-tokens';
+import {
+  DEFAULT_REFERRAL_CODE,
+  REFERRAL_POINTS_PER_SIGNUP,
+}                                    from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,6 +89,20 @@ export async function POST(req: NextRequest) {
 
     // Create User + Customer
     const newReferralCode = 'ENV' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // Resolve referral: validate supplied code is a real customer's code (not the platform default)
+    const referrerCode = referral_code && referral_code !== DEFAULT_REFERRAL_CODE
+      ? referral_code
+      : null;
+    let referrerExists = false;
+    if (referrerCode) {
+      const referrer = await db.customer.findUnique({
+        where:  { referral_code: referrerCode },
+        select: { id: true },
+      });
+      referrerExists = !!referrer;
+    }
+
     const user = await db.$transaction(async (tx: any) => {
       const u = await tx.user.create({
         data: {
@@ -122,12 +126,20 @@ export async function POST(req: NextRequest) {
           state,
           pcn_certificate_url: pcnUrl,
           referral_code:       newReferralCode,
-          referred_by:         referral_code ?? undefined,
+          // Store the real referrer code if valid, otherwise the platform sentinel
+          referred_by:         referrerExists ? referrerCode! : DEFAULT_REFERRAL_CODE,
           status:              'REGISTERED',
         },
       });
       return u;
     });
+    // referral_points: added in schema — run `npx prisma generate` if types lag
+    if (referrerExists && referrerCode) {
+      void (db.customer.update as any)({
+        where: { referral_code: referrerCode },
+        data:  { referral_points: { increment: REFERRAL_POINTS_PER_SIGNUP } },
+      }).catch((err: unknown) => console.error('[register] referral points update failed:', err));
+    }
 
     // Generate + store OTP
     const otp       = generateOtp();

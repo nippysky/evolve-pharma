@@ -1,15 +1,3 @@
-/**
- * Button + ButtonLink — primary action elements.
- *
- * Variants:  primary | secondary | ghost | danger
- * Sizes:     sm | md | lg
- * Extras:    loading, leadingIcon, trailingIcon, fullWidth, iconOnly
- *
- * `Button` renders a <button>; `ButtonLink` renders a Next <Link> with
- * the same visual styling. Use ButtonLink for navigation, Button for
- * actions/forms.
- */
-
 'use client';
 
 import { forwardRef, type ButtonHTMLAttributes, type ComponentProps, type ReactNode } from 'react';
@@ -70,8 +58,6 @@ function classes({
   );
 }
 
-// ---------- Button ------------------------------------------------------
-
 export interface ButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>,
     CommonProps {}
@@ -111,8 +97,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </button>
   );
 });
-
-// ---------- ButtonLink --------------------------------------------------
 
 export interface ButtonLinkProps extends Omit<ComponentProps<typeof Link>, 'children'>, CommonProps {
   external?: boolean;

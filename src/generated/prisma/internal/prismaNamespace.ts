@@ -414,6 +414,7 @@ export const ModelName = {
   OtpToken: 'OtpToken',
   LoginHistory: 'LoginHistory',
   AuditLog: 'AuditLog',
+  AppSettings: 'AppSettings',
   Notification: 'Notification'
 } as const
 
@@ -430,7 +431,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "customer" | "staff" | "driver" | "category" | "manufacturer" | "product" | "productImage" | "inventoryBatch" | "stockMovement" | "order" | "orderItem" | "delivery" | "refreshToken" | "otpToken" | "loginHistory" | "auditLog" | "notification"
+    modelProps: "user" | "customer" | "staff" | "driver" | "category" | "manufacturer" | "product" | "productImage" | "inventoryBatch" | "stockMovement" | "order" | "orderItem" | "delivery" | "refreshToken" | "otpToken" | "loginHistory" | "auditLog" | "appSettings" | "notification"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1556,6 +1557,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AppSettings: {
+      payload: Prisma.$AppSettingsPayload<ExtArgs>
+      fields: Prisma.AppSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AppSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AppSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.AppSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AppSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.AppSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.AppSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.AppSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.AppSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>
+        }
+        update: {
+          args: Prisma.AppSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.AppSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AppSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.AppSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AppSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.AppSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAppSettings>
+        }
+        groupBy: {
+          args: Prisma.AppSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AppSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AppSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AppSettingsCountAggregateOutputType> | number
+        }
+      }
+    }
     Notification: {
       payload: Prisma.$NotificationPayload<ExtArgs>
       fields: Prisma.NotificationFieldRefs
@@ -1695,6 +1762,7 @@ export const CustomerScalarFieldEnum = {
   status: 'status',
   referral_code: 'referral_code',
   referred_by: 'referred_by',
+  referral_points: 'referral_points',
   review_note: 'review_note',
   reviewed_by_id: 'reviewed_by_id',
   reviewed_at: 'reviewed_at',
@@ -1942,6 +2010,15 @@ export const AuditLogScalarFieldEnum = {
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
 
 
+export const AppSettingsScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  updated_at: 'updated_at'
+} as const
+
+export type AppSettingsScalarFieldEnum = (typeof AppSettingsScalarFieldEnum)[keyof typeof AppSettingsScalarFieldEnum]
+
+
 export const NotificationScalarFieldEnum = {
   id: 'id',
   user_id: 'user_id',
@@ -2135,6 +2212,14 @@ export const AuditLogOrderByRelevanceFieldEnum = {
 } as const
 
 export type AuditLogOrderByRelevanceFieldEnum = (typeof AuditLogOrderByRelevanceFieldEnum)[keyof typeof AuditLogOrderByRelevanceFieldEnum]
+
+
+export const AppSettingsOrderByRelevanceFieldEnum = {
+  key: 'key',
+  value: 'value'
+} as const
+
+export type AppSettingsOrderByRelevanceFieldEnum = (typeof AppSettingsOrderByRelevanceFieldEnum)[keyof typeof AppSettingsOrderByRelevanceFieldEnum]
 
 
 export const NotificationOrderByRelevanceFieldEnum = {
@@ -2445,6 +2530,7 @@ export type GlobalOmitConfig = {
   otpToken?: Prisma.OtpTokenOmit
   loginHistory?: Prisma.LoginHistoryOmit
   auditLog?: Prisma.AuditLogOmit
+  appSettings?: Prisma.AppSettingsOmit
   notification?: Prisma.NotificationOmit
 }
 

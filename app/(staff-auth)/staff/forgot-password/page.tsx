@@ -1,20 +1,3 @@
-'use client';
-
-/**
- * /staff/forgot-password — Staff / Admin / Driver password reset
- *
- *  Step "email"  Enter staff email → POST /api/auth/staff/forgot-password
- *  Step "reset"  Enter 6-digit OTP + new password → POST /api/auth/staff/reset-password
- *  Step "done"   Success screen → redirect to /staff/sign-in
- *
- * Separate from the customer flow (/forgot-password):
- *   - Only works for ADMIN | STAFF | DRIVER accounts
- *   - Routes through /api/auth/staff/* endpoints
- *   - Styling matches the staff auth visual (dark panel)
- *
- * The API always returns 200 for step 1 to prevent email enumeration.
- */
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -166,8 +149,6 @@ export default function StaffForgotPasswordPage() {
       setSubmitting(false);
     }
   };
-
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="w-full max-w-[28rem]">

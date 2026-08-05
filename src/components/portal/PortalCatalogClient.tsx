@@ -13,7 +13,7 @@ import type { ProductDTO } from '@/lib/api/types';
 
 const ALL = 'All';
 
-function CatalogProductCard({ product }: { product: ProductDTO }) {
+function CatalogProductCard({ product, priority = false }: { product: ProductDTO; priority?: boolean }) {
   const add    = useBasket((s) => s.add);
   const has    = useBasket((s) => s.hasItem);
   const getQty = useBasket((s) => s.getQuantity);
@@ -21,13 +21,19 @@ function CatalogProductCard({ product }: { product: ProductDTO }) {
   const inBasket = has(product.id);
   const qty      = getQty(product.id);
 
+  const minQty    = Math.max(1, product.minimum_order ?? 1);
+  const stock     = product.total_stock ?? 0;
+  // Out of stock OR stock is less than the minimum order — can't purchase
+  const outOfStock = stock < minQty;
+
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
-    add(product);
+    if (outOfStock) return;
+    add(product, minQty);
     toast.show({
       tone:        'success',
-      title:       inBasket ? `Added another · ${qty + 1} total` : 'Added to basket',
-      description: product.brand_name,
+      title:       inBasket ? `Added ${minQty} more · ${qty + minQty} total` : `${minQty} × ${product.brand_name} added`,
+      description: minQty > 1 ? `Minimum order: ${minQty} packs` : 'Continue browsing or head to your basket.',
     });
   };
 
@@ -48,6 +54,8 @@ function CatalogProductCard({ product }: { product: ProductDTO }) {
             alt={product.brand_name}
             width={480}
             height={360}
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
@@ -77,7 +85,10 @@ function CatalogProductCard({ product }: { product: ProductDTO }) {
         <div className="mt-auto flex items-end justify-between gap-2 pt-4">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-4">Per pack</p>
-            <span className="num mt-0.5 block font-display text-[1.2rem] leading-none tracking-[-0.03em] text-ink">
+            <span className={cn(
+              'num mt-0.5 block font-display text-[1.2rem] leading-none tracking-[-0.03em]',
+              outOfStock ? 'text-ink-3' : 'text-ink',
+            )}>
               {formatNaira(parseFloat(product.selling_price))}
             </span>
           </div>
@@ -85,24 +96,40 @@ function CatalogProductCard({ product }: { product: ProductDTO }) {
           <button
             type="button"
             onClick={handleAdd}
-            aria-label={`${inBasket ? 'Add more' : 'Add'} ${product.brand_name} to basket`}
+            disabled={outOfStock}
+            aria-label={outOfStock ? `${product.brand_name} — out of stock` : `${inBasket ? 'Add more' : 'Add'} ${product.brand_name} to basket`}
+            title={outOfStock ? 'Insufficient stock for minimum order' : undefined}
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200',
-              inBasket
-                ? 'bg-teal-50 text-teal-600 hover:bg-teal-100 ring-1 ring-teal-200'
-                : 'bg-[#042a36] text-white hover:opacity-80 shadow-sm',
+              outOfStock
+                ? 'cursor-not-allowed bg-bg-muted text-ink-4'
+                : inBasket
+                  ? 'bg-teal-50 text-teal-600 hover:bg-teal-100 ring-1 ring-teal-200'
+                  : 'bg-[#042a36] text-white hover:opacity-80 shadow-sm',
             )}
           >
-            {inBasket ? <Check size={15} /> : <Plus size={15} />}
+            {inBasket && !outOfStock ? <Check size={15} /> : <Plus size={15} />}
           </button>
         </div>
 
-        {inBasket && (
+        {/* Status row — out of stock or in-basket indicator */}
+        {outOfStock ? (
+          <div className="mt-2 flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1">
+            <X size={11} className="text-red-400" />
+            <span className="text-[11px] font-medium text-red-500">
+              {stock === 0 ? 'Out of stock' : `Stock (${stock}) below min. order of ${minQty}`}
+            </span>
+          </div>
+        ) : inBasket ? (
           <div className="mt-2 flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1">
             <ShoppingCart size={11} className="text-teal-500" />
             <span className="text-[11px] font-medium text-teal-600">{qty} in basket</span>
           </div>
-        )}
+        ) : minQty > 1 ? (
+          <div className="mt-2 flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1">
+            <span className="text-[11px] font-medium text-amber-600">Min. order: {minQty} packs</span>
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -259,7 +286,7 @@ export function PortalCatalogClient({ products }: Props) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((p) => <CatalogProductCard key={p.id} product={p} />)}
+          {filtered.map((p, i) => <CatalogProductCard key={p.id} product={p} priority={i < 4} />)}
         </div>
       )}
 

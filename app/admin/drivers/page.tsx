@@ -1,10 +1,3 @@
-'use client';
-
-/**
- * Admin — Drivers
- * Manage the driver team: status, vehicle info, and onboarding.
- */
-
 import React, { useMemo, useState, useRef } from 'react';
 import {
   Truck,
@@ -26,11 +19,7 @@ import { useDrivers }        from '@/hooks/staff/useStaff';
 import type { DriverRecord } from '@/hooks/staff/useStaff';
 import { formatDate, cn }    from '@/lib/utils';
 
-// ---------- Constants -------------------------------------------------------
-
 const PAGE_SIZE = 15;
-
-// ---------- Filter config ---------------------------------------------------
 
 type DriverFilter = 'all' | 'AVAILABLE' | 'ON_DELIVERY' | 'OFFLINE' | 'INACTIVE';
 
@@ -94,8 +83,6 @@ const FILTER_CONFIG: Record<DriverFilter, FilterConfig> = {
 
 const FILTER_ORDER: DriverFilter[] = ['all', 'AVAILABLE', 'ON_DELIVERY', 'OFFLINE', 'INACTIVE'];
 
-// ---------- Status badge ----------------------------------------------------
-
 function StatusBadge({ record }: { record: DriverRecord }) {
   const filter: DriverFilter = record.status === 'INACTIVE'
     ? 'INACTIVE'
@@ -111,8 +98,6 @@ function StatusBadge({ record }: { record: DriverRecord }) {
     </span>
   );
 }
-
-// ---------- Filter card -----------------------------------------------------
 
 function FilterCard({
   filter,
@@ -170,8 +155,6 @@ function FilterCard({
   );
 }
 
-// ---------- Table skeleton --------------------------------------------------
-
 function TableSkeleton() {
   return (
     <div className="rounded-2xl border border-line overflow-hidden">
@@ -201,8 +184,6 @@ function TableSkeleton() {
     </div>
   );
 }
-
-// ---------- Pagination ------------------------------------------------------
 
 function Pagination({
   page,
@@ -270,8 +251,6 @@ function Pagination({
     </div>
   );
 }
-
-// ---------- Driver table ----------------------------------------------------
 
 function matchesFilter(driver: DriverRecord, filter: DriverFilter): boolean {
   if (filter === 'all') return true;
@@ -434,8 +413,6 @@ function DriverTable({
     </>
   );
 }
-
-// ---------- Page ------------------------------------------------------------
 
 export default function AdminDriversPage() {
   const [activeFilter, setActiveFilter] = useState<DriverFilter>('all');

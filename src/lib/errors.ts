@@ -1,16 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Centralised Error Utilities
- *
- * `parseError(err)` — converts any thrown value into a human-readable string.
- *
- * Rule:
- *   - If the backend returned a clear, non-technical message, pass it through
- *     unchanged. Our API routes already craft good English messages.
- *   - Only rephrase when the raw message would be cryptic to a user
- *     ("fetch failed", "P2002", "Internal server error", etc.)
- */
-
-// ─── Core parser ──────────────────────────────────────────────────────────────
 
 export function parseError(err: unknown): string {
   const raw = extractMessage(err);
@@ -90,8 +77,6 @@ function humanise(msg: string): string {
   // ── Good message from our API — pass through unchanged ────────────────────
   return msg;
 }
-
-// ─── Shorthand for sign-in error categorisation ──────────────────────────────
 
 /**
  * Maps login errors to display categories.

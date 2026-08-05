@@ -1,20 +1,3 @@
-'use client';
-
-/**
- * UserContext — global auth state
- *
- * Keeps the current user in memory (from JWT cookie, via /api/auth/me).
- * No TanStack Query dependency — plain fetch + React state.
- *
- * Token refresh strategy:
- *   • On mount:    call /api/auth/me to hydrate the user
- *   • Every 10min: call /api/auth/refresh proactively (access token is 15min)
- *   • On tab focus (if ≥8min since last refresh): refresh then re-fetch me
- *
- * /api/auth/me and /api/auth/refresh are created in Module 2.
- * Until then, me() returns null gracefully so the UI renders unauthenticated.
- */
-
 import {
   createContext,
   useCallback,
@@ -27,8 +10,6 @@ import {
 import type { SessionUser } from '@/types';
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 min
-
-// ─── Context type ─────────────────────────────────────────────────────────────
 
 interface UserContextValue {
   user:      SessionUser | null;
@@ -43,8 +24,6 @@ const UserContext = createContext<UserContextValue>({
   error:     null,
   refetch:   async () => {},
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function fetchMe(): Promise<SessionUser | null> {
   try {
@@ -68,8 +47,6 @@ async function callRefresh(): Promise<boolean> {
     return false;
   }
 }
-
-// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user,      setUser]      = useState<SessionUser | null>(null);
@@ -119,8 +96,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     </UserContext.Provider>
   );
 }
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useUser(): UserContextValue {
   return useContext(UserContext);

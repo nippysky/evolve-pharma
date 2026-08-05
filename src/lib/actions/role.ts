@@ -1,13 +1,3 @@
-'use server';
-
-/**
- * Session actions — thin wrappers used by portal/console logout flows.
- *
- * In the new JWT-cookie system (Module 2) these will be replaced by
- * direct calls to POST /api/auth/logout. Kept here as stubs so the
- * existing UI components still compile without changes.
- */
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '@/lib/auth';

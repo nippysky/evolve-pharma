@@ -1,8 +1,3 @@
-/**
- * GET   /api/notifications — user's notifications (paginated)
- * PATCH /api/notifications — mark all as read
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -56,8 +51,6 @@ export async function GET(req: NextRequest) {
     return apiInternalError();
   }
 }
-
-// ─── Mark all as read ─────────────────────────────────────────────────────────
 
 const patchSchema = z.object({
   ids: z.array(z.number().int().positive()).optional(), // if omitted, mark all

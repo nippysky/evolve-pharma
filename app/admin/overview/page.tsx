@@ -1,11 +1,3 @@
-/**
- * Admin Overview — live KPIs + recent orders, streamed with Suspense.
- *
- * Shell (header + skeleton cards) renders in ~100 ms.
- * Data streams in from the 2-minute cached DB fetch.
- * On a cache hit the whole page is ready in < 50 ms.
- */
-
 import { Suspense }   from 'react';
 import { redirect }   from 'next/navigation';
 import { getSession } from '@/lib/auth';
@@ -21,8 +13,6 @@ import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from '@/lib/constants';
 import { db }        from '@/lib/db';
 
 export const metadata = { title: 'Overview' };
-
-// ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function KpiSkeleton() {
   return (
@@ -46,8 +36,6 @@ function FeedSkeleton() {
   );
 }
 
-// ─── KPI card ─────────────────────────────────────────────────────────────────
-
 function KpiCard({ label, value, hint, Icon, warn = false }: {
   label: string; value: string | number; hint?: string;
   Icon: React.ComponentType<{ size?: number; className?: string }>; warn?: boolean;
@@ -65,8 +53,6 @@ function KpiCard({ label, value, hint, Icon, warn = false }: {
     </div>
   );
 }
-
-// ─── Async server sections (each independently streamed) ─────────────────────
 
 async function KpiGrid() {
   const kpis = await getDashboardKpis();
@@ -179,8 +165,6 @@ async function QuickStats() {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function AdminOverviewPage() {
   const session = await getSession();

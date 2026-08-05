@@ -1,8 +1,3 @@
-/**
- * Portal — My Profile
- * Server wrapper → cached profile data → ProfileClient form.
- */
-
 import { Suspense }           from 'react';
 import { redirect }           from 'next/navigation';
 import { getSession }         from '@/lib/auth';

@@ -1,19 +1,3 @@
-'use client';
-
-/**
- * /sign-up/invited — Admin-invited customer activation
- *
- * Entered via the invitation email link:
- *   /sign-up/invited?email=customer%40pharmacy.ng
- *
- * 3-step mini-flow (skips the details step since admin already entered them):
- *   Step 1 — Upload PCN certificate   → POST /api/auth/customer/invited-pcn
- *   Step 2 — Verify OTP from email    → POST /api/auth/customer/verify-otp
- *   Step 3 — Set password             → POST /api/auth/customer/create-password
- *
- * On completion, redirects to /sign-up/pending (same as self-signup).
- */
-
 import Link                from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams }    from 'next/navigation';
@@ -35,12 +19,8 @@ import { useVerifyOtp, useResendOtp } from '@/hooks/auth/useCustomerAuth';
 import { passwordSchema }             from '@/lib/schemas';
 import { cn }                         from '@/lib/utils';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
 type Step = 1 | 2 | 3;
 const STEPS = ['Upload PCN', 'Verify email', 'Set password'];
-
-// ─── Step header ───────────────────────────────────────────────────────────────
 
 function StepHeader({ step, email }: { step: Step; email: string }) {
   const titles = [
@@ -66,8 +46,6 @@ function StepHeader({ step, email }: { step: Step; email: string }) {
     </>
   );
 }
-
-// ─── Main component ────────────────────────────────────────────────────────────
 
 function InvitedPageInner() {
   const router       = useRouter();
@@ -464,8 +442,6 @@ function InvitedPageInner() {
     </div>
   );
 }
-
-// ─── Suspense boundary (required for useSearchParams) ─────────────────────────
 
 export default function InvitedPage() {
   return (

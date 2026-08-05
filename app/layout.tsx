@@ -1,22 +1,9 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Root Layout
- *
- * Sets up:
- *   • next/font: Geist Sans (body + display) + Geist Mono (codes/SKUs)
- *   • Global stylesheet (design tokens + reset)
- *   • Toast provider (custom, no third-party)
- *   • App-wide metadata
- *   • Production favicon / app-icon metadata
- */
-
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { SITE } from '@/lib/constants';
 import './globals.css';
-
-// ---------- Fonts --------------------------------------------------------
 
 const geistSans = Geist({
   subsets: ['latin'],
@@ -34,8 +21,6 @@ const geistMono = Geist_Mono({
   display: 'swap',
   preload: false,
 });
-
-// ---------- Metadata -----------------------------------------------------
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -124,8 +109,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
 };
-
-// ---------- Layout -------------------------------------------------------
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

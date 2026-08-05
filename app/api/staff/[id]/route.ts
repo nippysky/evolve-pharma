@@ -1,10 +1,3 @@
-/**
- * DELETE /api/staff/[id] — remove a staff or driver account (Admin only)
- *
- * Hard-deletes the user record (cascades to staff/driver tables via schema).
- * Logs the action to the audit trail.
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';

@@ -1,7 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Admin Logs Hooks
- */
-
 import { useQuery } from '@tanstack/react-query';
 import {
   getLoginHistory,

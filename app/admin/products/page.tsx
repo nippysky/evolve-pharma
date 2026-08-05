@@ -1,8 +1,3 @@
-/**
- * Console · Products (admin-only). The catalog: what we sell and its
- * commercial attributes. Stock lives on the Inventory page, not here.
- */
-
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { PageHead } from '@/components/shared/PageHead';
@@ -10,7 +5,6 @@ import { ButtonLink } from '@/components/ui/Button';
 import { Plus } from '@/components/icons';
 import { ProductsList } from './ProductList';
 import { ProductsImport } from './ProductsImport';
-
 
 export const metadata = {
   title: 'Products',

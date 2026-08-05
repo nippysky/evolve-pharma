@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { Container, Section } from '@/components/ui/Layout';
 import { ButtonLink } from '@/components/ui/Button';
 import { ProductsCatalog } from '@/components/marketing/ProductsCatalog';
@@ -24,16 +23,12 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
   const session    = await getSession();
   const params     = await searchParams;
 
-  // Logged-in users don't need the marketing catalogue — send them to the real thing
-  if (session) {
-    const dest = session.role === 'CUSTOMER' ? '/portal/catalog' : '/admin/overview';
-    redirect(dest);
-  }
-
-  const products   = await getActiveProducts();
-  const isLoggedIn = false;
-  const isCustomer = false;
-  const portalHref = '/portal/catalog';
+  const products      = await getActiveProducts();
+  const role          = session?.role ?? null;
+  const isCustomer    = role === 'CUSTOMER';
+  const isAdminStaff  = role === 'ADMIN' || role === 'STAFF';
+  const isLoggedIn    = !!session;
+  const portalHref    = '/portal/catalog';
 
   return (
     <>
@@ -59,20 +54,20 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink-2 sm:text-lg">
                 Explore pharmaceuticals, supplements, industrial chemicals, and related supplies in
                 one clean catalogue.{' '}
-                {isLoggedIn ? (
+                {isCustomer ? (
                   <Link href={portalHref} className="font-semibold text-teal-600 underline-offset-4 hover:underline">
                     Head to your portal
                   </Link>
-                ) : (
+                ) : !isAdminStaff ? (
                   <Link href="/sign-up" className="font-semibold text-brand-600 underline-offset-4 hover:underline">
                     Create your buyer account
                   </Link>
-                )}{' '}
-                to place orders.
+                ) : null}{' '}
+                {!isAdminStaff && 'to place orders.'}
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                {isLoggedIn ? (
+                {isCustomer ? (
                   <Link
                     href={portalHref}
                     className="inline-flex h-12 items-center gap-2 rounded-full bg-[#042a36] px-6 text-sm font-semibold text-white shadow-[0_10px_32px_rgba(4,42,54,0.28)] transition-all hover:-translate-y-0.5 hover:bg-teal-900"
@@ -81,6 +76,11 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
                     Order from my portal
                     <ArrowRight size={14} />
                   </Link>
+                ) : isAdminStaff ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                    <Shield size={14} />
+                    Viewing as staff — purchasing requires a customer account
+                  </div>
                 ) : (
                   <>
                     <ButtonLink href="/sign-up" trailingIcon={<ArrowRight size={14} />}>Create account</ButtonLink>

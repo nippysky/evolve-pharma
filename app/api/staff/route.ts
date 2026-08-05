@@ -1,15 +1,3 @@
-/**
- * GET  /api/staff — paginated staff list (Admin only)
- * POST /api/staff — invite a staff / driver member (Admin only)
- *
- * Staff invitation flow (per backend engineer spec):
- *   1. Admin fills in staff details — NO password required
- *   2. System creates User (INACTIVE) + Staff/Driver record (UNVERIFIED)
- *   3. Stores a UUID verification token in OtpToken (24-hour expiry)
- *   4. Sends staff-verify-email with a secure link
- *   5. Staff clicks link → /staff/verify?token=UUID → sets password → ACTIVE
- */
-
 import { NextRequest }   from 'next/server';
 import { z }             from 'zod';
 import { v4 as uuidv4 }  from 'uuid';
@@ -25,11 +13,9 @@ import {
   handlePrismaError,
   parsePagination,
 } from '@/lib/api/response';
-import { writeAuditLog }           from '@/lib/audit';
+import { writeAuditLog }              from '@/lib/audit';
 import { sendStaffVerificationEmail } from '@/lib/mail';
 import type { UserRole, StaffVerificationStatus } from '@db/enums';
-
-// ─── Validation ───────────────────────────────────────────────────────────────
 
 const createSchema = z.object({
   first_name:  z.string().min(1).max(100),
@@ -41,14 +27,11 @@ const createSchema = z.object({
   department:    z.string().max(100).optional(),
   job_title:     z.string().max(100).optional(),
   role:          z.enum(['STAFF', 'DRIVER']).default('STAFF'),
-  // Driver-specific (only used when role === 'DRIVER')
+  // Driver-specific
   vehicle_plate: z.string().max(30).optional(),
   vehicle_type:  z.string().max(100).optional(),
   region:        z.string().max(100).optional(),
-  // employee_code auto-generated server-side
 });
-
-// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,9 +42,9 @@ export async function GET(req: NextRequest) {
     const sp = req.nextUrl.searchParams;
     const { page, limit, skip } = parsePagination(sp, { limit: 20 });
 
-    const search       = sp.get('search') ?? '';
-    const roleRaw      = sp.get('role');
-    const verifyRaw    = sp.get('verification');
+    const search    = sp.get('search') ?? '';
+    const roleRaw   = sp.get('role');
+    const verifyRaw = sp.get('verification');
 
     const roleFilter:   UserRole | undefined = (roleRaw === 'STAFF' || roleRaw === 'DRIVER') ? roleRaw : undefined;
     const verification: StaffVerificationStatus | undefined =
@@ -83,39 +66,76 @@ export async function GET(req: NextRequest) {
       } : {}),
     };
 
-    const [users, total] = await Promise.all([
-      db.user.findMany({
-        where,
-        orderBy: { created_at: 'desc' },
-        skip,
-        take:    limit,
-        include: {
-          staff:  true,
-          driver: true,
-        },
-      }),
-      db.user.count({ where }),
-    ]);
+    // User rows (no includes)
+    const rawUsers = await db.user.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+      select: {
+        id: true, uuid: true, first_name: true, last_name: true,
+        email: true, phone: true, role: true, status: true,
+        avatar_url: true, created_at: true,
+      },
+    });
 
-    const records = (users as any[]).map((u) => ({
-      id:                  u.id,
-      uuid:                u.uuid,
-      first_name:          u.first_name,
-      last_name:           u.last_name,
-      email:               u.email,
-      phone:               u.phone,
-      role:                u.role,
-      status:              u.status,
-      avatar_url:          u.avatar_url,
-      created_at:          u.created_at,
-      employee_code:       u.staff?.employee_code ?? u.driver?.employee_code ?? null,
-      department:          u.staff?.department   ?? null,
-      job_title:           u.staff?.job_title    ?? null,
-      verification_status: u.staff?.verification_status ?? null,
-      driver_status:       u.driver?.driver_status ?? null,
-      vehicle_plate:       u.driver?.vehicle_plate  ?? null,
-      vehicle_type:        u.driver?.vehicle_type   ?? null,
-    }));
+    // Total count
+    const total = await db.user.count({ where });
+
+    if (rawUsers.length === 0) {
+      return apiPaginated([], { page, limit, total }, 'Staff retrieved successfully');
+    }
+
+    const userIds = rawUsers.map(u => u.id);
+
+    // Staff records (batch)
+    const staffRecords = await db.staff.findMany({
+      where:  { user_id: { in: userIds } },
+      select: {
+        user_id: true, employee_code: true, department: true,
+        job_title: true, verification_status: true,
+      },
+    });
+
+    // Driver records (batch)
+    const driverRecords = await db.driver.findMany({
+      where:  { user_id: { in: userIds } },
+      select: {
+        id: true, user_id: true, employee_code: true, driver_status: true,
+        vehicle_plate: true, vehicle_type: true,
+      },
+    });
+
+    // ── Merge in JS ───────────────────────────────────────────────────────────
+    const staffMap  = new Map(staffRecords.map(s  => [s.user_id,  s]));
+    const driverMap = new Map(driverRecords.map(d => [d.user_id, d]));
+
+    const records = rawUsers.map(u => {
+      const staff  = staffMap.get(u.id);
+      const driver = driverMap.get(u.id);
+      return {
+        id:                  u.id,
+        uuid:                u.uuid,
+        first_name:          u.first_name,
+        last_name:           u.last_name,
+        email:               u.email,
+        phone:               u.phone,
+        role:                u.role,
+        status:              u.status,
+        avatar_url:          u.avatar_url,
+        created_at:          u.created_at,
+        employee_code:       staff?.employee_code  ?? driver?.employee_code  ?? null,
+        department:          staff?.department     ?? null,
+        job_title:           staff?.job_title      ?? null,
+        verification_status: staff?.verification_status ?? null,
+        driver_status:       driver?.driver_status  ?? null,
+        vehicle_plate:       driver?.vehicle_plate  ?? null,
+        vehicle_type:        driver?.vehicle_type   ?? null,
+        // driver_record_id is the driver TABLE primary key (needed for delivery assignment)
+        // distinct from user.id which is the user TABLE id
+        driver_record_id:    driver?.id ?? null,
+      };
+    });
 
     return apiPaginated(records, { page, limit, total }, 'Staff retrieved successfully');
   } catch (err) {
@@ -123,8 +143,6 @@ export async function GET(req: NextRequest) {
     return handlePrismaError(err) ?? apiInternalError();
   }
 }
-
-// ─── POST ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -145,50 +163,47 @@ export async function POST(req: NextRequest) {
       return apiError('Please review the fields below.', 422, errors);
     }
 
-    const { first_name, middle_name, last_name, email, phone, gender, department, job_title, role, vehicle_plate, vehicle_type, region } = parsed.data;
+    const {
+      first_name, middle_name, last_name, email, phone, gender,
+      department, job_title, role, vehicle_plate, vehicle_type,
+    } = parsed.data;
 
-    const existingUser = await db.user.findUnique({ where: { email } });
-    if (existingUser) return apiError('An account with this email already exists.', 409);
+    // Email uniqueness check
+    const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
+    if (existing) return apiError('An account with this email already exists.', 409);
 
-    // Auto-generate employee code: ROLE-TIMESTAMP-RANDOM
-    const timestamp    = Date.now().toString(36).toUpperCase();
-    const random       = Math.random().toString(36).substring(2, 5).toUpperCase();
+    // Auto-generate employee code: ROLE_PREFIX-TIMESTAMP-RANDOM
+    const timestamp     = Date.now().toString(36).toUpperCase();
+    const random        = Math.random().toString(36).substring(2, 5).toUpperCase();
     const employee_code = `${role.slice(0, 2)}-${timestamp}-${random}`;
 
-    // Verification UUID token (stored in OtpToken, 24-hour expiry)
+    // Verification token (24-hour expiry)
     const verifyToken = uuidv4();
     const expiresAt   = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const newUser = await db.user.create({
+      data: {
+        first_name, middle_name, last_name, email, phone, gender,
+        password_hash: 'UNSET',
+        role,
+        status: 'INACTIVE',
+      },
+    });
 
-    const user = await db.$transaction(async (tx: any) => {
-      const newUser = await tx.user.create({
-        data: {
-          first_name,
-          middle_name,
-          last_name,
-          email,
-          phone,
-          gender,
-          // Password will be set after email verification
-          password_hash: 'UNSET',
-          role,
-          // INACTIVE until they verify email and set password
-          status: 'INACTIVE',
-        },
-      });
-
+    // Create staff/driver record + OTP token (sequential, manual rollback)
+    // Can't use batch transaction here because user.id is only known after step 2.
+    try {
       if (role === 'STAFF') {
-        await tx.staff.create({
+        await db.staff.create({
           data: {
             user_id:             newUser.id,
             employee_code,
             department,
             job_title,
-            // UNVERIFIED until they click the verification link
             verification_status: 'UNVERIFIED',
           },
         });
-      } else if (role === 'DRIVER') {
-        await tx.driver.create({
+      } else {
+        await db.driver.create({
           data: {
             user_id:       newUser.id,
             employee_code,
@@ -199,8 +214,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Store verification token
-      await tx.otpToken.create({
+      await db.otpToken.create({
         data: {
           user_id:    newUser.id,
           token:      verifyToken,
@@ -208,19 +222,21 @@ export async function POST(req: NextRequest) {
           expires_at: expiresAt,
         },
       });
+    } catch (innerErr) {
+      // Rollback: delete the user so no orphan records are left
+      await db.user.delete({ where: { id: newUser.id } }).catch(() => {});
+      throw innerErr;
+    }
 
-      return newUser;
-    });
-
-    // Send verification email (fire-and-forget)
-    const frontendUrl       = process.env.FRONTEND_URL ?? 'https://www.envolvepharm.com.ng';
-    const verificationUrl   = `${frontendUrl}/staff/verify?token=${verifyToken}`;
+    // Fire-and-forget: verification email + audit log
+    const frontendUrl     = process.env.FRONTEND_URL ?? 'https://www.envolvepharm.com.ng';
+    const verificationUrl = `${frontendUrl}/staff/verify?token=${verifyToken}`;
 
     void sendStaffVerificationEmail({
-      to:              email,
-      name:            first_name,
+      to:   email,
+      name: first_name,
       verificationUrl,
-    }).catch((e) => console.error('[staff/create] verification email failed:', e));
+    }).catch(e => console.error('[staff/create] verification email failed:', e));
 
     void writeAuditLog({
       userId:      session.userId,
@@ -229,13 +245,13 @@ export async function POST(req: NextRequest) {
       email:       session.email,
       action:      'CREATE_STAFF',
       entityType:  'User',
-      entityId:    String(user.id),
+      entityId:    String(newUser.id),
       description: `Invited ${role.toLowerCase()} ${first_name} ${last_name} (${email}) — verification email sent`,
       req,
     });
 
     return apiSuccess(
-      { user: { id: user.id, email: user.email, employee_code } },
+      { user: { id: newUser.id, email: newUser.email, employee_code } },
       201,
       'Staff member invited. A verification email has been sent.',
     );

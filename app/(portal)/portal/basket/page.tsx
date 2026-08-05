@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ButtonLink, Button } from '@/components/ui/Button';
 import { EmptyState, Skeleton } from '@/components/ui/Primitives';
 import { PageHead } from '@/components/shared/PageHead';
-import { Plus, Minus, Trash, Basket as BasketIcon, ArrowRight, Shield } from '@/components/icons';
+import { Plus, Minus, Trash, Basket as BasketIcon, ArrowRight, Shield, AlertTriangle } from '@/components/icons';
 import { useBasket } from '@/lib/hooks/useBasket';
 import { useToast } from '@/contexts/ToastContext';
 import { formatNaira } from '@/lib/utils';
@@ -41,6 +41,10 @@ export default function BasketPage() {
   const shipping = subtotal >= FREE_SHIP_THRESHOLD || subtotal === 0 ? 0 : SHIP_FEE;
   const vat = Math.round(subtotal * VAT_RATE);
   const total = subtotal + shipping + vat;
+
+  // Items that don't meet their minimum order requirement
+  const underMinItems = items.filter(i => i.quantity < Math.max(1, i.minimum_order ?? 1));
+  const canCheckout   = underMinItems.length === 0 && items.length > 0;
 
   return (
     <>
@@ -99,25 +103,32 @@ export default function BasketPage() {
                   </div>
                 </div>
 
-                <div className="col-start-2 row-start-2 inline-flex h-9 items-center self-start rounded-md border border-line bg-white sm:col-start-3 sm:row-start-1 sm:self-center">
-                  <button
-                    type="button"
-                    onClick={() => decrement(item.product_id)}
-                    disabled={item.quantity <= 1}
-                    aria-label="Decrease"
-                    className="grid h-full w-8 place-items-center text-ink-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="num w-9 text-center text-sm font-medium">{item.quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => increment(item.product_id)}
-                    aria-label="Increase"
-                    className="grid h-full w-8 place-items-center text-ink-2 hover:text-ink"
-                  >
-                    <Plus size={12} />
-                  </button>
+                <div className="col-start-2 row-start-2 flex flex-col gap-1 self-start sm:col-start-3 sm:row-start-1 sm:self-center">
+                  <div className="inline-flex h-9 items-center rounded-md border border-line bg-white">
+                    <button
+                      type="button"
+                      onClick={() => decrement(item.product_id)}
+                      disabled={item.quantity <= Math.max(1, item.minimum_order ?? 1)}
+                      aria-label="Decrease"
+                      className="grid h-full w-8 place-items-center text-ink-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="num w-9 text-center text-sm font-medium">{item.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => increment(item.product_id)}
+                      aria-label="Increase"
+                      className="grid h-full w-8 place-items-center text-ink-2 hover:text-ink"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                  {(item.minimum_order ?? 1) > 1 && (
+                    <p className="text-[10px] font-medium text-amber-600">
+                      Min. {item.minimum_order} packs
+                    </p>
+                  )}
                 </div>
 
                 <div className="num col-start-3 row-start-2 self-start text-right font-display text-base sm:col-start-4 sm:row-start-1 sm:self-center">
@@ -159,10 +170,28 @@ export default function BasketPage() {
               <span className="text-sm font-medium text-ink">Total</span>
               <span className="num font-display text-2xl tracking-tight text-ink">{formatNaira(total)}</span>
             </div>
+            {underMinItems.length > 0 && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="text-xs font-semibold text-amber-800">Minimum order not met</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {underMinItems.map(i => (
+                        <li key={i.product_id} className="text-[11px] text-amber-700">
+                          {i.name}: need at least <span className="font-semibold">{i.minimum_order} packs</span> (you have {i.quantity})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
             <Button
               size="lg"
               fullWidth
               className="mt-4"
+              disabled={!canCheckout}
               trailingIcon={<ArrowRight size={16} />}
               onClick={() => router.push('/portal/checkout')}
             >

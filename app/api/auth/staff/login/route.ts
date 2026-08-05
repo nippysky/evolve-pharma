@@ -1,16 +1,3 @@
-/**
- * POST /api/auth/staff/login
- *
- * Login for internal users: ADMIN, STAFF, DRIVER.
- * - Verifies email + password
- * - Role must be ADMIN | STAFF | DRIVER (customers are rejected here)
- * - User must be ACTIVE (not suspended)
- * - Issues JWT access + refresh tokens (httpOnly cookies + JSON body)
- * - Writes login history + audit log
- *
- * No auth required.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z }                          from 'zod';
 import bcrypt                         from 'bcryptjs';
@@ -24,18 +11,12 @@ import {
 } from '@/lib/api/response';
 import { issueTokensForUser } from '@/lib/api/issue-tokens';
 
-// ─── Validation ───────────────────────────────────────────────────────────────
-
 const schema = z.object({
   email:    z.email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 
-// ─── Allowed roles for this endpoint ─────────────────────────────────────────
-
 const STAFF_ROLES = new Set(['ADMIN', 'STAFF', 'DRIVER'] as const);
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -89,7 +70,6 @@ export async function POST(req: NextRequest) {
     // Issue tokens
     const { accessToken, refreshToken, authResponse } = await issueTokensForUser(user, req);
 
-    // Write audit trail (fire-and-forget)
     void writeLoginHistory({
       userId:   user.id,
       userType: user.role,

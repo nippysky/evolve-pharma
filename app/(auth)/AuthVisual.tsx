@@ -1,9 +1,3 @@
-/**
- * AuthVisual — the gradient panel rendered on the right of the auth
- * pages on desktop. Holds the brand wordmark, an editorial pull-quote,
- * trust pills, and a glass testimonial card.
- */
-
 import { Logo } from '@/components/shared/Logo';
 import { Shield, Truck, Sparkle } from '@/components/icons';
 

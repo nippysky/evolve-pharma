@@ -1,13 +1,7 @@
-/**
- * Admin — Orders
- * Live data wired in Module 5.
- */
-
-import { redirect }   from 'next/navigation';
-import { getSession }  from '@/lib/auth';
-import { PageHead }    from '@/components/shared/PageHead';
-import { EmptyState }  from '@/components/ui/Primitives';
-import { Box }         from '@/components/icons';
+import { redirect }          from 'next/navigation';
+import { getSession }         from '@/lib/auth';
+import { PageHead }           from '@/components/shared/PageHead';
+import { AdminOrdersView }    from './AdminOrdersView';
 
 export const metadata = { title: 'Orders' };
 
@@ -18,12 +12,11 @@ export default async function AdminOrdersPage() {
 
   return (
     <>
-      <PageHead title="Orders" subtitle="Manage and track all customer orders." />
-      <EmptyState
-        icon={<Box size={24} />}
-        title="No orders yet"
-        description="Orders will appear here once customers start placing them."
+      <PageHead
+        title="Orders"
+        subtitle="Manage and track all customer orders. Update status, confirm payment, and print invoices."
       />
+      <AdminOrdersView />
     </>
   );
 }

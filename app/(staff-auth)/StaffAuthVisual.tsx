@@ -1,10 +1,3 @@
-/**
- * StaffAuthVisual — the panel rendered beside the staff console sign-in
- * on desktop. Intentionally sober and internal: no customer marketing,
- * no testimonial. Dark gradient signals "back office" vs the customer
- * brand-green panel.
- */
-
 import { Logo } from '@/components/shared/Logo';
 import { Shield, Truck, Sparkle } from '@/components/icons';
 

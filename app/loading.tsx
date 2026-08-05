@@ -1,10 +1,3 @@
-/**
- * Route-level loading UI. Streams in while the segment's server component
- * is suspended. Kept minimal: a single thin progress bar at the top + a
- * centered spinner that fades in only after a beat, so quick navigations
- * never flash a loader.
- */
-
 import { Spinner } from '@/components/icons';
 
 export default function Loading() {

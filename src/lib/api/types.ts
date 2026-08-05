@@ -1,16 +1,3 @@
-/**
- * EVOLVE PHARMACEUTICALS — Shared API / Entity Types
- *
- * These types mirror the Prisma schema and are shared between:
- *   - Next.js API route handlers (server-side)
- *   - React components that display data (client-side)
- *   - Mobile app (same response envelope, same field names)
- *
- * All dates are ISO 8601 strings when serialised through JSON.
- * All decimals (prices) are serialised as strings from Prisma's Decimal type.
- */
-
-// ─── Enums ────────────────────────────────────────────────────────────────────
 
 export type UserRole    = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
 export type UserStatus  = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
@@ -44,8 +31,6 @@ export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
 export type OtpType           = 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
 export type LoginEvent        = 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOGOUT' | 'TOKEN_REFRESHED';
 
-// ─── API Envelope ─────────────────────────────────────────────────────────────
-
 export interface ApiSuccess<T = unknown> {
   status:  'success';
   message: string;
@@ -71,8 +56,6 @@ export interface PaginatedResponse<T> {
   records:    T[];
   pagination: Pagination;
 }
-
-// ─── User ─────────────────────────────────────────────────────────────────────
 
 export interface UserDTO {
   id:                 number;
@@ -102,8 +85,6 @@ export interface SessionUser {
   avatar_url?: string | null;
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-
 export interface AuthTokens {
   access_token:  string;
   refresh_token: string;
@@ -114,8 +95,6 @@ export interface AuthResponse {
   user:   SessionUser;
   tokens: AuthTokens; // also set as httpOnly cookies for web clients
 }
-
-// ─── Customer ─────────────────────────────────────────────────────────────────
 
 export interface CustomerDTO {
   id:                    number;
@@ -138,8 +117,6 @@ export interface CustomerDTO {
   updated_at:            string;
 }
 
-// ─── Staff ────────────────────────────────────────────────────────────────────
-
 export interface StaffDTO {
   id:                  number;
   user_id:             number;
@@ -151,8 +128,6 @@ export interface StaffDTO {
   created_at:          string;
   updated_at:          string;
 }
-
-// ─── Driver ───────────────────────────────────────────────────────────────────
 
 export interface DriverDTO {
   id:               number;
@@ -167,23 +142,17 @@ export interface DriverDTO {
   updated_at:       string;
 }
 
-// ─── Category ─────────────────────────────────────────────────────────────────
-
 export interface CategoryDTO {
   id:         number;
   name:       string;
   created_at: string;
 }
 
-// ─── Manufacturer ─────────────────────────────────────────────────────────────
-
 export interface ManufacturerDTO {
   id:         number;
   name:       string;
   created_at: string;
 }
-
-// ─── Product ──────────────────────────────────────────────────────────────────
 
 export interface ProductImageDTO {
   id:                   number;
@@ -225,8 +194,6 @@ export interface ProductDTO {
   updated_at:               string;
 }
 
-// ─── Inventory ────────────────────────────────────────────────────────────────
-
 export interface InventoryBatchDTO {
   id:           number;
   product_id:   number;
@@ -251,8 +218,6 @@ export interface StockMovementDTO {
   notes?:          string | null;
   created_at:      string;
 }
-
-// ─── Orders ───────────────────────────────────────────────────────────────────
 
 export interface OrderItemDTO {
   id:         number;
@@ -287,8 +252,6 @@ export interface OrderDTO {
   updated_at:         string;
 }
 
-// ─── Deliveries ───────────────────────────────────────────────────────────────
-
 export interface DeliveryDTO {
   id:             number;
   uuid:           string;
@@ -304,8 +267,6 @@ export interface DeliveryDTO {
   created_at:     string;
   updated_at:     string;
 }
-
-// ─── Audit / Security ─────────────────────────────────────────────────────────
 
 export interface LoginHistoryDTO {
   id:                number;
@@ -338,8 +299,6 @@ export interface AuditLogDTO {
   created_at:   string;
 }
 
-// ─── Notifications ────────────────────────────────────────────────────────────
-
 export interface NotificationDTO {
   id:         number;
   user_id:    number;
@@ -350,16 +309,12 @@ export interface NotificationDTO {
   created_at: string;
 }
 
-// ─── Bulk Import ──────────────────────────────────────────────────────────────
-
 export interface BulkImportResult {
   total:   number;
   success: number;
   failed:  number;
   errors:  Array<{ row: number; sku?: string; reason: string }>;
 }
-
-// ─── Backward-compat aliases ──────────────────────────────────────────────────
 
 /** @deprecated Use AuditLogDTO */
 export type AuditLogRecord = AuditLogDTO;
@@ -375,8 +330,6 @@ export type AdminProductRecord = ProductDTO;
 
 /** @deprecated Use BulkImportResult */
 export type BulkImportProductResponse = BulkImportResult;
-
-// ─── Staff / customer hook types (used by useStaff.ts — will be rewritten in Module 6) ──
 
 export interface LoginStaffPayload {
   email:    string;
@@ -464,8 +417,6 @@ export interface CustomerAdminRecord {
   created_at:           string;
 }
 
-// ─── Customer auth payloads (used by useCustomerAuth.ts — will be wired in Module 6) ──
-
 export interface RegisterCustomerPayload {
   first_name:       string;
   middle_name?:     string;
@@ -495,8 +446,6 @@ export interface CreatePasswordPayload {
   password: string;
   token:    string;
 }
-
-// ─── Staff bulk upload result (returned by POST /api/staff/bulk-upload) ───────
 
 export interface StaffBulkUploadResult {
   total_record_inserted: number;

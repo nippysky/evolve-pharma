@@ -1,12 +1,3 @@
-/**
- * GET /api/customers/[id]
- *
- * Full customer detail record — all fields including PCN URL, review history,
- * address, and order summary count.
- *
- * Auth: ADMIN or STAFF only.
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';

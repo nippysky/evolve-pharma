@@ -1,15 +1,3 @@
-/**
- * POST /api/auth/customer/login
- *
- * Customer sign-in (CUSTOMER role only).
- * - Verifies email + password
- * - Enforces account status gates (must be email-verified, not rejected)
- * - Issues JWT access + refresh tokens (httpOnly cookies + JSON body)
- * - Writes login history
- *
- * No auth required.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z }                          from 'zod';
 import bcrypt                         from 'bcryptjs';
@@ -23,14 +11,10 @@ import {
 } from '@/lib/api/response';
 import { issueTokensForUser } from '@/lib/api/issue-tokens';
 
-// ─── Validation ───────────────────────────────────────────────────────────────
-
 const schema = z.object({
   email:    z.email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const ip        = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -106,7 +90,6 @@ export async function POST(req: NextRequest) {
     // Issue tokens
     const { accessToken, refreshToken, authResponse } = await issueTokensForUser(user, req);
 
-    // Write login history (fire-and-forget)
     void writeLoginHistory({
       userId:   user.id,
       userType: 'CUSTOMER',

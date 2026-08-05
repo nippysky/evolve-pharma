@@ -1,15 +1,3 @@
-/**
- * POST /api/auth/customer/reset-password
- *
- * Final step of the forgot-password flow.
- * Verifies the 6-digit PASSWORD_RESET OTP and sets the new password.
- *
- * Body: { email, otp_code, new_password }
- *
- * Returns 200 on success — client redirects to /sign-in.
- * No auth required.
- */
-
 import { NextRequest }       from 'next/server';
 import { z }                 from 'zod';
 import bcrypt                from 'bcryptjs';
@@ -20,8 +8,6 @@ import {
   apiInternalError,
   handlePrismaError,
 } from '@/lib/api/response';
-
-// ─── Validation ───────────────────────────────────────────────────────────────
 
 const schema = z.object({
   email: z.email('Please enter a valid email address.'),
@@ -34,8 +20,6 @@ const schema = z.object({
     .min(8,  'Password must be at least 8 characters.')
     .max(128, 'Password must not exceed 128 characters.'),
 });
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {

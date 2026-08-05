@@ -10,8 +10,6 @@ import { useRegisterStaff, useBulkUploadStaff } from '@/hooks/staff/useStaff';
 import type { StaffBulkUploadResult as BulkUploadResult } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
-// ---------- Add staff modal -------------------------------------------------
-
 function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast       = useToast();
   const registerMut = useRegisterStaff();
@@ -119,10 +117,6 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-// ---------- Bulk upload modal -----------------------------------------------
-
-// ---------- File type helpers & staff validation ----------------------------
-
 const ACCEPTED_TYPES = '.xlsx,.xls,.csv';
 const ACCEPTED_MIME  = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -207,8 +201,6 @@ async function parseStaffFile(file: File): Promise<StaffPreviewRow[]> {
     return { index: i, cells, errors, valid: errors.length === 0 };
   });
 }
-
-// ---------- Bulk upload modal -----------------------------------------------
 
 const PREVIEW_LIMIT_STAFF = 100;
 
@@ -548,8 +540,6 @@ function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () => void
     </div>
   );
 }
-
-// ---------- Exported component ---------------------------------------------
 
 export function StaffActions() {
   const [addOpen,    setAddOpen]    = useState(false);

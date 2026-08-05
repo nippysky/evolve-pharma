@@ -29,7 +29,19 @@ function CatalogSkeleton() {
 }
 
 async function CatalogContent() {
-  const products = await getActiveProducts(200);
+  let products: Awaited<ReturnType<typeof getActiveProducts>> = [];
+  try {
+    products = await getActiveProducts(200);
+  } catch (err) {
+    console.error('[portal/catalog] getActiveProducts failed:', err);
+    // Return empty list with a message rather than crashing the page
+    return (
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <p className="text-sm font-medium text-ink-2">Could not load catalogue</p>
+        <p className="text-xs text-ink-4">Please refresh the page. If this keeps happening, contact support.</p>
+      </div>
+    );
+  }
   return <PortalCatalogClient products={products} />;
 }
 

@@ -1,11 +1,3 @@
-/**
- * Auth Service — client-side stubs
- *
- * These functions call the new Next.js /api/auth/* routes.
- * Full implementation wired in Module 6; stubs here satisfy TypeScript
- * and compile cleanly until then.
- */
-
 import type {
   SessionUser,
   LoginCustomerPayload,
@@ -13,8 +5,6 @@ import type {
   VerifyOtpPayload,
   CreatePasswordPayload,
 } from '@/lib/api/types';
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 async function post<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -27,8 +17,6 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   if (!res.ok) throw new Error(json?.message ?? 'Request failed');
   return json?.data as T;
 }
-
-// ─── Customer auth ────────────────────────────────────────────────────────────
 
 export async function registerCustomer(payload: RegisterCustomerPayload) {
   // Must use FormData — payload includes a File (pcn_certificate)
@@ -82,8 +70,6 @@ export async function uploadPcnCert(file: File) {
   if (!res.ok) throw new Error(json?.message ?? 'Upload failed');
   return json?.data as { url: string };
 }
-
-// ─── Shared auth ──────────────────────────────────────────────────────────────
 
 export async function getMe() {
   const res = await fetch('/api/auth/me', { credentials: 'include' });

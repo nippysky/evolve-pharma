@@ -1,17 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Icon Set
- *
- * We re-export Lucide icons under our internal naming convention so the
- * rest of the app imports `from '@/components/icons'` and never knows
- * which underlying library is in play. Swap-friendly: change this file
- * to use Phosphor, Tabler, Radix Icons, or hand-built SVGs without
- * touching a single component.
- *
- * All icons accept a `size` prop (defaults to 16) plus standard SVG
- * props. They inherit `currentColor`, so colorize via `color: …` on the
- * parent.
- */
-
 import {
   // navigation / arrows
   ArrowRight as LRArrowRight,
@@ -81,6 +67,11 @@ import {
   TrendingDown as LRTrendingDown,
   ClipboardList as LRClipboardList,
   ShoppingCart as LRShoppingCart,
+  SlidersHorizontal as LRSliders,
+  Printer as LRPrinter,
+  RefreshCw as LRRefresh,
+  Copy as LRCopy,
+  Package as LRPackage,
   type LucideProps,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -102,8 +93,6 @@ function wrap(
   C.displayName = `Icon(${(LR as { displayName?: string }).displayName ?? 'Lucide'})`;
   return C;
 }
-
-// ---------- Public icon set --------------------------------------------
 
 export const ArrowRight = wrap(LRArrowRight);
 export const ArrowUpRight = wrap(LRArrowUpRight);
@@ -169,10 +158,13 @@ export const TrendingUp = wrap(LRTrendingUp);
 export const TrendingDown = wrap(LRTrendingDown);
 export const ClipboardList = wrap(LRClipboardList);
 export const ShoppingCart = wrap(LRShoppingCart);
+export const Sliders = wrap(LRSliders);
 export const MoreV = wrap(LRMoreV);
 export const Tag = wrap(LRTag);
-
-// ---------- Registry / dispatcher --------------------------------------
+export const Printer = wrap(LRPrinter);
+export const Refresh = wrap(LRRefresh);
+export const Copy    = wrap(LRCopy);
+export const Package = wrap(LRPackage);
 
 export const Icons = {
   ArrowRight,
@@ -237,6 +229,11 @@ export const Icons = {
   ShoppingCart,
   MoreV,
   Tag,
+  Printer,
+  Refresh,
+  Sliders,
+  Copy,
+  Package,
 } as const;
 
 export type IconName = keyof typeof Icons;

@@ -1,12 +1,3 @@
-/**
- * Customer profile data fetcher — server-side only.
- *
- * Fetches the User + Customer record for the logged-in portal user.
- * Cached per-user for 5 minutes — profile changes are rare.
- *
- * Call revalidateTag(`profile-user-${userId}`) after a profile update.
- */
-
 import { unstable_cache } from 'next/cache';
 import { db }            from '@/lib/db';
 

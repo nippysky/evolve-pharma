@@ -1,33 +1,3 @@
-/**
- * /api/customers
- *
- * ┌─────────────────────────────────────────────────────────────────────────┐
- * │  GET  — paginated customer list (Admin / Staff)                         │
- * │  POST — admin-initiated customer invite (Admin / Staff)                 │
- * └─────────────────────────────────────────────────────────────────────────┘
- *
- * GET query params:
- *   page    — page number (default 1)
- *   limit   — records per page (default 20)
- *   status  — REGISTERED | OTP_CONFIRMED | PCN_CERT_UPLOADED | PENDING_REVIEW | APPROVED | REJECTED
- *   search  — full-text on name, email, company_name
- *
- * POST body (JSON):
- *   first_name    string  required
- *   last_name     string  required
- *   middle_name   string  optional
- *   company_name  string  required
- *   email         string  required
- *   phone         string  required
- *   address       string  required
- *   city          string  required
- *   state         string  required
- *   referral_code string  optional
- *
- * POST response 201:
- *   { customer_id, user_id, email, invite_url }
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -146,8 +116,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ─── POST /api/customers ──────────────────────────────────────────────────────
-
 /** 48-hour OTP expiry for admin-generated invitations. */
 function inviteOtpExpiresAt(): Date {
   return new Date(Date.now() + 48 * 60 * 60 * 1000);
@@ -238,7 +206,6 @@ export async function POST(req: NextRequest) {
     void sendCustomerInvitationEmail({
       to:          email.toLowerCase(),
       name:        first_name,
-      otp,
       companyName: company_name,
       inviteUrl,
     }).catch((e) => console.error('[POST /api/customers] Invitation email failed:', e));

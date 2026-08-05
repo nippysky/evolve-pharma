@@ -1,51 +1,4 @@
-/**
- * Envolve Pharmaceuticals — Nodemailer email system
- *
- * ─── PHPMailer vs Nodemailer ──────────────────────────────────────────────────
- * PHPMailer is a PHP library — it cannot run in Node.js. Nodemailer is the
- * Node.js equivalent. The HTML templates from the backend are just HTML files
- * with {{PLACEHOLDER}} variables — they're language-agnostic. We reuse the
- * same design here by embedding the HTML in TypeScript and substituting
- * variables with `.replace()` / template literals. The SMTP server (Gmail)
- * is unchanged.
- *
- * ─── Anti-spam checklist ─────────────────────────────────────────────────────
- * ✓ multipart/alternative  — HTML + plain text in every send (required by Gmail/Yahoo)
- * ✓ Proper From header     — "Display Name <real@domain>" (not a bare address)
- * ✓ Specific subject lines — no ALL-CAPS, no "FREE!!!", meaningful content
- * ✓ Valid HTML             — no JavaScript, no external CSS, only inline styles
- * ✓ Physical address       — in footer (CAN-SPAM compliance)
- * ✓ Table-based layout     — max email client compatibility
- * ✓ Preheader text         — hidden preview line shown in inbox
- * ✓ Reply-To header        — points to a monitored support inbox
- * ✓ Single recipient       — one To per send, no BCC blasting
- *
- * ─── DNS records (configure on Hostinger DNS — not in code) ──────────────────
- * SPF:   TXT @ "v=spf1 include:_spf.google.com ~all"
- * DKIM:  auto-configured by Google Workspace / Gmail SMTP
- * DMARC: TXT _dmarc "v=DMARC1; p=quarantine; rua=mailto:postmaster@envolvepharm.com.ng"
- *
- * ─── Bearer tokens vs cookies ─────────────────────────────────────────────────
- * Our API routes use httpOnly cookies (ep_access, ep_refresh). The browser
- * automatically attaches these on every same-origin fetch — no Authorization
- * header needed. The `Authorization: Bearer` code in our route handlers is
- * only a fallback for mobile clients. Web clients never touch bearer tokens.
- * This is exactly what the backend engineer described: session handled on the
- * server per user, no token in the request headers for browser traffic.
- *
- * Required env vars:
- *   MAIL_HOST           smtp.gmail.com
- *   MAIL_PORT           465
- *   MAIL_USERNAME       miuchs@oauife.edu.ng       (Gmail account)
- *   MAIL_PASSWORD       "app password"              (Google App Password)
- *   MAIL_FROM_ADDRESS   no-reply@envolvepharm.com.ng
- *   MAIL_FROM_NAME      EnvolveCare Express
- *   FRONTEND_URL        https://www.envolvepharm.com.ng
- */
-
 import nodemailer from 'nodemailer';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 // Logo is served from the Next.js public folder — accessible at /images/Evolve_Pharm.png
 // in production (Vercel). We derive the URL from FRONTEND_URL so it always points
@@ -64,8 +17,6 @@ function year(): number {
   return new Date().getFullYear();
 }
 
-// ─── Transport singleton ──────────────────────────────────────────────────────
-
 const transport = nodemailer.createTransport({
   host:   process.env.MAIL_HOST   ?? 'smtp.gmail.com',
   port:   Number(process.env.MAIL_PORT ?? 465),
@@ -79,8 +30,6 @@ const transport = nodemailer.createTransport({
   maxConnections: 3,
   maxMessages:    100,
 });
-
-// ─── Core send helper ─────────────────────────────────────────────────────────
 
 interface MailOptions {
   to:       string;
@@ -111,8 +60,6 @@ export async function sendMail(opts: MailOptions): Promise<void> {
     },
   });
 }
-
-// ─── HTML email shell ─────────────────────────────────────────────────────────
 // Table-based layout for max email client compatibility (Outlook, Apple Mail,
 // Gmail web, Gmail Android, Yahoo Mail). Inline styles only — external CSS
 // is stripped by most clients.
@@ -213,8 +160,6 @@ function shell(preheader: string, bodyRows: string): string {
 </body>
 </html>`;
 }
-
-// ─── Reusable row blocks ──────────────────────────────────────────────────────
 
 /** Main content row — white background, generous padding */
 function contentRow(inner: string): string {
@@ -345,8 +290,6 @@ function signOff(): string {
   </p>`;
 }
 
-// ─── 1. Customer OTP verification ─────────────────────────────────────────────
-
 /**
  * Sent during customer registration (Step 2 → 3).
  * Subject clearly states it's a time-sensitive code — helps with deliverability.
@@ -404,8 +347,6 @@ If you didn't request this, you can safely ignore this email.
   await sendMail({ to: params.to, subject, html, text });
 }
 
-// ─── 2. PCN certificate under review ─────────────────────────────────────────
-
 /**
  * Sent after customer creates their password (status → PENDING_REVIEW).
  * Reassures the customer their submission was received and sets expectations.
@@ -452,8 +393,6 @@ This typically takes 24–48 hours. You will receive an email once the review is
   await sendMail({ to: params.to, subject, html, text });
 }
 
-// ─── 3. Customer account approved ────────────────────────────────────────────
-
 /**
  * Sent when an admin approves a customer's PCN review.
  */
@@ -495,8 +434,6 @@ ${loginUrl}
 
   await sendMail({ to: params.to, subject, html, text });
 }
-
-// ─── 4. Customer account rejected ────────────────────────────────────────────
 
 /**
  * Sent when an admin rejects a customer's PCN review.
@@ -545,17 +482,14 @@ Email: support@envolvepharm.com.ng
   await sendMail({ to: params.to, subject, html, text });
 }
 
-// ─── 5. Customer invitation (admin-initiated onboarding) ─────────────────────
-
 /**
  * Sent when an admin creates a customer record and invites them to complete
- * registration. The email contains the 6-digit OTP + a deep link to the
- * /sign-up/invited page. The OTP is valid for 48 hours (set at creation time).
+ * registration. Contains only the deep link — no OTP. A fresh verification
+ * code is issued automatically after the customer uploads their PCN certificate.
  */
 export async function sendCustomerInvitationEmail(params: {
   to:           string;
   name:         string;
-  otp:          string;
   companyName:  string;
   inviteUrl:    string;
 }): Promise<void> {
@@ -567,23 +501,15 @@ export async function sendCustomerInvitationEmail(params: {
     contentRow(`
       ${body(`Welcome, ${params.name}!`, [
         `An administrator has created an account for <strong>${params.companyName}</strong> on <strong>${APP_NAME}</strong> — Nigeria's pharmaceutical ordering platform.`,
-        'To complete your registration, you need to upload your PCN certificate and set a password. Click the button below to get started.',
+        'To complete your registration, upload your PCN certificate and set a password. A verification code will be sent to this email address once your certificate is uploaded.',
+        'Click the button below to get started.',
       ])}
       ${ctaButton('Complete your registration', params.inviteUrl, '#0d9488')}
       <p style="margin:24px 0 8px;font-size:14px;color:#475569;font-weight:600;">
         If the button doesn't work, copy and paste this link:
       </p>
       ${urlBox(params.inviteUrl)}
-      ${divider()}
-      ${body('Your verification code', [
-        'You\'ll need this code when prompted during setup:',
-      ])}
-      ${otpBlock(params.otp)}
-      ${infoBox(
-        '⏱&nbsp; This code is valid for <strong>48 hours</strong>. You can request a new code from the registration page if it expires.',
-        'warn',
-      )}
-      <p style="margin:12px 0 0;font-size:13px;color:#94a3b8;">
+      <p style="margin:24px 0 0;font-size:13px;color:#94a3b8;">
         Not expecting this email? It may have been sent in error — you can safely ignore it.
       </p>
       ${signOff()}
@@ -597,8 +523,7 @@ An administrator has created an account for ${params.companyName} on ${APP_NAME}
 To complete your registration, visit:
 ${params.inviteUrl}
 
-Your verification code: ${params.otp}
-(valid for 48 hours)
+A verification code will be sent to your email after you upload your PCN certificate.
 
 If you did not expect this email, you can safely ignore it.
 
@@ -606,8 +531,6 @@ If you did not expect this email, you can safely ignore it.
 
   await sendMail({ to: params.to, subject, html, text });
 }
-
-// ─── 6. Staff email verification (invitation link) ──────────────────────────
 
 /**
  * Sent when an admin creates a new staff/driver account.
@@ -657,8 +580,6 @@ If you did not expect this email, please contact your administrator.
   await sendMail({ to: params.to, subject, html, text });
 }
 
-// ─── 7. Staff account activation (after password set) ────────────────────────
-
 /**
  * Sent after staff verifies their email and sets their password.
  * Confirms the account is active and provides the sign-in link.
@@ -696,6 +617,183 @@ We're excited to have you on board.
 
 Best regards,
 Envolve Support`;
+
+  await sendMail({ to: params.to, subject, html, text });
+}
+
+type OrderEmailStatus = 'CONFIRMED' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
+
+const ORDER_STATUS_META: Record<OrderEmailStatus, {
+  subject:    string;
+  preheader:  string;
+  paragraphs: string[];
+  variant:    'info' | 'success' | 'warn' | 'danger';
+  boxText:    (orderNumber: string, tracking?: string | null) => string;
+  ctaLabel:   string;
+  ctaColor:   string;
+}> = {
+  CONFIRMED: {
+    subject:    'Order confirmed — we\'re preparing your items',
+    preheader:  'Your order has been confirmed and our warehouse team has been notified.',
+    paragraphs: [
+      'Great news — your order has been <strong>confirmed</strong> and our warehouse team has been notified to begin preparation.',
+      'You will receive another update as soon as your items are being processed.',
+    ],
+    variant:  'success',
+    boxText:  (o) => `<strong>Order:</strong> ${o}<br/><strong>Status:</strong> Confirmed — warehouse notified`,
+    ctaLabel: 'View your order',
+    ctaColor: '#0d9488',
+  },
+  PROCESSING: {
+    subject:    'Your order is being prepared',
+    preheader:  'Our warehouse team is picking and packing your items right now.',
+    paragraphs: [
+      'Our warehouse team is now <strong>picking and packing</strong> your items.',
+      'You will be notified as soon as your order is dispatched.',
+    ],
+    variant:  'info',
+    boxText:  (o) => `<strong>Order:</strong> ${o}<br/><strong>Status:</strong> Processing — packing in progress`,
+    ctaLabel: 'Track your order',
+    ctaColor: '#4f46e5',
+  },
+  DISPATCHED: {
+    subject:    'Your order is on its way!',
+    preheader:  'Your items have been dispatched and are heading to you.',
+    paragraphs: [
+      'Your order has been <strong>dispatched</strong> and is currently in transit to your delivery address.',
+      'Use the tracking code below to follow its progress.',
+    ],
+    variant:  'info',
+    boxText:  (o, t) => `<strong>Order:</strong> ${o}<br/><strong>Status:</strong> In transit${t ? `<br/><strong>Tracking code:</strong> ${t}` : ''}`,
+    ctaLabel: 'View order details',
+    ctaColor: '#4f46e5',
+  },
+  DELIVERED: {
+    subject:    'Your order has been delivered',
+    preheader:  'Your order has been delivered. Thank you for choosing EnvolveCare Express!',
+    paragraphs: [
+      'Your order has been <strong>successfully delivered</strong> to your address. We hope everything arrived in perfect condition.',
+      'Thank you for choosing EnvolveCare Express. We look forward to serving you again.',
+    ],
+    variant:  'success',
+    boxText:  (o) => `<strong>Order:</strong> ${o}<br/><strong>Status:</strong> Delivered ✓`,
+    ctaLabel: 'View your orders',
+    ctaColor: '#0d9488',
+  },
+  CANCELLED: {
+    subject:    'Your order has been cancelled',
+    preheader:  'Your order has been cancelled. Contact support if this was unexpected.',
+    paragraphs: [
+      'Your order has been <strong>cancelled</strong>.',
+      'If you did not request this cancellation or have any questions, please contact our support team immediately.',
+    ],
+    variant:  'danger',
+    boxText:  (o) => `<strong>Order:</strong> ${o}<br/><strong>Status:</strong> Cancelled`,
+    ctaLabel: 'Contact support',
+    ctaColor: '#64748b',
+  },
+};
+
+/**
+ * Sent to the customer on every order status transition.
+ * Invoke with void to avoid blocking the response.
+ */
+export async function sendOrderStatusEmail(params: {
+  to:           string;
+  name:         string;
+  orderNumber:  string;
+  orderId:      number;
+  newStatus:    OrderEmailStatus;
+  total:        number;
+  trackingCode: string | null;
+}): Promise<void> {
+  const meta     = ORDER_STATUS_META[params.newStatus];
+  const portalUrl = `${siteUrl()}/portal/orders/${params.orderId}`;
+  const ctaUrl   = params.newStatus === 'CANCELLED'
+    ? 'mailto:support@envolvepharm.com.ng'
+    : portalUrl;
+
+  const html = shell(
+    meta.preheader,
+    contentRow(`
+      <h3 style="margin:0 0 20px;font-size:18px;font-weight:700;color:#0f172a;line-height:1.3;">
+        Hi ${params.name},
+      </h3>
+      ${meta.paragraphs.map(p => `<p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.7;">${p}</p>`).join('')}
+      ${infoBox(meta.boxText(params.orderNumber, params.trackingCode), meta.variant)}
+      ${ctaButton(meta.ctaLabel, ctaUrl, meta.ctaColor)}
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
+        Order value: <strong style="color:#0f172a;">&#x20A6;${params.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong>
+      </p>
+      ${signOff()}
+    `),
+  );
+
+  const text = `Hi ${params.name},
+
+Order: ${params.orderNumber}
+New status: ${params.newStatus}
+${params.trackingCode ? `Tracking code: ${params.trackingCode}` : ''}
+
+View your order: ${portalUrl}
+
+— The ${APP_NAME} Team`;
+
+  await sendMail({ to: params.to, subject: meta.subject, html, text });
+}
+
+/**
+ * Sent when admin marks an order as PAID or changes payment status.
+ * Invoke with void to avoid blocking the response.
+ */
+export async function sendPaymentStatusEmail(params: {
+  to:            string;
+  name:          string;
+  orderNumber:   string;
+  orderId:       number;
+  paymentStatus: string;
+  total:         number;
+}): Promise<void> {
+  const isPaid    = params.paymentStatus === 'PAID';
+  const portalUrl = `${siteUrl()}/portal/orders/${params.orderId}`;
+  const subject   = isPaid
+    ? `Payment confirmed for order ${params.orderNumber}`
+    : `Payment update for order ${params.orderNumber}`;
+  const preheader = isPaid
+    ? `Your payment has been received and confirmed. Order ${params.orderNumber} is now active.`
+    : `The payment status for order ${params.orderNumber} has been updated to ${params.paymentStatus}.`;
+
+  const html = shell(
+    preheader,
+    contentRow(`
+      <h3 style="margin:0 0 20px;font-size:18px;font-weight:700;color:#0f172a;line-height:1.3;">
+        Hi ${params.name},
+      </h3>
+      <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.7;">
+        ${isPaid
+          ? `We have <strong>received and confirmed</strong> your payment for order <strong>${params.orderNumber}</strong>. Your order will now proceed to processing.`
+          : `The payment status for your order <strong>${params.orderNumber}</strong> has been updated to <strong>${params.paymentStatus}</strong>.`}
+      </p>
+      ${infoBox(
+        isPaid
+          ? `<strong>Order:</strong> ${params.orderNumber}<br/><strong>Amount:</strong> &#x20A6;${params.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}<br/><strong>Payment:</strong> Confirmed &#x2713;`
+          : `<strong>Order:</strong> ${params.orderNumber}<br/><strong>Payment status:</strong> ${params.paymentStatus}`,
+        isPaid ? 'success' : 'warn',
+      )}
+      ${ctaButton('View order', portalUrl, '#0d9488')}
+      ${signOff()}
+    `),
+  );
+
+  const text = `Hi ${params.name},
+
+${isPaid
+  ? `Payment confirmed for order ${params.orderNumber}. Amount: ₦${params.total.toLocaleString('en-NG')}`
+  : `Payment status for order ${params.orderNumber} updated to: ${params.paymentStatus}`}
+
+View your order: ${portalUrl}
+
+— The ${APP_NAME} Team`;
 
   await sendMail({ to: params.to, subject, html, text });
 }

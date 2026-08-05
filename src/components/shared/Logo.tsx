@@ -1,14 +1,3 @@
-/**
- * Logo — Envolve wordmark using the official PNG.
- *
- * Drop `Evolve_Pharm.png` (transparent background) into /public.
- *
- * Props:
- *   - height: pixel height; width auto-scales (default 36)
- *   - variant: 'full' | 'mark' — 'mark' shrinks for tight spaces (mobile topbars)
- *   - monochrome: inverts to pure white for dark backgrounds (auth panel, console sidebar)
- */
-
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 

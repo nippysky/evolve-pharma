@@ -1,26 +1,6 @@
-/**
- * Product Service — real API calls
- * All functions call Next.js API routes; httpOnly cookies are sent automatically.
- *
- * Exports:
- *   getAdminProducts       — paginated product list
- *   getProductCategories   — all categories (id + name + product_count)
- *   createCategory         — POST /api/products/categories
- *   deleteCategory         — DELETE /api/products/categories/[id]
- *   uploadProductImages    — POST /api/products/[sku]/images
- *   deleteProductImage     — DELETE /api/products/[sku]/images/[id]
- *   setProductImagePrimary — PATCH /api/products/[sku]/images/[id]
- *   bulkImportProducts     — POST /api/products/bulk-import
- *   getInventoryStats      — GET /api/inventory/stats
- *   receiveStock           — POST /api/inventory/receive
- *   bulkReceiveStock       — POST /api/inventory/bulk-receive
- */
-
 import type {
   ProductDTO, CategoryDTO, ProductImageDTO, BulkImportResult, InventoryBatchDTO,
 } from '@/lib/api/types';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface GetAdminProductsParams {
   page?:     number;
@@ -47,8 +27,6 @@ export interface InventoryStats {
   total_stock:     number;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res  = await fetch(path, { credentials: 'include', ...init });
   const json = await res.json();
@@ -61,8 +39,6 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return json?.data as T;
 }
-
-// ─── Products ─────────────────────────────────────────────────────────────────
 
 export async function getAdminProducts(
   params: GetAdminProductsParams = {},
@@ -81,8 +57,6 @@ export async function getAdminProducts(
   return data.records ?? [];
 }
 
-// ─── Categories ───────────────────────────────────────────────────────────────
-
 export async function getProductCategories(): Promise<CategoryDTO[]> {
   const data = await apiFetch<{ categories: CategoryDTO[] }>('/api/products/categories');
   return data.categories ?? [];
@@ -100,8 +74,6 @@ export async function createCategory(name: string): Promise<CategoryDTO> {
 export async function deleteCategory(id: number): Promise<void> {
   await apiFetch(`/api/products/categories/${id}`, { method: 'DELETE' });
 }
-
-// ─── Product images ───────────────────────────────────────────────────────────
 
 export async function uploadProductImages(
   sku:   string,
@@ -136,8 +108,6 @@ export async function setProductImagePrimary(sku: string, imageId: number): Prom
   });
 }
 
-// ─── Bulk import ──────────────────────────────────────────────────────────────
-
 export async function bulkImportProducts(file: File): Promise<BulkImportResult> {
   const fd = new FormData();
   fd.append('file', file);
@@ -159,8 +129,6 @@ export async function bulkImportProducts(file: File): Promise<BulkImportResult> 
 
   return (json?.data ?? { total: 0, inserted: 0, updated: 0, failed: 0 }) as BulkImportResult;
 }
-
-// ─── Inventory ────────────────────────────────────────────────────────────────
 
 export async function getInventoryStats(): Promise<InventoryStats> {
   const data = await apiFetch<InventoryStats>('/api/inventory/stats');

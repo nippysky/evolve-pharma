@@ -1,8 +1,3 @@
-/**
- * GET  /api/products/manufacturers — list all manufacturers
- * POST /api/products/manufacturers — create manufacturer (Admin/Staff)
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';

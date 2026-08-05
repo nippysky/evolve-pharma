@@ -1,17 +1,3 @@
-/**
- * GET /api/admin/audit-logs
- *
- * Paginated audit log (Admin only).
- *
- * Query params:
- *   page, limit
- *   user_type   — ADMIN | STAFF | DRIVER | CUSTOMER
- *   action      — partial match (e.g. "PRODUCT" matches CREATE_PRODUCT, UPDATE_PRODUCT)
- *   entity_type — Product | Customer | Order | User …
- *   search      — email or user_name
- *   from, to    — date range
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';

@@ -1,15 +1,3 @@
-/**
- * POST /api/auth/customer/verify-otp
- *
- * Step 2 of customer sign-up:
- *   1. Find valid, unused EMAIL_VERIFICATION OTP for the given email
- *   2. Mark OTP used, set user.email_verified_at, user.status → ACTIVE
- *   3. Set customer.status → OTP_CONFIRMED
- *   4. Return a short-lived setup_token (30 min) for the create-password step
- *
- * No auth required.
- */
-
 import { NextRequest }      from 'next/server';
 import { z }                from 'zod';
 import { db }               from '@/lib/db';

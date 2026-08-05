@@ -1,8 +1,3 @@
-/**
- * Layout primitives — Container + Section.
- * Container caps width and centers content; Section adds vertical rhythm.
- */
-
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 

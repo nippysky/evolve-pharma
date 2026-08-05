@@ -1,9 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Admin Products & Inventory Hooks
- *
- * TanStack Query hooks for the admin products list, categories, and inventory.
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getAdminProducts,
@@ -21,8 +15,6 @@ import {
 } from '@/lib/api/services/product.service';
 import type { ProductDTO } from '@/lib/api/types';
 
-// ---------- Query key factory -----------------------------------------------
-
 export const PRODUCT_KEYS = {
   all:            ['products']                                   as const,
   list:           (params: GetAdminProductsParams) =>
@@ -30,8 +22,6 @@ export const PRODUCT_KEYS = {
   categories:     ['product', 'categories']                      as const,
   inventoryStats: ['inventory-stats']                            as const,
 };
-
-// ---------- Admin product list ----------------------------------------------
 
 /** Paginated admin product list. */
 export function useAdminProducts(params: GetAdminProductsParams = {}) {
@@ -42,8 +32,6 @@ export function useAdminProducts(params: GetAdminProductsParams = {}) {
     placeholderData: (prev: ProductDTO[] | undefined) => prev,
   });
 }
-
-// ---------- Product categories ----------------------------------------------
 
 /** All categories, cached 30 min. */
 export function useProductCategories() {
@@ -75,8 +63,6 @@ export function useDeleteCategory() {
   });
 }
 
-// ---------- Product images --------------------------------------------------
-
 /** Upload one or more images for a product. */
 export function useUploadProductImages() {
   const qc = useQueryClient();
@@ -107,8 +93,6 @@ export function useSetProductImagePrimary() {
   });
 }
 
-// ---------- Inventory stats -------------------------------------------------
-
 /** Summary counts for the Inventory dashboard. */
 export function useInventoryStats() {
   return useQuery({
@@ -117,8 +101,6 @@ export function useInventoryStats() {
     staleTime: 60 * 1000, // 1 min
   });
 }
-
-// ---------- Receive stock ---------------------------------------------------
 
 /** Manually receive a stock batch. Invalidates inventory + stats on success. */
 export function useReceiveStock() {

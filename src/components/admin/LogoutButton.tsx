@@ -1,22 +1,3 @@
-'use client';
-
-/**
- * ENVOLVE PHARMACEUTICALS — Logout Button (admin / staff)
- *
- * Flow:
- *  1. POST /api/auth/logout — backend invalidates the refresh token in DB
- *     and sets Set-Cookie headers that clear ep_access + ep_refresh in the browser.
- *  2. window.location.href = '/staff/sign-in' — hard navigation so React state
- *     is fully reset and the middleware sees the now-absent cookies immediately.
- *
- * Why NOT a Server Action redirect:
- *  next/navigation redirect() throws a special NEXT_REDIRECT internally.
- *  When awaited inside a client-side try/finally it escapes the React Server
- *  Action interceptor and surfaces as "An unexpected response was received
- *  from the server." — the error overlay the user sees. Hard-navigating on
- *  the client after the API call is simpler and avoids this entirely.
- */
-
 import { useState } from 'react';
 import { Logout, Spinner } from '@/components/icons';
 import { logoutUser } from '@/lib/api/services/auth.service';

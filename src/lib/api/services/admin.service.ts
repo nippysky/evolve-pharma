@@ -1,10 +1,4 @@
-/**
- * Admin Service — real API calls to /api/admin/*
- */
-
 import type { LoginHistoryDTO, AuditLogDTO, PaginatedResponse } from '@/lib/api/types';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string): Promise<T> {
   const res  = await fetch(path, { credentials: 'include' });
@@ -22,8 +16,6 @@ function buildQS(params: Record<string, string | number | undefined>): string {
   return s ? `?${s}` : '';
 }
 
-// ─── Login history filters ─────────────────────────────────────────────────────
-
 export interface LoginHistoryFilters {
   user_type?: string;
   event?:     string;
@@ -31,8 +23,6 @@ export interface LoginHistoryFilters {
   from?:      string;
   to?:        string;
 }
-
-// ─── Audit log filters ────────────────────────────────────────────────────────
 
 export interface AuditLogFilters {
   user_type?:   string;
@@ -43,8 +33,6 @@ export interface AuditLogFilters {
   to?:          string;
 }
 
-// ─── Login history ────────────────────────────────────────────────────────────
-
 export async function getLoginHistory(
   page    = 1,
   limit   = 20,
@@ -53,8 +41,6 @@ export async function getLoginHistory(
   const qs = buildQS({ page, limit, ...filters });
   return apiFetch<PaginatedResponse<LoginHistoryDTO>>(`/api/admin/login-history${qs}`);
 }
-
-// ─── Audit logs ───────────────────────────────────────────────────────────────
 
 export async function getAuditLogs(
   page    = 1,

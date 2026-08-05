@@ -1,21 +1,6 @@
-'use client';
-
-/**
- * ENVOLVE PHARMACEUTICALS — Admin Auth Provider
- *
- * Wraps /admin/* routes. Renders a skeleton while auth/me is in-flight
- * so users never see a partially-loaded dashboard with dummy placeholder
- * names or missing role info. Once auth/me resolves the real layout mounts.
- *
- * The proxy at /api/proxy/ ensures the JWT cookie works cross-origin in
- * development — see app/api/proxy/[...path]/route.ts for details.
- */
-
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { UserProvider, useUser } from '@/contexts/UserContext';
-
-// ---------- Inner gate -------------------------------------------------------
 
 function AuthGate({ children }: { children: ReactNode }) {
   const { isLoading, user, error } = useUser();
@@ -95,8 +80,6 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
-
-// ---------- Provider ---------------------------------------------------------
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   return (

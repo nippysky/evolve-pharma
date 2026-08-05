@@ -1,16 +1,3 @@
-/**
- * GET /api/admin/login-history
- *
- * Paginated login history (Admin only).
- *
- * Query params:
- *   page, limit
- *   user_type  — CUSTOMER | STAFF | DRIVER | ADMIN
- *   event      — LOGIN_SUCCESS | LOGIN_FAILED | LOGOUT | TOKEN_REFRESHED
- *   search     — email or user_name
- *   from, to   — date range
- */
-
 import { NextRequest } from 'next/server';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';

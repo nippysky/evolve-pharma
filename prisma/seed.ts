@@ -1,14 +1,3 @@
-/**
- * Dev seed — inserts a default super-admin for local development.
- * Run:  npx tsx prisma/seed.ts
- *
- * Credentials (pre-filled on admin sign-in page):
- *   Email:    admin@gmail.com
- *   Password: Admin@2026
- *
- * Delete this user before going to production.
- */
-
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
@@ -68,12 +57,10 @@ async function main() {
     });
 
     console.log('');
-    console.log('✅  Dev admin seeded!');
+    console.log('✅  Super-admin seeded!');
     console.log(`    Email:    ${EMAIL}`);
     console.log(`    Password: ${PASSWORD}`);
     console.log(`    User ID:  ${user.id}`);
-    console.log('');
-    console.log('⚠️   Delete this account before going to production!');
   } finally {
     await db.$disconnect();
   }

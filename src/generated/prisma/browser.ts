@@ -103,6 +103,11 @@ export type LoginHistory = Prisma.LoginHistoryModel
  */
 export type AuditLog = Prisma.AuditLogModel
 /**
+ * Model AppSettings
+ * 
+ */
+export type AppSettings = Prisma.AppSettingsModel
+/**
  * Model Notification
  * 
  */

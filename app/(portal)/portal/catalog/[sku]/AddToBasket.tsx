@@ -1,23 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Plus, Minus, ShoppingCart, Check } from '@/components/icons';
 import { useBasket } from '@/lib/hooks/useBasket';
 import { useToast } from '@/contexts/ToastContext';
 import type { ProductDTO } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
+/** Fire-and-forget sync to the server-side cart. Non-blocking — UI stays instant. */
+async function syncToServerCart(productId: number, quantity: number) {
+  try {
+    await fetch('/api/cart/items', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ product_id: productId, quantity }),
+    });
+  } catch {
+    // Non-fatal — the localStorage basket is the source of truth for the UI.
+    // Server cart sync is best-effort for cross-device access.
+  }
+}
+
 export function AddToBasket({ product }: { product: ProductDTO }) {
-  const [qty, setQty] = useState(1);
-  const add = useBasket((s) => s.add);
-  const has = useBasket((s) => s.hasItem);
+  const minQty = Math.max(1, product.minimum_order ?? 1);
+  const [qty, setQty] = useState(minQty);
+  const add    = useBasket((s) => s.add);
+  const has    = useBasket((s) => s.hasItem);
   const getQty = useBasket((s) => s.getQuantity);
-  const toast = useToast();
-  const inBasket = has(product.id);
+  const toast  = useToast();
+  const inBasket  = has(product.id);
   const basketQty = getQty(product.id);
 
-  const onAdd = () => {
+  const onAdd = useCallback(() => {
     add(product, qty);
+    void syncToServerCart(product.id, qty);
     toast.show({
       tone: 'success',
       title: `${qty} × ${product.brand_name} added`,
@@ -25,7 +41,7 @@ export function AddToBasket({ product }: { product: ProductDTO }) {
         ? `${basketQty + qty} total in basket`
         : 'Continue browsing or head to your basket.',
     });
-  };
+  }, [add, product, qty, inBasket, basketQty, toast]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -38,8 +54,15 @@ export function AddToBasket({ product }: { product: ProductDTO }) {
         </div>
       )}
 
+      {/* Minimum order notice */}
+      {minQty > 1 && (
+        <p className="text-xs font-medium text-amber-700">
+          Minimum order: <span className="font-semibold">{minQty} packs</span>
+        </p>
+      )}
+
       <div className="flex items-center gap-3">
-        {/* Quantity stepper */}
+        {/* Quantity stepper — floor is minimum_order, not 1 */}
         <div
           className="flex h-12 items-center overflow-hidden rounded-full border border-line bg-white"
           role="group"
@@ -47,8 +70,8 @@ export function AddToBasket({ product }: { product: ProductDTO }) {
         >
           <button
             type="button"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-            disabled={qty <= 1}
+            onClick={() => setQty((q) => Math.max(minQty, q - 1))}
+            disabled={qty <= minQty}
             aria-label="Decrease quantity"
             className="grid h-full w-11 place-items-center text-ink-2 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
           >
@@ -73,7 +96,7 @@ export function AddToBasket({ product }: { product: ProductDTO }) {
         {/* Add button */}
         <button
           type="button"
-          onClick={onAdd}
+          onClick={() => onAdd()}
           className={cn(
             'flex h-12 flex-1 items-center justify-center gap-2 rounded-full font-medium transition-all duration-200',
             inBasket

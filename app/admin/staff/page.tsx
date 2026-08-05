@@ -1,11 +1,3 @@
-'use client';
-
-/**
- * Console · Staff management
- * Unified view — verified (active) and unverified (pending email setup).
- * Consistent design language with the Customers page.
- */
-
 import React, { useMemo, useState, useRef } from 'react';
 import {
   Users,
@@ -32,11 +24,7 @@ import {
 } from '@/hooks/staff/useStaff';
 import { formatDate, cn } from '@/lib/utils';
 
-// ---------- Constants -------------------------------------------------------
-
 const PAGE_SIZE = 15;
-
-// ---------- Filter config ---------------------------------------------------
 
 type StaffFilter = StaffStatus | 'all';
 
@@ -84,8 +72,6 @@ const FILTER_CONFIG: Record<StaffFilter, FilterConfig> = {
 
 const FILTER_ORDER: StaffFilter[] = ['all', 'VERIFIED', 'UNVERIFIED'];
 
-// ---------- Status badge (in table) ----------------------------------------
-
 function StatusBadge({ status }: { status: StaffStatus }) {
   const cfg = FILTER_CONFIG[status];
   return (
@@ -98,8 +84,6 @@ function StatusBadge({ status }: { status: StaffStatus }) {
     </span>
   );
 }
-
-// ---------- Filter card -----------------------------------------------------
 
 function FilterCard({
   filter,
@@ -172,8 +156,6 @@ function FilterCard({
   );
 }
 
-// ---------- Table skeleton --------------------------------------------------
-
 function TableSkeleton() {
   return (
     <div className="rounded-2xl border border-line overflow-hidden">
@@ -203,8 +185,6 @@ function TableSkeleton() {
     </div>
   );
 }
-
-// ---------- Pagination ------------------------------------------------------
 
 function Pagination({
   page,
@@ -272,8 +252,6 @@ function Pagination({
     </div>
   );
 }
-
-// ---------- Staff table -----------------------------------------------------
 
 function StaffTable({
   records,
@@ -441,8 +419,6 @@ function StaffTable({
     </>
   );
 }
-
-// ---------- Page ------------------------------------------------------------
 
 export default function ConsoleStaffPage() {
   const [activeFilter, setActiveFilter] = useState<StaffFilter>('all');

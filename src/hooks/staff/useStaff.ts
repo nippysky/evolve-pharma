@@ -1,12 +1,3 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Staff & Console TanStack Query Hooks
- *
- * Mutations for staff login / register / bulk-upload and
- * queries for listing staff and customers by lifecycle stage.
- *
- * Components import these hooks — never import services directly.
- */
-
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,8 +20,6 @@ import {
 } from '@/lib/api/services/customers.service';
 import type { LoginStaffPayload, RegisterStaffPayload, CustomerAdminRecord, StaffRecord, DriverRecord } from '@/lib/api/types';
 
-// ---------- Query keys -----------------------------------------------------
-
 export const STAFF_KEYS = {
   verified:   ['staff', 'verified']   as const,
   unverified: ['staff', 'unverified'] as const,
@@ -44,8 +33,6 @@ export const CUSTOMER_ADMIN_KEYS = {
   list: (stage: string) => ['customers-admin', stage] as const,
 } as const;
 
-// ---------- Staff login ----------------------------------------------------
-
 /**
  * Mutation for staff sign-in.
  * On success, response contains `role: "ADMIN" | "STAFF" | "DRIVER"`.
@@ -57,8 +44,6 @@ export function useLoginStaff() {
   });
 }
 
-// ---------- Staff register -------------------------------------------------
-
 export function useRegisterStaff() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -69,8 +54,6 @@ export function useRegisterStaff() {
     },
   });
 }
-
-// ---------- Staff bulk upload ----------------------------------------------
 
 export function useBulkUploadStaff() {
   const queryClient = useQueryClient();
@@ -85,15 +68,11 @@ export function useBulkUploadStaff() {
   });
 }
 
-// ---------- Staff types for unified view -----------------------------------
-
 export type StaffStatus = 'VERIFIED' | 'UNVERIFIED';
 
 export interface TaggedStaffRecord extends StaffRecord {
   _status: StaffStatus;
 }
-
-// ---------- Staff lists ----------------------------------------------------
 
 export function useVerifiedStaff() {
   return useQuery({
@@ -141,8 +120,6 @@ export function useAllStaff() {
   return { allRecords, counts, isLoading, errors, refetchAll };
 }
 
-// ---------- Driver list ----------------------------------------------------
-
 export { type DriverRecord };
 
 export function useDrivers() {
@@ -156,8 +133,6 @@ export function useDrivers() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: DRIVER_KEYS.all });
   return { ...query, refetch, invalidate };
 }
-
-// ---------- Customer admin lists -------------------------------------------
 
 export type CustomerStage = 'pending' | 'registered' | 'unverified' | 'verified' | 'approved' | 'rejected';
 
@@ -193,7 +168,7 @@ const STATUS_TO_STAGE: Record<string, CustomerStage> = {
  * Fetches ALL customers in ONE request and splits them by stage client-side.
  *
  * Replaces the previous 6-parallel-query approach which exhausted the
- * Hostinger shared-hosting DB connection pool (limit = 2 connections).
+ * Sequential queries to stay within the DB connection limit.
  * One request = one connection = no pool starvation for other endpoints.
  */
 export function useAllCustomers() {
@@ -228,8 +203,6 @@ export function useAllCustomers() {
   return { allRecords, counts, isLoading, isFetching, errors, refetchAll };
 }
 
-// ---------- Review customer ------------------------------------------------
-
 export function useReviewCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -249,8 +222,6 @@ export function useReviewCustomer() {
   });
 }
 
-// ---------- Create single customer (admin invite) --------------------------
-
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
   return useMutation<CreateCustomerResult, Error, CreateCustomerInput>({
@@ -260,8 +231,6 @@ export function useCreateCustomer() {
     },
   });
 }
-
-// ---------- Bulk upload customers ------------------------------------------
 
 export function useBulkUploadCustomers() {
   const queryClient = useQueryClient();

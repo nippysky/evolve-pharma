@@ -1,18 +1,3 @@
-/**
- * PATCH  /api/products/[sku]/images/[imageId] — set as primary image
- * DELETE /api/products/[sku]/images/[imageId] — remove image
- *
- * DELETE also removes the file from Cloudinary.
- * If the deleted image was primary, the next oldest image becomes primary.
- *
- * Responses:
- *   200  { images: ProductImageDTO[] }
- *   401  unauthenticated
- *   403  forbidden
- *   404  product or image not found
- *   500  server error
- */
-
 import { NextRequest }             from 'next/server';
 import { db }                      from '@/lib/db';
 import { getSession }              from '@/lib/auth';
@@ -26,8 +11,6 @@ import {
 } from '@/lib/api/response';
 
 type RouteContext = { params: Promise<{ sku: string; imageId: string }> };
-
-// ─── PATCH — set as primary ────────────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
@@ -69,8 +52,6 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     return apiInternalError();
   }
 }
-
-// ─── DELETE ────────────────────────────────────────────────────────────────────
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {

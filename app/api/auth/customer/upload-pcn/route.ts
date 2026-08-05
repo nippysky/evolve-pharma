@@ -1,11 +1,3 @@
-/**
- * POST /api/auth/customer/upload-pcn
- *
- * PCN sticky-gate upload — used when a customer logs in but has no
- * certificate on file (bulk-imported or abandoned sign-up).
- * Requires a valid session cookie (customer must be logged in).
- */
-
 import { NextRequest }         from 'next/server';
 import { db }                  from '@/lib/db';
 import { getSession }          from '@/lib/auth';

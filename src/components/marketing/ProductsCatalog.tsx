@@ -107,10 +107,11 @@ export function ProductsCatalog({ products, initialCategory }: ProductsCatalogPr
         </div>
       ) : (
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((product) => (
+          {filtered.map((product, i) => (
             <ProductCard
               key={product.id}
               product={product}
+              priority={i < 4}
               href={`/products/${product.sku}`}
             />
           ))}

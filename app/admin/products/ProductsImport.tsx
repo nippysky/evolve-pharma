@@ -1,28 +1,9 @@
-'use client';
-
-/**
- * Products Bulk Import
- *
- * Button → modal: drag-drop or click to select xlsx/csv/xls,
- * parse client-side with xlsx, show a scrollable preview table with
- * per-row validation, then POST to /api/products/bulk-import.
- * Shows a result summary after submit.
- *
- * Template columns (matching the backend template):
- *   manufacturer, brand_name, generic_name, product_strength, pack_size,
- *   product_category, batch_no, expiry_date, minimum_order, quantity_per_carton,
- *   quantity_received, shelf_location, cost_price, selling_price,
- *   minimum_stock_level, reorder_quantity
- */
-
 import { useState, useRef, useCallback }   from 'react';
 import { useQueryClient }                   from '@tanstack/react-query';
 import { Upload, X, AlertTriangle, CheckCircle, FileText, RotateCw, Download } from '@/components/icons';
 import { Button }   from '@/components/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { cn }       from '@/lib/utils';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PreviewRow {
   rowNum:           number;
@@ -45,8 +26,6 @@ interface ImportResult {
   inventory_batches_created: number;
   failed_records:            Array<{ row: number; sku: string; errors: string[] }>;
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function headerKey(h: string): string {
   return String(h).toLowerCase().trim().replace(/[\s-]+/g, '_');
@@ -81,8 +60,6 @@ function validateRow(row: unknown[], headers: Record<string, number>, rowNum: nu
   return { rowNum, manufacturer, brand_name, generic_name, product_category, selling_price, cost_price, batch_no, quantity_received, errors };
 }
 
-// ─── Download template ────────────────────────────────────────────────────────
-
 async function downloadTemplate() {
   const XLSX = await import('xlsx');
   const header = [
@@ -101,8 +78,6 @@ async function downloadTemplate() {
   XLSX.utils.book_append_sheet(wb, ws, 'Products');
   XLSX.writeFile(wb, 'products_import_template.xlsx');
 }
-
-// ─── Modal ────────────────────────────────────────────────────────────────────
 
 function BulkImportModal({ onClose }: { onClose: () => void }) {
   const toast       = useToast();
@@ -410,8 +385,6 @@ function BulkImportModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
-
-// ─── Export ───────────────────────────────────────────────────────────────────
 
 export function ProductsImport() {
   const [open, setOpen] = useState(false);

@@ -1,12 +1,3 @@
-'use client';
-
-/**
- * Console · Audit Trail
- *
- * Complete, filterable log of every action performed across the platform.
- * Filters: user type, action keyword, entity type, actor search, date range.
- */
-
 import React, { useState, useCallback, useTransition } from 'react';
 import {
   Shield, ClipboardList, CheckCircle, XCircle, AlertTriangle,
@@ -18,8 +9,6 @@ import type { AuditLogFilters } from '@/lib/api/services/admin.service';
 import { useToast } from '@/contexts/ToastContext';
 import { cn, formatDateTime, timeAgo } from '@/lib/utils';
 import type { AuditLogRecord, PaginationMeta } from '@/lib/api/types';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDateTime(raw: string) {
   try { return formatDateTime(raw.replace(' ', 'T')); } catch { return raw; }
@@ -33,8 +22,6 @@ function shortAgent(ua: string): string {
   if (ua.startsWith('Mozilla'))        return 'Browser';
   return ua.split('/')[0] ?? ua.slice(0, 20);
 }
-
-// ─── Action meta ──────────────────────────────────────────────────────────────
 
 interface ActionMeta {
   icon: React.ReactNode; iconBg: string; iconColor: string;
@@ -68,8 +55,6 @@ function getActionMeta(action: string): ActionMeta {
     badgeBg: 'bg-slate-50', badgeText: 'text-slate-600', badgeRing: 'ring-slate-200', label: action.replace(/_/g, ' ') };
 }
 
-// ─── Pills ────────────────────────────────────────────────────────────────────
-
 const USER_TYPE_STYLE: Record<string, string> = {
   ADMIN:    'bg-brand-50 text-brand-700 ring-brand-200',
   STAFF:    'bg-violet-50 text-violet-700 ring-violet-200',
@@ -95,8 +80,6 @@ function ActionBadge({ action }: { action: string }) {
     </span>
   );
 }
-
-// ─── Skeleton / states ────────────────────────────────────────────────────────
 
 function FeedSkeleton() {
   return (
@@ -140,8 +123,6 @@ function EmptyFeed() {
   );
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
 function StatCard({ label, value, icon, color, isLoading }: {
   label: string; value: number; icon: React.ReactNode; color: string; isLoading: boolean;
 }) {
@@ -157,8 +138,6 @@ function StatCard({ label, value, icon, color, isLoading }: {
     </div>
   );
 }
-
-// ─── Pagination ───────────────────────────────────────────────────────────────
 
 function PaginationBar({ meta, page, onPage }: { meta: PaginationMeta; page: number; onPage: (p: number) => void }) {
   if (meta.total_pages <= 1) return null;
@@ -198,8 +177,6 @@ function PaginationBar({ meta, page, onPage }: { meta: PaginationMeta; page: num
     </div>
   );
 }
-
-// ─── Filter bar ───────────────────────────────────────────────────────────────
 
 const USER_TYPES   = ['ADMIN', 'STAFF', 'CUSTOMER', 'DRIVER'] as const;
 const ENTITY_TYPES = ['Product', 'Customer', 'Order', 'Staff', 'Driver', 'Delivery', 'User'] as const;
@@ -278,8 +255,6 @@ function FilterBar({
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AuditLogsPage() {
   const toast  = useToast();

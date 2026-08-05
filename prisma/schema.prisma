@@ -164,6 +164,7 @@ model Customer {
   // Unique referral code e.g. "ENV58A5D112"
   referral_code        String?        @unique @db.VarChar(50)
   referred_by          String?        @db.VarChar(50) // referral_code of referrer
+  referral_points      Int            @default(0)     // points earned from referrals
   review_note          String?        @db.Text
   reviewed_by_id       Int?
   reviewed_by          User?          @relation("CustomerReviewedBy", fields: [reviewed_by_id], references: [id], onDelete: SetNull)

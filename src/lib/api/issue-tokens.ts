@@ -1,11 +1,3 @@
-/**
- * Shared token-issuance helper used by every login route.
- *
- * Creates both access + refresh JWTs, persists the refresh token's
- * jti in the DB (for revocation), and builds the AuthResponse body.
- * Cookies are set by the caller via setAuthCookies().
- */
-
 import { db }                               from '@/lib/db';
 import { signAccessToken, signRefreshToken } from '@/lib/jwt';
 import type { UserRole }                     from '@/lib/api/types';

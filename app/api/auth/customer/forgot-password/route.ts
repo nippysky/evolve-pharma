@@ -1,13 +1,3 @@
-/**
- * POST /api/auth/customer/forgot-password
- *
- * Sends a 6-digit password-reset OTP to the customer's email.
- * Always returns 200 regardless of whether the email exists — prevents
- * user enumeration attacks.
- *
- * No auth required.
- */
-
 import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
@@ -20,13 +10,9 @@ import {
 } from '@/lib/api/response';
 import { generateOtp, otpExpiresAt } from '@/lib/api/issue-tokens';
 
-// ─── Validation ───────────────────────────────────────────────────────────────
-
 const schema = z.object({
   email: z.email('Invalid email address'),
 });
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,7 +57,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Send email (fire-and-forget — don't expose mail errors to client)
       sendOtpEmail({
         to:   email,
         name: user.first_name,

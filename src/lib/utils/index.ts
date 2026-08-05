@@ -1,18 +1,10 @@
-/**
- * ENVOLVE PHARMACEUTICALS — Utility Helpers
- */
-
 import clsx, { type ClassValue } from 'clsx';
 import { format, formatDistanceToNow, isAfter, differenceInDays } from 'date-fns';
-
-// ---------- Class names --------------------------------------------------
 
 /** Merge class names — clsx wrapper (no Tailwind merging needed; we use CSS Modules). */
 export function cn(...inputs: ClassValue[]): string {
   return clsx(inputs);
 }
-
-// ---------- Money / numbers ---------------------------------------------
 
 /** Format Naira amount: 1234567 → "₦1,234,567". */
 export function formatNaira(amount: number, opts?: { minimumFractionDigits?: number }): string {
@@ -31,8 +23,6 @@ export function formatCompact(n: number): string {
     maximumFractionDigits: 1,
   }).format(n);
 }
-
-// ---------- Dates --------------------------------------------------------
 
 export function formatDate(iso: string, pattern = 'd MMM yyyy'): string {
   return format(new Date(iso), pattern);
@@ -53,8 +43,6 @@ export function isExpiringSoon(iso: string, withinDays = 90): boolean {
 export function isExpired(iso: string): boolean {
   return !isAfter(new Date(iso), new Date());
 }
-
-// ---------- Strings ------------------------------------------------------
 
 export function initials(name: string): string {
   return name
@@ -77,8 +65,6 @@ export function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
-
-// ---------- Misc ---------------------------------------------------------
 
 export function range(n: number): number[] {
   return Array.from({ length: n }, (_, i) => i);

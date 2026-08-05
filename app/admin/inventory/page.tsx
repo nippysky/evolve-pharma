@@ -1,8 +1,3 @@
-/**
- * Console · Inventory (admin-only). The stock ledger: quantities, batches,
- * and expiry across catalog SKUs. Catalog editing lives on the Products page.
- */
-
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { InventoryView } from './InventoryView';
