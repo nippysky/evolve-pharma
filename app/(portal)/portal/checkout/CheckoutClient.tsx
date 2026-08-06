@@ -38,7 +38,6 @@ interface ConfettiStyle extends React.CSSProperties {
   '--rot': string;
 }
 const PAYSTACK_KEY        = process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? '';
-const VAT_RATE            = 0.075;
 const FREE_SHIP_THRESHOLD = 50_000;
 const SHIP_FEE            = 2_500;
 
@@ -331,13 +330,13 @@ function EmptyBasket() {
 }
 
 interface Props {
-  /** Real customer email from server session — used for Paystack popup */
-  userEmail: string;
-  /** Pre-filled delivery fields from customer profile */
+  userEmail:  string;
+  vatEnabled: boolean;
+  vatRate:    number;
   prefill?: Partial<Pick<FormFields, 'state' | 'city' | 'street_address' | 'contact_phone'>>;
 }
 
-export default function CheckoutClient({ userEmail, prefill }: Props) {
+export default function CheckoutClient({ userEmail, vatEnabled, vatRate, prefill }: Props) {
   const items     = useBasket((s) => s.items);
   const clear     = useBasket((s) => s.clear);
   const toast     = useToast();
@@ -372,10 +371,11 @@ export default function CheckoutClient({ userEmail, prefill }: Props) {
     document.head.appendChild(s);
   }, []);
 
-  const subtotal = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-  const shipping = subtotal >= FREE_SHIP_THRESHOLD || subtotal === 0 ? 0 : SHIP_FEE;
-  const vat      = Math.round(subtotal * VAT_RATE);
-  const total    = subtotal + shipping + vat;
+  const subtotal  = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const shipping  = subtotal >= FREE_SHIP_THRESHOLD || subtotal === 0 ? 0 : SHIP_FEE;
+  const vat       = vatEnabled ? Math.round(subtotal * vatRate) : 0;
+  const total     = subtotal + shipping + vat;
+  const vatPct    = Math.round(vatRate * 100);
 
   // Basket items formatted for the server action
   const basketPayload = items.map(i => ({ product_id: i.product_id, quantity: i.quantity }));
@@ -637,13 +637,13 @@ export default function CheckoutClient({ userEmail, prefill }: Props) {
           <div className="mt-4 space-y-2.5">
             <SummaryRow label="Subtotal" value={formatNaira(subtotal)} />
             <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : formatNaira(shipping)} valueClass={shipping === 0 ? 'text-teal-600 font-semibold' : ''} />
-            <SummaryRow label="VAT (7.5%)" value={formatNaira(vat)} />
+            {vatEnabled && <SummaryRow label={`VAT (${vatPct}%)`} value={formatNaira(vat)} />}
           </div>
 
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-teal-100 bg-teal-50 px-5 py-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-600">Total payable</p>
-              <p className="mt-0.5 text-[10px] text-teal-500">Incl. VAT &amp; shipping</p>
+              <p className="mt-0.5 text-[10px] text-teal-500">{vatEnabled ? `Incl. VAT & shipping` : 'Incl. shipping'}</p>
             </div>
             <span className="num font-display text-2xl font-bold tracking-tight text-[#042a36]">{formatNaira(total)}</span>
           </div>

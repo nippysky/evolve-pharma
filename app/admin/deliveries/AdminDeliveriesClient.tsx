@@ -608,7 +608,8 @@ export default function AdminDeliveriesClient() {
       const res = await fetch(`/api/deliveries?${params}`);
       return res.json();
     },
-    staleTime: 30_000,
+    staleTime:       0,       // always fetch fresh on mount / navigation
+    refetchOnMount:  true,
   });
 
   // ── Available drivers for assignment ─────────────────────────────────────

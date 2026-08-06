@@ -490,6 +490,8 @@ export function AdminOrdersView() {
       });
       qc.invalidateQueries({ queryKey: ['admin-orders'] });
       qc.invalidateQueries({ queryKey: ['admin-order', vars.id] });
+      // Bust deliveries cache so the deliveries page shows the new record immediately
+      qc.invalidateQueries({ queryKey: ['admin-deliveries'] });
     },
     onError: () => toast.show({ tone: 'error', title: 'Network error — please try again' }),
   });

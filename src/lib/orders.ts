@@ -7,8 +7,8 @@ import {
   clearCartItems,
   getOrCreateCart,
 }                                     from '@/lib/cart-db';
+import { getVatSettings }             from '@/lib/data/settings.server';
 
-const VAT_RATE            = 0.075;     // 7.5 %
 const FREE_SHIP_THRESHOLD = 50_000;    // ₦50,000
 const SHIP_FEE            = 2_500;     // ₦2,500
 
@@ -107,8 +107,9 @@ export async function createOrder(
     return { product_id: p.id, quantity: item.quantity, unit_price: unitPrice, subtotal: lineTotal };
   });
 
+  const { enabled: vatEnabled, rate: vatRate } = await getVatSettings();
   const deliveryFee = subtotal >= FREE_SHIP_THRESHOLD ? 0 : SHIP_FEE;
-  const vat         = Math.round(subtotal * VAT_RATE);
+  const vat         = vatEnabled ? Math.round(subtotal * vatRate) : 0;
   const total       = subtotal + deliveryFee + vat;
 
   // Create Order (temp order_number avoids UNIQUE collision)
@@ -135,6 +136,7 @@ export async function createOrder(
         delivery_notes: deliveryNotes ?? null,
         contact_phone:  contactPhone,
         vat,
+        vat_rate:       vatEnabled ? vatRate * 100 : 0,
       }),
     },
   });

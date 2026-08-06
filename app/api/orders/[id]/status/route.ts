@@ -2,7 +2,7 @@ import { NextRequest }        from 'next/server';
 import { z }                  from 'zod';
 import { db }                 from '@/lib/db';
 import { getSession }         from '@/lib/auth';
-import { revalidateOrders }   from '@/lib/revalidate';
+import { revalidateOrders, revalidateDeliveries } from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -121,6 +121,7 @@ export async function PATCH(
 
     // 5. Invalidate caches
     revalidateOrders({ orderId });
+    revalidateDeliveries(orderId);
 
     // 6. Resolve tracking code — use the pre-generated one (no extra DB round-trip needed)
     const trackingCode = newTrackingCode ?? order.delivery?.tracking_code ?? null;
