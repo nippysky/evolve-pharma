@@ -19,14 +19,18 @@ import bcrypt from 'bcryptjs';
 // ── Wipe order respects FK constraints (children before parents) ─────────────
 
 const WIPE_ORDER = [
+  // leaf / child tables first (FK checks disabled below, but order kept logical)
   'notifications',
   'audit_logs',
   'login_history',
   'otp_tokens',
   'refresh_tokens',
+  'cart_items',            // child of carts + products
+  'payment_transactions',  // child of orders
   'deliveries',
   'order_items',
   'orders',
+  'carts',                 // child of customers
   'stock_movements',
   'inventory_batches',
   'product_images',
@@ -65,14 +69,24 @@ async function main() {
     await db.$connect();
     console.log('✅  Connected to database\n');
 
-    // ── 1. Delete all data in child-before-parent order ──────────────────────
-    // DELETE FROM (not TRUNCATE) works without disabling FK checks as long as
-    // children are deleted before parents. TRUNCATE is refused on any table
-    // with an inbound FK, even when the referencing table is already empty.
+    // ── 1. Delete all data ───────────────────────────────────────────────────
+    // Disable FK checks for the duration of the wipe so that tables present in
+    // the live DB but not yet in the Prisma schema (e.g. payment_transactions)
+    // can't block deletion. Re-enabled immediately after.
+    await db.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 0');
     for (const table of WIPE_ORDER) {
-      await db.$executeRawUnsafe(`DELETE FROM \`${table}\``);
-      console.log(`   🗑  Wiped: ${table}`);
+      try {
+        await db.$executeRawUnsafe(`DELETE FROM \`${table}\``);
+        // Reset auto-increment so IDs start from 1 on a clean DB.
+        // (DELETE does not reset the counter; only TRUNCATE would, but TRUNCATE
+        // is blocked by FK constraints even with checks disabled in some engines.)
+        await db.$executeRawUnsafe(`ALTER TABLE \`${table}\` AUTO_INCREMENT = 1`);
+        console.log(`   🗑  Wiped: ${table}`);
+      } catch {
+        console.log(`   ⚠️  Skipped: ${table} (table may not exist)`);
+      }
     }
+    await db.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 1');
 
     console.log('\n✅  All tables wiped\n');
 

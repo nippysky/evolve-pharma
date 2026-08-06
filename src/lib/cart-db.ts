@@ -1,3 +1,12 @@
+/**
+ * cart-db.ts
+ *
+ * All cart and payment-transaction operations via the Prisma client.
+ * Tables are still bootstrapped via ensureCartTables() because this project
+ * uses manual DB setup rather than prisma migrate — the IF NOT EXISTS guards
+ * are harmless no-ops once the tables exist.
+ */
+
 import { db } from '@/lib/db';
 
 let tablesReady = false;
@@ -53,11 +62,7 @@ export async function ensureCartTables(): Promise<void> {
   tablesReady = true;
 }
 
-interface CartRow {
-  id:          number;
-  uuid:        string;
-  customer_id: number;
-}
+// ─── Cart ─────────────────────────────────────────────────────────────────────
 
 export interface CartItemRow {
   id:            number;
@@ -84,86 +89,76 @@ export interface CartWithItems {
 export async function getOrCreateCart(customerId: number): Promise<{ id: number; uuid: string }> {
   await ensureCartTables();
 
-  const existing = await db.$queryRaw<CartRow[]>`
-    SELECT id, uuid, customer_id FROM carts WHERE customer_id = ${customerId} LIMIT 1
-  `;
-
-  if (existing.length > 0) {
-    return { id: existing[0]!.id, uuid: existing[0]!.uuid };
-  }
+  const existing = await db.cart.findUnique({
+    where:  { customer_id: customerId },
+    select: { id: true, uuid: true },
+  });
+  if (existing) return existing;
 
   const uuid = crypto.randomUUID();
-  await db.$executeRaw`
-    INSERT INTO carts (uuid, customer_id) VALUES (${uuid}, ${customerId})
-  `;
-
-  const created = await db.$queryRaw<CartRow[]>`
-    SELECT id, uuid, customer_id FROM carts WHERE customer_id = ${customerId} LIMIT 1
-  `;
-
-  if (!created[0]) throw new Error('Failed to retrieve cart after insert');
-  return { id: created[0].id, uuid: created[0].uuid };
+  const created = await db.cart.create({
+    data:   { uuid, customer_id: customerId },
+    select: { id: true, uuid: true },
+  });
+  return created;
 }
 
 export async function getCartWithItems(customerId: number): Promise<CartWithItems | null> {
   await ensureCartTables();
 
-  const carts = await db.$queryRaw<CartRow[]>`
-    SELECT id, uuid, customer_id FROM carts WHERE customer_id = ${customerId} LIMIT 1
-  `;
-  if (!carts.length) return null;
+  const cart = await db.cart.findUnique({
+    where: { customer_id: customerId },
+    select: { id: true, uuid: true, customer_id: true },
+  });
+  if (!cart) return null;
 
-  const cart = carts[0]!;
+  // Fetch items with product + primary image via Prisma
+  const rawItems = await db.cartItem.findMany({
+    where:   { cart_id: cart.id },
+    orderBy: { created_at: 'asc' },
+    select: {
+      id:         true,
+      cart_id:    true,
+      product_id: true,
+      quantity:   true,
+      unit_price: true,
+      product: {
+        select: {
+          brand_name:    true,
+          generic_name:  true,
+          sku:           true,
+          pack_size:     true,
+          selling_price: true,
+          status:        true,
+          deleted_at:    true,
+          images: {
+            where:   { is_primary: true },
+            take:    1,
+            select:  { url: true },
+          },
+        },
+      },
+    },
+  });
 
-  // Left-join cart_items → products → product_images (primary only)
-  const rows = await db.$queryRaw<Array<{
-    id:            number;
-    cart_id:       number;
-    product_id:    number;
-    quantity:      number;
-    unit_price:    string;   // Decimal comes back as string in MySQL raw
-    brand_name:    string;
-    generic_name:  string;
-    sku:           string;
-    pack_size:     string | null;
-    selling_price: string;
-    primary_image: string | null;
-    status:        string;
-  }>>`
-    SELECT
-      ci.id,
-      ci.cart_id,
-      ci.product_id,
-      ci.quantity,
-      ci.unit_price,
-      p.brand_name,
-      p.generic_name,
-      p.sku,
-      p.pack_size,
-      p.selling_price,
-      p.status,
-      (
-        SELECT pi.url FROM product_images pi
-        WHERE pi.product_id = p.id AND pi.is_primary = 1
-        LIMIT 1
-      ) AS primary_image
-    FROM cart_items ci
-    JOIN products p ON p.id = ci.product_id
-    WHERE ci.cart_id = ${cart.id}
-      AND p.deleted_at IS NULL
-    ORDER BY ci.created_at ASC
-  `;
+  const items: CartItemRow[] = rawItems
+    .filter(i => i.product.deleted_at === null)
+    .map(i => ({
+      id:            i.id,
+      cart_id:       i.cart_id,
+      product_id:    i.product_id,
+      quantity:      i.quantity,
+      unit_price:    Number(i.unit_price),
+      brand_name:    i.product.brand_name,
+      generic_name:  i.product.generic_name,
+      sku:           i.product.sku,
+      pack_size:     i.product.pack_size ?? null,
+      selling_price: Number(i.product.selling_price),
+      primary_image: i.product.images[0]?.url ?? null,
+      status:        i.product.status,
+    }));
 
-  return {
-    id:         cart.id,
-    uuid:       cart.uuid,
-    customerId: cart.customer_id,
-    items:      rows.map(r => ({
-      ...r,
-      unit_price:    Number(r.unit_price),
-      selling_price: Number(r.selling_price),
-    })),
-  };
+  return { id: cart.id, uuid: cart.uuid, customerId: cart.customer_id, items };
 }
 
 export async function upsertCartItem(
@@ -172,14 +167,22 @@ export async function upsertCartItem(
   quantity:  number,
   unitPrice: number,
 ): Promise<void> {
-  await db.$executeRaw`
-    INSERT INTO cart_items (cart_id, product_id, quantity, unit_price)
-    VALUES (${cartId}, ${productId}, ${quantity}, ${unitPrice})
-    ON DUPLICATE KEY UPDATE
-      quantity   = quantity + VALUES(quantity),
-      unit_price = VALUES(unit_price),
-      updated_at = CURRENT_TIMESTAMP
-  `;
+  // Prisma doesn't support ON DUPLICATE KEY UPDATE natively, so we upsert manually.
+  const existing = await db.cartItem.findUnique({
+    where: { cart_id_product_id: { cart_id: cartId, product_id: productId } },
+    select: { id: true, quantity: true },
+  });
+
+  if (existing) {
+    await db.cartItem.update({
+      where: { id: existing.id },
+      data:  { quantity: existing.quantity + quantity, unit_price: unitPrice },
+    });
+  } else {
+    await db.cartItem.create({
+      data: { cart_id: cartId, product_id: productId, quantity, unit_price: unitPrice },
+    });
+  }
 }
 
 export async function setCartItemQuantity(
@@ -187,45 +190,53 @@ export async function setCartItemQuantity(
   cartId: number,
   quantity: number,
 ): Promise<boolean> {
-  const result = await db.$executeRaw`
-    UPDATE cart_items
-    SET    quantity = ${quantity}, updated_at = CURRENT_TIMESTAMP
-    WHERE  id = ${itemId} AND cart_id = ${cartId}
-  `;
-  return (result as number) > 0;
+  try {
+    await db.cartItem.updateMany({
+      where: { id: itemId, cart_id: cartId },
+      data:  { quantity },
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function removeCartItem(
   itemId: number,
   cartId: number,
 ): Promise<boolean> {
-  const result = await db.$executeRaw`
-    DELETE FROM cart_items WHERE id = ${itemId} AND cart_id = ${cartId}
-  `;
-  return (result as number) > 0;
+  const result = await db.cartItem.deleteMany({
+    where: { id: itemId, cart_id: cartId },
+  });
+  return result.count > 0;
 }
 
 export async function clearCartItems(cartId: number): Promise<void> {
-  await db.$executeRaw`
-    DELETE FROM cart_items WHERE cart_id = ${cartId}
-  `;
+  await db.cartItem.deleteMany({ where: { cart_id: cartId } });
 }
+
+// ─── Payment Transactions ─────────────────────────────────────────────────────
 
 export async function createPaymentTransaction(params: {
   orderId:   number;
   reference: string;
-  amount:    number; // naira (not kobo)
+  amount:    number;
   gateway:   string;
   status:    'pending' | 'success' | 'failed';
 }): Promise<void> {
   await ensureCartTables();
-  await db.$executeRaw`
-    INSERT INTO payment_transactions (order_id, reference, amount, gateway, status)
-    VALUES (${params.orderId}, ${params.reference}, ${params.amount}, ${params.gateway}, ${params.status})
-    ON DUPLICATE KEY UPDATE
-      status   = VALUES(status),
-      updated_at = CURRENT_TIMESTAMP
-  `;
+
+  await db.paymentTransaction.upsert({
+    where:  { reference: params.reference },
+    update: { status: params.status },
+    create: {
+      order_id:  params.orderId,
+      reference: params.reference,
+      amount:    params.amount,
+      gateway:   params.gateway,
+      status:    params.status,
+    },
+  });
 }
 
 export async function updatePaymentTransactionStatus(
@@ -233,30 +244,19 @@ export async function updatePaymentTransactionStatus(
   status:    'pending' | 'success' | 'failed',
   gatewayResponse?: string,
 ): Promise<void> {
-  await db.$executeRaw`
-    UPDATE payment_transactions
-    SET    status           = ${status},
-           gateway_response = ${gatewayResponse ?? null},
-           updated_at       = CURRENT_TIMESTAMP
-    WHERE  reference = ${reference}
-  `;
+  await db.paymentTransaction.update({
+    where: { reference },
+    data:  { status, gateway_response: gatewayResponse ?? null },
+  });
 }
 
 export async function getPaymentTransactionByRef(reference: string) {
   await ensureCartTables();
-  const rows = await db.$queryRaw<Array<{
-    id:       number;
-    order_id: number;
-    reference: string;
-    amount:   string;
-    status:   string;
-    gateway:  string;
-  }>>`
-    SELECT id, order_id, reference, amount, status, gateway
-    FROM   payment_transactions
-    WHERE  reference = ${reference}
-    LIMIT  1
-  `;
-  if (!rows.length) return null;
-  return { ...rows[0]!, amount: Number(rows[0]!.amount) };
+
+  const row = await db.paymentTransaction.findUnique({
+    where:  { reference },
+    select: { id: true, order_id: true, reference: true, amount: true, status: true, gateway: true },
+  });
+  if (!row) return null;
+  return { ...row, amount: Number(row.amount) };
 }

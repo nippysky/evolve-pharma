@@ -83,6 +83,21 @@ export type OrderItem = Prisma.OrderItemModel
  */
 export type Delivery = Prisma.DeliveryModel
 /**
+ * Model Cart
+ * 
+ */
+export type Cart = Prisma.CartModel
+/**
+ * Model CartItem
+ * 
+ */
+export type CartItem = Prisma.CartItemModel
+/**
+ * Model PaymentTransaction
+ * 
+ */
+export type PaymentTransaction = Prisma.PaymentTransactionModel
+/**
  * Model RefreshToken
  * 
  */

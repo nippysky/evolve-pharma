@@ -64,6 +64,9 @@ export const ModelName = {
   Order: 'Order',
   OrderItem: 'OrderItem',
   Delivery: 'Delivery',
+  Cart: 'Cart',
+  CartItem: 'CartItem',
+  PaymentTransaction: 'PaymentTransaction',
   RefreshToken: 'RefreshToken',
   OtpToken: 'OtpToken',
   LoginHistory: 'LoginHistory',
@@ -307,6 +310,47 @@ export const DeliveryScalarFieldEnum = {
 export type DeliveryScalarFieldEnum = (typeof DeliveryScalarFieldEnum)[keyof typeof DeliveryScalarFieldEnum]
 
 
+export const CartScalarFieldEnum = {
+  id: 'id',
+  uuid: 'uuid',
+  customer_id: 'customer_id',
+  expires_at: 'expires_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type CartScalarFieldEnum = (typeof CartScalarFieldEnum)[keyof typeof CartScalarFieldEnum]
+
+
+export const CartItemScalarFieldEnum = {
+  id: 'id',
+  cart_id: 'cart_id',
+  product_id: 'product_id',
+  quantity: 'quantity',
+  unit_price: 'unit_price',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type CartItemScalarFieldEnum = (typeof CartItemScalarFieldEnum)[keyof typeof CartItemScalarFieldEnum]
+
+
+export const PaymentTransactionScalarFieldEnum = {
+  id: 'id',
+  order_id: 'order_id',
+  reference: 'reference',
+  amount: 'amount',
+  currency: 'currency',
+  gateway: 'gateway',
+  status: 'status',
+  gateway_response: 'gateway_response',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type PaymentTransactionScalarFieldEnum = (typeof PaymentTransactionScalarFieldEnum)[keyof typeof PaymentTransactionScalarFieldEnum]
+
+
 export const RefreshTokenScalarFieldEnum = {
   id: 'id',
   jti: 'jti',
@@ -528,6 +572,24 @@ export const DeliveryOrderByRelevanceFieldEnum = {
 } as const
 
 export type DeliveryOrderByRelevanceFieldEnum = (typeof DeliveryOrderByRelevanceFieldEnum)[keyof typeof DeliveryOrderByRelevanceFieldEnum]
+
+
+export const CartOrderByRelevanceFieldEnum = {
+  uuid: 'uuid'
+} as const
+
+export type CartOrderByRelevanceFieldEnum = (typeof CartOrderByRelevanceFieldEnum)[keyof typeof CartOrderByRelevanceFieldEnum]
+
+
+export const PaymentTransactionOrderByRelevanceFieldEnum = {
+  reference: 'reference',
+  currency: 'currency',
+  gateway: 'gateway',
+  status: 'status',
+  gateway_response: 'gateway_response'
+} as const
+
+export type PaymentTransactionOrderByRelevanceFieldEnum = (typeof PaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof PaymentTransactionOrderByRelevanceFieldEnum]
 
 
 export const RefreshTokenOrderByRelevanceFieldEnum = {
