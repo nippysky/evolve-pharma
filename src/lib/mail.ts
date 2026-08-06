@@ -621,6 +621,119 @@ Envolve Support`;
   await sendMail({ to: params.to, subject, html, text });
 }
 
+/**
+ * Receipt email — sent immediately when a customer places an order.
+ * This is the 4th document in the pharma workflow (Invoice, Picklist, Waybill, Receipt).
+ */
+export async function sendOrderReceiptEmail(params: {
+  to:          string;
+  name:        string;
+  orderNumber: string;
+  orderId:     number;
+  items:       Array<{
+    brand_name:   string;
+    generic_name: string | null;
+    quantity:     number;
+    unit_price:   number;
+    subtotal:     number;
+  }>;
+  subtotal:     number;
+  deliveryFee:  number;
+  vat:          number;
+  total:        number;
+  paymentMethod: string;
+  isPaid:        boolean;
+}): Promise<void> {
+  const portalUrl = `${siteUrl()}/portal/orders/${params.orderId}`;
+  const subject   = `Order confirmed — ${params.orderNumber}`;
+  const preheader = `Your order ${params.orderNumber} has been received. We'll begin processing once payment is confirmed.`;
+
+  const fmt = (n: number) => `&#x20A6;${n.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+
+  const itemRows = params.items.map(item => `
+    <tr>
+      <td style="padding:10px 12px;font-size:13px;color:#0f172a;">
+        <div style="font-weight:600;">${item.brand_name}</div>
+        ${item.generic_name ? `<div style="font-size:11px;color:#64748b;">${item.generic_name}</div>` : ''}
+      </td>
+      <td style="padding:10px 12px;text-align:center;font-size:13px;color:#475569;">${item.quantity}</td>
+      <td style="padding:10px 12px;text-align:right;font-size:13px;color:#475569;">${fmt(item.unit_price)}</td>
+      <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:700;color:#0f172a;">${fmt(item.subtotal)}</td>
+    </tr>`).join('');
+
+  const html = shell(
+    preheader,
+    contentRow(`
+      ${body(`Thank you, ${params.name}!`, [
+        `Your order <strong>${params.orderNumber}</strong> has been successfully placed. Here is your receipt:`,
+      ])}
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+        style="border-collapse:collapse;margin:20px 0;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+        <thead>
+          <tr style="background:#0f172a;color:#fff;">
+            <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.08em;">PRODUCT</th>
+            <th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;letter-spacing:0.08em;">QTY</th>
+            <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;letter-spacing:0.08em;">UNIT PRICE</th>
+            <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;letter-spacing:0.08em;">SUBTOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRows}
+        </tbody>
+      </table>
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+        style="margin:0 0 20px;">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;">Subtotal</td>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;text-align:right;">${fmt(params.subtotal)}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;">Delivery</td>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;text-align:right;">${params.deliveryFee === 0 ? 'Free' : fmt(params.deliveryFee)}</td>
+        </tr>
+        ${params.vat > 0 ? `
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;">VAT (7.5%)</td>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;text-align:right;">${fmt(params.vat)}</td>
+        </tr>` : ''}
+        <tr>
+          <td style="padding:12px 14px;font-size:15px;font-weight:700;background:#0f172a;color:#fff;border-radius:8px 0 0 8px;">TOTAL</td>
+          <td style="padding:12px 14px;font-size:17px;font-weight:800;background:#0f172a;color:#fff;text-align:right;border-radius:0 8px 8px 0;">${fmt(params.total)}</td>
+        </tr>
+      </table>
+
+      ${infoBox(
+        params.isPaid
+          ? `<strong>Payment confirmed ✓</strong><br />Your payment has been verified. We will begin processing your order shortly.`
+          : `<strong>Payment pending</strong><br />Payment method: ${params.paymentMethod.replace(/_/g, ' ')}. Please ensure payment is made promptly to avoid delays.`,
+        params.isPaid ? 'success' : 'warn',
+      )}
+
+      ${ctaButton('View your order', portalUrl, '#0d9488')}
+      ${signOff()}
+    `),
+  );
+
+  const text = `Thank you, ${params.name}!
+
+Order: ${params.orderNumber}
+${params.items.map(i => `- ${i.brand_name} × ${i.quantity} = ₦${i.subtotal.toLocaleString('en-NG')}`).join('\n')}
+
+Subtotal: ₦${params.subtotal.toLocaleString('en-NG')}
+Delivery: ${params.deliveryFee === 0 ? 'Free' : `₦${params.deliveryFee.toLocaleString('en-NG')}`}
+${params.vat > 0 ? `VAT: ₦${params.vat.toLocaleString('en-NG')}\n` : ''}Total: ₦${params.total.toLocaleString('en-NG')}
+
+Payment: ${params.isPaid ? 'Paid ✓' : `Pending (${params.paymentMethod})`}
+
+View your order: ${portalUrl}
+
+— The ${APP_NAME} Team`;
+
+  await sendMail({ to: params.to, subject, html, text });
+}
+
 type OrderEmailStatus = 'CONFIRMED' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
 
 const ORDER_STATUS_META: Record<OrderEmailStatus, {

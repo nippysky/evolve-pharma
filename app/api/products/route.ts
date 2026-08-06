@@ -12,10 +12,10 @@ import {
   handlePrismaError,
   parsePagination,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }        from '@/lib/audit';
+import { revalidateProducts }   from '@/lib/revalidate';
 
 const createSchema = z.object({
-  sku:                z.string().min(1).max(100),
   brand_name:         z.string().min(1).max(255),
   generic_name:       z.string().min(1).max(255),
   category_id:        z.number().int().positive().optional(),
@@ -31,8 +31,32 @@ const createSchema = z.object({
   discount_percentage:z.number().min(0).max(100).optional(),
   minimum_stock_level:z.number().int().min(0).default(0),
   reorder_quantity:   z.number().int().min(0).default(0),
+  shelf_location:     z.string().max(50).optional(),
   status:             z.enum(['ACTIVE', 'DRAFT', 'DISCONTINUED']).default('DRAFT'),
 });
+
+function slugify(s: string): string {
+  return s.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 20);
+}
+
+async function generateUniqueSku(brand: string, manufacturerName: string | null): Promise<string> {
+  const base = manufacturerName
+    ? `${slugify(manufacturerName)}-${slugify(brand)}`
+    : slugify(brand);
+
+  // Try base first, then add 4-char random suffix on collision
+  const candidate = base.slice(0, 95);
+  const existing  = await db.product.findFirst({ where: { sku: candidate } });
+  if (!existing) return candidate;
+
+  for (let i = 0; i < 10; i++) {
+    const suffix  = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const variant = `${base.slice(0, 90)}-${suffix}`;
+    const taken   = await db.product.findFirst({ where: { sku: variant } });
+    if (!taken) return variant;
+  }
+  return `${base.slice(0, 88)}-${Date.now().toString(36).toUpperCase()}`;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -102,6 +126,7 @@ export async function GET(req: NextRequest) {
       discount_percentage:  p.discount_percentage ? Number(p.discount_percentage) : null,
       minimum_stock_level:  p.minimum_stock_level,
       reorder_quantity:     p.reorder_quantity,
+      shelf_location:       p.shelf_location,
       status:               p.status,
       category:             p.category,
       manufacturer:         p.manufacturer,
@@ -140,13 +165,21 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    // Check SKU uniqueness
-    const existing = await db.product.findUnique({ where: { sku: data.sku } });
-    if (existing) return apiError('A product with this SKU already exists.', 409);
+    // Resolve manufacturer name for SKU generation
+    let manufacturerName: string | null = null;
+    if (data.manufacturer_id) {
+      const mfr = await db.manufacturer.findUnique({
+        where:  { id: data.manufacturer_id },
+        select: { name: true },
+      });
+      manufacturerName = mfr?.name ?? null;
+    }
+
+    const sku = await generateUniqueSku(data.brand_name, manufacturerName);
 
     const product = await db.product.create({
       data: {
-        sku:                 data.sku,
+        sku,
         brand_name:          data.brand_name,
         generic_name:        data.generic_name,
         category_id:         data.category_id,
@@ -162,6 +195,7 @@ export async function POST(req: NextRequest) {
         discount_percentage: data.discount_percentage,
         minimum_stock_level: data.minimum_stock_level,
         reorder_quantity:    data.reorder_quantity,
+        shelf_location:      data.shelf_location,
         status:              data.status,
         created_by_id:       session.userId,
         updated_by_id:       session.userId,
@@ -179,6 +213,8 @@ export async function POST(req: NextRequest) {
       description: `Created product ${product.brand_name} (${product.sku})`,
       req,
     });
+
+    revalidateProducts();
 
     return apiSuccess({ product: { id: product.id, sku: product.sku, uuid: product.uuid } }, 201, 'Product created successfully');
   } catch (err) {

@@ -1,6 +1,6 @@
 import { NextRequest }    from 'next/server';
 import { z }              from 'zod';
-import { revalidateTag }  from 'next/cache';
+import { revalidateProducts } from '@/lib/revalidate';
 import { db }             from '@/lib/db';
 import { getSession }     from '@/lib/auth';
 import {
@@ -30,6 +30,7 @@ const patchSchema = z.object({
   discount_percentage: z.number().min(0).max(100).nullable().optional(),
   minimum_stock_level: z.number().int().min(0).optional(),
   reorder_quantity:    z.number().int().min(0).optional(),
+  shelf_location:      z.string().max(50).nullable().optional(),
   status:              z.enum(['ACTIVE', 'DRAFT', 'DISCONTINUED']).optional(),
 });
 
@@ -125,9 +126,7 @@ export async function PATCH(
       req,
     });
 
-    // Bust the public catalog cache so frontend reflects the change immediately
-    revalidateTag('products', 'default');
-    revalidateTag('catalog', 'default');
+    revalidateProducts(sku);
 
     return apiSuccess({ product: { id: updated.id, sku: updated.sku } }, 200, 'Product updated successfully');
   } catch (err) {
@@ -188,10 +187,13 @@ export async function DELETE(
       );
     }
 
-    // 4. Soft-delete the product (preserves FK target for any order items)
+    // 4. Soft-delete the product (preserves FK target for any order items).
+    //    Mangle the SKU so the unique constraint slot is freed — re-adding the
+    //    same drug name/manufacturer via bulk import or manual form will work.
     await db.product.update({
       where: { id: product.id },
       data:  {
+        sku:           `${product.sku}__DEL_${product.id}`,
         deleted_at:    new Date(),
         deleted_by_id: session.userId,
         status:        'DISCONTINUED',
@@ -209,6 +211,8 @@ export async function DELETE(
       description: `Deleted "${product.brand_name}" (${product.sku}) — ${product.images.length} images, ${batchesDeleted} batches, ${movementsDeleted} stock movements removed`,
       req,
     });
+
+    revalidateProducts(sku);
 
     return apiSuccess(
       {

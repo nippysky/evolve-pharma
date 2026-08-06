@@ -2,6 +2,7 @@ import { NextRequest }             from 'next/server';
 import { db }                      from '@/lib/db';
 import { getSession }              from '@/lib/auth';
 import { deleteFromCloudinary }    from '@/lib/cloudinary';
+import { revalidateProducts }      from '@/lib/revalidate';
 import {
   apiSuccess,
   apiUnauthorized,
@@ -46,6 +47,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       orderBy: [{ is_primary: 'desc' }, { created_at: 'asc' }],
     });
 
+    revalidateProducts(sku);
     return apiSuccess({ images: allImages }, 200, 'Primary image updated');
   } catch (err) {
     console.error('[PATCH /api/products/[sku]/images/[imageId]]', err);
@@ -96,6 +98,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       orderBy: [{ is_primary: 'desc' }, { created_at: 'asc' }],
     });
 
+    revalidateProducts(sku);
     return apiSuccess({ images: allImages, deleted: true }, 200, 'Image deleted');
   } catch (err) {
     console.error('[DELETE /api/products/[sku]/images/[imageId]]', err);

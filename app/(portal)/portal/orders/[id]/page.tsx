@@ -8,7 +8,7 @@ import { getOrderDetail }   from '@/lib/data/orders.server';
 import { formatNaira, formatDate } from '@/lib/utils';
 import { PageHead }          from '@/components/shared/PageHead';
 import { PrintOrderButton }  from '@/components/portal/PrintOrderButton';
-import { ArrowLeft, Box, MapPin, Phone, Building, Pill } from '@/components/icons';
+import { ArrowLeft, Box, MapPin, Phone, Building, Pill, Calendar, Tag } from '@/components/icons';
 
 const ORDER_STYLE: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   pending:    { bg: 'bg-amber-50 border border-amber-200',   text: 'text-amber-800',  dot: 'bg-amber-400',  label: 'Pending'    },
@@ -89,8 +89,32 @@ export default async function CustomerOrderDetailPage({ params }: Props) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">{item.brand_name}</p>
-                    <p className="text-xs text-ink-3">{item.generic_name}{item.pack_size ? ` · ${item.pack_size}` : ''}</p>
+                    <p className="text-xs text-ink-3">
+                      {item.generic_name}
+                      {item.product_strength ? ` · ${item.product_strength}` : ''}
+                      {item.pack_size ? ` · ${item.pack_size}` : ''}
+                    </p>
+                    {item.manufacturer && (
+                      <p className="text-[10px] text-ink-4">{item.manufacturer}</p>
+                    )}
                     <p className="mt-0.5 text-[11px] font-mono text-ink-4">{item.sku}</p>
+                    {/* Pharma batch / expiry info */}
+                    {(item.batch_number || item.expiry_date) && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {item.batch_number && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-100 px-2 py-0.5 text-[10px] font-mono text-blue-700">
+                            <Tag size={9} />
+                            Batch: {item.batch_number}
+                          </span>
+                        )}
+                        {item.expiry_date && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-100 px-2 py-0.5 text-[10px] text-amber-700">
+                            <Calendar size={9} />
+                            Exp: {new Date(item.expiry_date).toLocaleDateString('en-NG', { year: 'numeric', month: 'short' })}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-ink">{formatNaira(item.subtotal)}</p>

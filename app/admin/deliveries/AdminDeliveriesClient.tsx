@@ -8,6 +8,7 @@ import {
 } from '@/components/icons';
 import { formatNaira, formatDate, cn } from '@/lib/utils';
 import { useToast } from '@/contexts/ToastContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface AdminDelivery {
   id:            number;
@@ -349,10 +350,10 @@ function DetailPanel({
   onClose,
   onReassign,
 }: {
-  delivery:   AdminDelivery;
-  drivers:    AvailableDriver[];
-  onClose:    () => void;
-  onReassign: () => void;
+  delivery:    AdminDelivery;
+  drivers:     AvailableDriver[];
+  onClose:     () => void;
+  onReassign?: () => void;
 }) {
   const toast = useToast();
   const qc    = useQueryClient();
@@ -455,7 +456,7 @@ function DetailPanel({
               <label className="text-[10px] font-semibold uppercase tracking-widest text-ink-3">
                 Driver
               </label>
-              {delivery.driver && (
+              {onReassign && delivery.driver && (
                 <button
                   onClick={onReassign}
                   className="text-[11px] font-medium text-brand-600 hover:text-brand-700 hover:underline"
@@ -476,7 +477,7 @@ function DetailPanel({
                   <p className="text-xs text-ink-3">{delivery.driver.phone}</p>
                 </div>
               </div>
-            ) : (
+            ) : onReassign ? (
               <button
                 onClick={onReassign}
                 className="flex w-full items-center justify-between rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 hover:bg-amber-100 transition-colors"
@@ -484,6 +485,10 @@ function DetailPanel({
                 <span>No driver assigned yet</span>
                 <span className="font-semibold">+ Assign driver</span>
               </button>
+            ) : (
+              <div className="rounded-xl border border-line bg-bg-subtle px-4 py-3 text-sm text-ink-3">
+                No driver assigned — contact an admin to assign.
+              </div>
             )}
           </section>
 
@@ -573,6 +578,9 @@ const TABS = [
 ] as const;
 
 export default function AdminDeliveriesClient() {
+  const { user } = useUser();
+  const isAdmin  = user?.role === 'ADMIN';
+
   const [page,         setPage]       = useState(1);
   const [statusFilter, setStatus]     = useState('');
   const [search,       setSearch]     = useState('');
@@ -843,15 +851,15 @@ export default function AdminDeliveriesClient() {
           delivery={selected}
           drivers={drivers}
           onClose={() => setSelected(null)}
-          onReassign={() => {
+          onReassign={isAdmin ? () => {
             setAssigning(selected);
             setSelected(null);
-          }}
+          } : undefined}
         />
       )}
 
-      {/* ── Assign driver modal ───────────────────────────────────────────── */}
-      {assigning && (
+      {/* ── Assign driver modal (Admin only) ─────────────────────────────── */}
+      {isAdmin && assigning && (
         <AssignDriverModal
           deliveryId={assigning.id}
           currentDriverId={assigning.driver?.id ?? null}

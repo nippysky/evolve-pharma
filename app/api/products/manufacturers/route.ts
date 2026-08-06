@@ -1,7 +1,8 @@
-import { NextRequest } from 'next/server';
-import { z }           from 'zod';
-import { db }          from '@/lib/db';
-import { getSession }  from '@/lib/auth';
+import { NextRequest }          from 'next/server';
+import { z }                    from 'zod';
+import { db }                   from '@/lib/db';
+import { getSession }           from '@/lib/auth';
+import { revalidateProducts }   from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     if (existing) return apiError('A manufacturer with this name already exists.', 409);
 
     const manufacturer = await db.manufacturer.create({ data: { name: parsed.data.name } });
+    revalidateProducts();
     return apiSuccess({ manufacturer }, 201, 'Manufacturer created successfully');
   } catch (err) {
     console.error('[POST /api/products/manufacturers]', err);

@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }       from '@/lib/audit';
+import { revalidateInventory } from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
                    `${batch.quantity} → ${newQuantity}. Reason: ${reason}.`,
     });
 
+    revalidateInventory();
     return apiSuccess({
       batch_id:      updated.id,
       batch_number:  updated.batch_number,

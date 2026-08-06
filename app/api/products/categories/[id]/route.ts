@@ -1,7 +1,8 @@
-import { NextRequest } from 'next/server';
-import { z }           from 'zod';
-import { db }          from '@/lib/db';
-import { getSession }  from '@/lib/auth';
+import { NextRequest }          from 'next/server';
+import { z }                    from 'zod';
+import { db }                   from '@/lib/db';
+import { getSession }           from '@/lib/auth';
+import { revalidateProducts }   from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -53,6 +54,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       include: { _count: { select: { products: true } } },
     });
 
+    revalidateProducts();
     return apiSuccess({
       category: {
         id:            category.id,
@@ -85,6 +87,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
     await db.category.delete({ where: { id: catId } });
 
+    revalidateProducts();
     return apiSuccess(
       { deleted: true, affected_products: existing._count.products },
       200,

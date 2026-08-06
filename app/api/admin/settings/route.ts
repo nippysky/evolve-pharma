@@ -1,7 +1,8 @@
-import { NextRequest } from 'next/server';
-import { z }           from 'zod';
-import { db }          from '@/lib/db';
-import { getSession }  from '@/lib/auth';
+import { NextRequest }        from 'next/server';
+import { z }                  from 'zod';
+import { db }                 from '@/lib/db';
+import { getSession }         from '@/lib/auth';
+import { revalidateSettings } from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -25,6 +26,7 @@ const ALLOWED_KEYS = new Set([
   'company_name', 'company_email', 'company_phone',
   'hq_address', 'currency', 'timezone',
   'email_audit_summary', 'auto_logout',
+  'vat_enabled', 'vat_rate',
 ]);
 
 export async function GET(req: NextRequest) {
@@ -80,6 +82,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    revalidateSettings();
     return apiSuccess({ updated: updates.map(([k]) => k) }, 200, 'Settings saved.');
   } catch (err) {
     console.error('[PATCH /api/admin/settings]', err);

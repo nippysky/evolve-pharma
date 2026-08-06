@@ -8,7 +8,8 @@ import {
   apiForbidden,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }       from '@/lib/audit';
+import { revalidateInventory } from '@/lib/revalidate';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_ROWS       = 500;
@@ -281,6 +282,7 @@ export async function POST(req: NextRequest) {
       req,
     });
 
+    revalidateInventory();
     return apiSuccess(
       {
         total_records:  allRows.length + parseErrors.length,

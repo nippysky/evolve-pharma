@@ -40,6 +40,8 @@ export default async function SettingsPage() {
     timezone:            saved.timezone            ?? 'Africa/Lagos',
     email_audit_summary: saved.email_audit_summary ?? 'true',
     auto_logout:         saved.auto_logout         ?? 'true',
+    vat_enabled:         saved.vat_enabled         ?? 'true',
+    vat_rate:            saved.vat_rate            ?? '7.5',
   };
 
   return (

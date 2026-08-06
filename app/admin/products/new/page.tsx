@@ -183,7 +183,6 @@ export default function NewProductPage() {
     const body: Record<string, unknown> = {
       brand_name:          fd.get('brand_name'),
       generic_name:        fd.get('generic_name'),
-      sku:                 fd.get('sku'),
       selling_price:       parseFloat(fd.get('selling_price') as string),
       last_cost_price:     fd.get('cost_price')              ? parseFloat(fd.get('cost_price') as string)              : undefined,
       product_strength:    fd.get('product_strength')        || undefined,
@@ -192,15 +191,14 @@ export default function NewProductPage() {
       minimum_order:       fd.get('minimum_order')           ? parseInt(fd.get('minimum_order') as string, 10)         : 1,
       minimum_stock_level: fd.get('minimum_stock_level')     ? parseInt(fd.get('minimum_stock_level') as string, 10)   : 0,
       reorder_quantity:    fd.get('reorder_quantity')        ? parseInt(fd.get('reorder_quantity') as string, 10)      : 0,
+      shelf_location:      fd.get('shelf_location')          || undefined,
       status:              fd.get('status') || 'DRAFT',
-      description:         fd.get('description')            || undefined,
     };
 
     // Validate client-side
     const errs: FormErrors = {};
     if (!body.brand_name)   errs.brand_name   = 'Brand name is required';
     if (!body.generic_name) errs.generic_name  = 'Generic name is required';
-    if (!body.sku)          errs.sku           = 'SKU is required';
     if (!body.selling_price || isNaN(body.selling_price as number) || (body.selling_price as number) <= 0)
       errs.selling_price = 'Selling price must be a positive number';
     if (Object.keys(errs).length) { setErrors(errs); return; }
@@ -357,10 +355,8 @@ export default function NewProductPage() {
           {/* ── SKU / Category / Manufacturer ── */}
           <section className="mb-4 rounded-xl border border-line bg-white p-5">
             <h2 className="mb-4 text-sm font-semibold text-ink">Classification</h2>
+            <p className="mb-3 text-xs text-ink-3">SKU is auto-generated from manufacturer + brand name after you save.</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="SKU" hint="Auto-generated from manufacturer + brand if left blank" error={errors.sku}>
-                <Input name="sku" placeholder="NEIMETH-PYRANTRIN" />
-              </Field>
               <Field label="Manufacturer" error={errors.manufacturer}>
                 <Input name="manufacturer" placeholder="Neimeth" />
               </Field>

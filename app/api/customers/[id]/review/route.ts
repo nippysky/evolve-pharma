@@ -11,7 +11,8 @@ import {
   apiInternalError,
   handlePrismaError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }       from '@/lib/audit';
+import { revalidateCustomers } from '@/lib/revalidate';
 import { sendCustomerApprovalEmail, sendCustomerRejectionEmail } from '@/lib/mail';
 
 const schema = z.object({
@@ -115,6 +116,7 @@ export async function PATCH(
       req,
     });
 
+    revalidateCustomers();
     return apiSuccess(
       { customer_id: customerId, status: newStatus },
       200,

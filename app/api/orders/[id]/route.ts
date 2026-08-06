@@ -49,7 +49,7 @@ export async function GET(
       return apiForbidden();
     }
 
-    // 3. Order items + product snapshots
+    // 3. Order items + product snapshots (including pharma fields)
     const rawItems = await db.orderItem.findMany({
       where:   { order_id: o.id },
       orderBy: { id: 'asc' },
@@ -58,7 +58,15 @@ export async function GET(
         product: {
           select: {
             sku: true, brand_name: true, generic_name: true,
+            product_strength: true, pack_size: true,
+            shelf_location: true,
+            manufacturer: { select: { name: true } },
             images: { where: { is_primary: true }, take: 1, select: { url: true } },
+            inventoryBatches: {
+              orderBy: { expiry_date: 'asc' },
+              take:    1,
+              select:  { batch_number: true, expiry_date: true, quantity: true },
+            },
           },
         },
       },
@@ -126,10 +134,16 @@ export async function GET(
           unit_price:  Number(item.unit_price),
           subtotal:    Number(item.subtotal),
           product: {
-            sku:           item.product.sku,
-            brand_name:    item.product.brand_name,
-            generic_name:  item.product.generic_name,
-            primary_image: (item.product.images as { url: string }[])[0]?.url ?? null,
+            sku:              item.product.sku,
+            brand_name:       item.product.brand_name,
+            generic_name:     item.product.generic_name,
+            product_strength: item.product.product_strength,
+            pack_size:        item.product.pack_size,
+            shelf_location:   item.product.shelf_location,
+            manufacturer:     item.product.manufacturer?.name ?? null,
+            primary_image:    (item.product.images as { url: string }[])[0]?.url ?? null,
+            batch_number:     item.product.inventoryBatches[0]?.batch_number ?? null,
+            expiry_date:      item.product.inventoryBatches[0]?.expiry_date ?? null,
           },
         })),
         delivery: delivery ? {

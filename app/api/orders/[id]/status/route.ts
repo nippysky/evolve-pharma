@@ -2,7 +2,7 @@ import { NextRequest }        from 'next/server';
 import { z }                  from 'zod';
 import { db }                 from '@/lib/db';
 import { getSession }         from '@/lib/auth';
-import { revalidateTag }      from 'next/cache';
+import { revalidateOrders }   from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -120,10 +120,7 @@ export async function PATCH(
     await db.$transaction(txOps);
 
     // 5. Invalidate caches
-    try {
-      revalidateTag('orders', 'default');
-      revalidateTag(`order-${orderId}`, 'default');
-    } catch { /* outside request context — safe to ignore */ }
+    revalidateOrders({ orderId });
 
     // 6. Resolve tracking code — use the pre-generated one (no extra DB round-trip needed)
     const trackingCode = newTrackingCode ?? order.delivery?.tracking_code ?? null;

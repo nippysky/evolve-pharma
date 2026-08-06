@@ -9,7 +9,8 @@ import {
   apiInternalError,
   handlePrismaError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }  from '@/lib/audit';
+import { revalidateStaff } from '@/lib/revalidate';
 
 export async function DELETE(
   req:     NextRequest,
@@ -45,6 +46,7 @@ export async function DELETE(
       req,
     });
 
+    revalidateStaff();
     return apiSuccess(null, 200, 'Staff member deleted successfully.');
   } catch (err) {
     console.error('[DELETE /api/staff/[id]]', err);

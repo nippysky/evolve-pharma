@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }       from '@/lib/audit';
+import { revalidateInventory } from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -110,6 +111,7 @@ export async function PATCH(
       description: `Batch ${existing.batch_number} (${existing.product.sku}) metadata updated. Changes: ${changes.join('; ') || 'none'}.`,
     });
 
+    revalidateInventory();
     return apiSuccess({
       id:           updated.id,
       batch_number: updated.batch_number,

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import { Building, Shield, ArrowRight, CheckCircle } from '@/components/icons';
+import { Building, Shield, ArrowRight, CheckCircle, Tag } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 
 export interface SettingsDefaults {
@@ -15,6 +15,8 @@ export interface SettingsDefaults {
   timezone:            string;
   email_audit_summary: string; // 'true' | 'false'
   auto_logout:         string; // 'true' | 'false'
+  vat_enabled:         string; // 'true' | 'false'
+  vat_rate:            string; // e.g. '7.5'
 }
 
 function Section({
@@ -70,6 +72,10 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
   const [emailAudit,  setEmailAudit]  = useState(defaults.email_audit_summary === 'true');
   const [autoLogout,  setAutoLogout]  = useState(defaults.auto_logout         === 'true');
 
+  // ── VAT state ─────────────────────────────────────────────────────────────
+  const [vatEnabled, setVatEnabled] = useState(defaults.vat_enabled !== 'false'); // default true
+  const [vatRate,    setVatRate]    = useState(defaults.vat_rate || '7.5');
+
   // ── Submit handlers ───────────────────────────────────────────────────────
 
   const handleCompanySubmit = async (e: React.FormEvent) => {
@@ -102,6 +108,22 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
         auto_logout:         String(autoLogout),
       });
       toast.success('Security settings saved');
+    } catch (err) {
+      toast.error('Save failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleVatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving('vat');
+    try {
+      await saveSettings({
+        vat_enabled: String(vatEnabled),
+        vat_rate:    vatRate,
+      });
+      toast.success('VAT settings saved', vatEnabled ? `VAT set to ${vatRate}%` : 'VAT disabled on orders');
     } catch (err) {
       toast.error('Save failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -228,6 +250,44 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
                 loading={saving === 'security'}
                 leadingIcon={<CheckCircle size={14} />}
               >
+                Save changes
+              </Button>
+            </div>
+          </form>
+        </Section>
+
+        {/* VAT */}
+        <Section
+          icon={<Tag size={14} className="text-ink-3" />}
+          title="VAT / Tax"
+          description="Controls whether VAT appears on orders, invoices, and documents."
+        >
+          <form onSubmit={handleVatSubmit}>
+            <div className="mb-4 flex flex-col gap-3">
+              <Checkbox
+                name="vat_enabled"
+                checked={vatEnabled}
+                onChange={e => setVatEnabled(e.target.checked)}
+              >
+                Apply VAT to orders
+              </Checkbox>
+              {vatEnabled && (
+                <Field label="VAT rate (%)" htmlFor="vat_rate" hint="e.g. 7.5 for 7.5%">
+                  <Input
+                    id="vat_rate"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={vatRate}
+                    onChange={e => setVatRate(e.target.value)}
+                    style={{ maxWidth: 120 }}
+                  />
+                </Field>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" loading={saving === 'vat'} leadingIcon={<CheckCircle size={14} />}>
                 Save changes
               </Button>
             </div>

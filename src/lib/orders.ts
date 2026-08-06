@@ -1,6 +1,7 @@
 import { db }                        from '@/lib/db';
 import { writeAuditLog }              from '@/lib/audit';
-import { revalidateTag }              from 'next/cache';
+import { revalidateOrders, revalidateInventory, revalidateProfile } from '@/lib/revalidate';
+import { sendOrderReceiptEmail }      from '@/lib/mail';
 import {
   createPaymentTransaction,
   clearCartItems,
@@ -199,8 +200,9 @@ export async function createOrder(
     });
   }
 
-  // Fire-and-forget: clear server cart + audit log
+  // Fire-and-forget: clear cart, audit log, receipt email
   void (async () => {
+    // 1. Clear cart
     try {
       const cart = await getOrCreateCart(customerId);
       await clearCartItems(cart.id);
@@ -208,6 +210,7 @@ export async function createOrder(
       console.warn('[createOrder] cart clear failed (non-fatal)', e);
     }
 
+    // 2. Audit log
     void writeAuditLog({
       userId:      userId,
       userType:    'CUSTOMER',
@@ -219,15 +222,47 @@ export async function createOrder(
       description: `Order ${orderNumber} created. Total: ₦${total.toLocaleString('en-NG')}. ` +
                    `Items: ${items.length}. Payment: ${paymentMethod}.`,
     });
+
+    // 3. Receipt email to customer
+    try {
+      const custRecord = await db.customer.findUnique({
+        where:  { id: customerId },
+        select: { user: { select: { email: true, first_name: true } } },
+      });
+      if (custRecord?.user) {
+        void sendOrderReceiptEmail({
+          to:            custRecord.user.email,
+          name:          custRecord.user.first_name,
+          orderNumber,
+          orderId:       order.id,
+          items:         lineItems.map(li => {
+            const p = productMap.get(li.product_id)!;
+            return {
+              brand_name:   p.brand_name,
+              generic_name: null, // not loaded in this query; kept minimal
+              quantity:     li.quantity,
+              unit_price:   li.unit_price,
+              subtotal:     li.subtotal,
+            };
+          }),
+          subtotal,
+          deliveryFee,
+          vat,
+          total,
+          paymentMethod,
+          isPaid,
+        }).catch(err => console.error('[createOrder] receipt email failed:', err));
+      }
+    } catch (e) {
+      console.error('[createOrder] receipt email lookup failed (non-fatal)', e);
+    }
   })();
 
   // Bust caches so portal reflects the new order immediately
   try {
-    revalidateTag('orders', 'default');
-    revalidateTag(`orders-user-${customerId}`, 'default');
-    // Sync profile metrics (total_orders, total_spent)
-    revalidateTag('profile', 'default');
-    revalidateTag(`profile-user-${userId}`, 'default');
+    revalidateOrders({ orderId: order.id, userId });
+    revalidateInventory();               // stock levels changed via FIFO deduction
+    revalidateProfile(userId);           // total_orders / total_spent metrics
   } catch {
     // revalidateTag is a no-op outside a request context — safe to ignore
   }

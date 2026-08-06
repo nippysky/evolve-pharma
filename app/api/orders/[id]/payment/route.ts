@@ -2,7 +2,7 @@ import { NextRequest }          from 'next/server';
 import { z }                    from 'zod';
 import { db }                   from '@/lib/db';
 import { getSession }           from '@/lib/auth';
-import { revalidateTag }        from 'next/cache';
+import { revalidateOrders }     from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -58,30 +58,25 @@ export async function PATCH(
       data:  { payment_status: newStatus },
     });
 
-    // 3. Invalidate caches
-    try {
-      // Fetch customer's user_id for targeted cache bust
-      const cust = await db.customer.findUnique({
-        where:  { id: order.customer_id },
-        select: { user_id: true, user: { select: { email: true, first_name: true } } },
-      });
+    // 3. Fetch customer for cache bust + email
+    const cust = await db.customer.findUnique({
+      where:  { id: order.customer_id },
+      select: { user_id: true, user: { select: { email: true, first_name: true } } },
+    });
 
-      revalidateTag('orders', 'default');
-      revalidateTag(`order-${orderId}`, 'default');
-      if (cust?.user_id) revalidateTag(`orders-user-${cust.user_id}`, 'default');
+    revalidateOrders({ orderId, userId: cust?.user_id });
 
-      // 4. Fire-and-forget email for PAID and REFUNDED status changes
-      if (cust?.user && (newStatus === 'PAID' || newStatus === 'REFUNDED')) {
-        void sendPaymentStatusEmail({
-          to:            cust.user.email,
-          name:          cust.user.first_name,
-          orderNumber:   order.order_number,
-          orderId:       order.id,
-          paymentStatus: newStatus,
-          total:         Number(order.total),
-        }).catch(err => console.error('[payment email]', err));
-      }
-    } catch { /* outside request context — safe to ignore */ }
+    // 4. Fire-and-forget email for PAID and REFUNDED status changes
+    if (cust?.user && (newStatus === 'PAID' || newStatus === 'REFUNDED')) {
+      void sendPaymentStatusEmail({
+        to:            cust.user.email,
+        name:          cust.user.first_name,
+        orderNumber:   order.order_number,
+        orderId:       order.id,
+        paymentStatus: newStatus,
+        total:         Number(order.total),
+      }).catch(err => console.error('[payment email]', err));
+    }
 
     // 5. Audit log
     void writeAuditLog({

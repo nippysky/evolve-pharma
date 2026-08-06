@@ -8,7 +8,8 @@ import {
   apiForbidden,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }                        from '@/lib/audit';
+import { revalidateProducts, revalidateInventory } from '@/lib/revalidate';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_ROWS       = 1_000;
@@ -222,12 +223,16 @@ export async function POST(req: NextRequest) {
       skipDuplicates:  true,
     });
 
-    // ── Phase 3: Load reference maps (2 queries, Promise.all) ────────────────
+    // ── Phase 3: Load reference maps (2 queries, sequential for pool safety) ───
 
-    const [cats, mfrs] = await Promise.all([
-      db.category.findMany({     select: { id: true, name: true }, where: { name: { in: uniqueCategories     } } }),
-      db.manufacturer.findMany({ select: { id: true, name: true }, where: { name: { in: uniqueManufacturers } } }),
-    ]);
+    const cats = await db.category.findMany({
+      select: { id: true, name: true },
+      where:  { name: { in: uniqueCategories } },
+    });
+    const mfrs = await db.manufacturer.findMany({
+      select: { id: true, name: true },
+      where:  { name: { in: uniqueManufacturers } },
+    });
 
     const catMap = new Map(cats.map(c => [c.name, c.id]));
     const mfrMap = new Map(mfrs.map(m => [m.name, m.id]));
@@ -413,6 +418,8 @@ export async function POST(req: NextRequest) {
       req,
     });
 
+    revalidateProducts();
+    revalidateInventory();
     return apiSuccess(
       {
         total_records:             allRows.length + parseErrors.length,

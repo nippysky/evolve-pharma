@@ -79,6 +79,7 @@ export type ProductMinAggregateOutputType = {
   discount_percentage: runtime.Decimal | null
   minimum_stock_level: number | null
   reorder_quantity: number | null
+  shelf_location: string | null
   status: $Enums.ProductStatus | null
   deleted_at: Date | null
   deleted_by_id: number | null
@@ -107,6 +108,7 @@ export type ProductMaxAggregateOutputType = {
   discount_percentage: runtime.Decimal | null
   minimum_stock_level: number | null
   reorder_quantity: number | null
+  shelf_location: string | null
   status: $Enums.ProductStatus | null
   deleted_at: Date | null
   deleted_by_id: number | null
@@ -135,6 +137,7 @@ export type ProductCountAggregateOutputType = {
   discount_percentage: number
   minimum_stock_level: number
   reorder_quantity: number
+  shelf_location: number
   status: number
   deleted_at: number
   deleted_by_id: number
@@ -199,6 +202,7 @@ export type ProductMinAggregateInputType = {
   discount_percentage?: true
   minimum_stock_level?: true
   reorder_quantity?: true
+  shelf_location?: true
   status?: true
   deleted_at?: true
   deleted_by_id?: true
@@ -227,6 +231,7 @@ export type ProductMaxAggregateInputType = {
   discount_percentage?: true
   minimum_stock_level?: true
   reorder_quantity?: true
+  shelf_location?: true
   status?: true
   deleted_at?: true
   deleted_by_id?: true
@@ -255,6 +260,7 @@ export type ProductCountAggregateInputType = {
   discount_percentage?: true
   minimum_stock_level?: true
   reorder_quantity?: true
+  shelf_location?: true
   status?: true
   deleted_at?: true
   deleted_by_id?: true
@@ -370,6 +376,7 @@ export type ProductGroupByOutputType = {
   discount_percentage: runtime.Decimal | null
   minimum_stock_level: number
   reorder_quantity: number
+  shelf_location: string | null
   status: $Enums.ProductStatus
   deleted_at: Date | null
   deleted_by_id: number | null
@@ -421,6 +428,7 @@ export type ProductWhereInput = {
   discount_percentage?: Prisma.DecimalNullableFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFilter<"Product"> | number
   reorder_quantity?: Prisma.IntFilter<"Product"> | number
+  shelf_location?: Prisma.StringNullableFilter<"Product"> | string | null
   status?: Prisma.EnumProductStatusFilter<"Product"> | $Enums.ProductStatus
   deleted_at?: Prisma.DateTimeNullableFilter<"Product"> | Date | string | null
   deleted_by_id?: Prisma.IntNullableFilter<"Product"> | number | null
@@ -458,6 +466,7 @@ export type ProductOrderByWithRelationInput = {
   discount_percentage?: Prisma.SortOrderInput | Prisma.SortOrder
   minimum_stock_level?: Prisma.SortOrder
   reorder_quantity?: Prisma.SortOrder
+  shelf_location?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder
   deleted_by_id?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -499,6 +508,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   discount_percentage?: Prisma.DecimalNullableFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFilter<"Product"> | number
   reorder_quantity?: Prisma.IntFilter<"Product"> | number
+  shelf_location?: Prisma.StringNullableFilter<"Product"> | string | null
   status?: Prisma.EnumProductStatusFilter<"Product"> | $Enums.ProductStatus
   deleted_at?: Prisma.DateTimeNullableFilter<"Product"> | Date | string | null
   deleted_by_id?: Prisma.IntNullableFilter<"Product"> | number | null
@@ -536,6 +546,7 @@ export type ProductOrderByWithAggregationInput = {
   discount_percentage?: Prisma.SortOrderInput | Prisma.SortOrder
   minimum_stock_level?: Prisma.SortOrder
   reorder_quantity?: Prisma.SortOrder
+  shelf_location?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder
   deleted_by_id?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -572,6 +583,7 @@ export type ProductScalarWhereWithAggregatesInput = {
   discount_percentage?: Prisma.DecimalNullableWithAggregatesFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntWithAggregatesFilter<"Product"> | number
   reorder_quantity?: Prisma.IntWithAggregatesFilter<"Product"> | number
+  shelf_location?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   status?: Prisma.EnumProductStatusWithAggregatesFilter<"Product"> | $Enums.ProductStatus
   deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Product"> | Date | string | null
   deleted_by_id?: Prisma.IntNullableWithAggregatesFilter<"Product"> | number | null
@@ -597,6 +609,7 @@ export type ProductCreateInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -631,6 +644,7 @@ export type ProductUncheckedCreateInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -660,6 +674,7 @@ export type ProductUpdateInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -694,6 +709,7 @@ export type ProductUncheckedUpdateInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -726,6 +742,7 @@ export type ProductCreateManyInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -751,6 +768,7 @@ export type ProductUpdateManyMutationInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -776,6 +794,7 @@ export type ProductUncheckedUpdateManyInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -820,6 +839,7 @@ export type ProductCountOrderByAggregateInput = {
   discount_percentage?: Prisma.SortOrder
   minimum_stock_level?: Prisma.SortOrder
   reorder_quantity?: Prisma.SortOrder
+  shelf_location?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrder
   deleted_by_id?: Prisma.SortOrder
@@ -865,6 +885,7 @@ export type ProductMaxOrderByAggregateInput = {
   discount_percentage?: Prisma.SortOrder
   minimum_stock_level?: Prisma.SortOrder
   reorder_quantity?: Prisma.SortOrder
+  shelf_location?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrder
   deleted_by_id?: Prisma.SortOrder
@@ -893,6 +914,7 @@ export type ProductMinOrderByAggregateInput = {
   discount_percentage?: Prisma.SortOrder
   minimum_stock_level?: Prisma.SortOrder
   reorder_quantity?: Prisma.SortOrder
+  shelf_location?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrder
   deleted_by_id?: Prisma.SortOrder
@@ -1226,6 +1248,7 @@ export type ProductCreateWithoutCreated_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1259,6 +1282,7 @@ export type ProductUncheckedCreateWithoutCreated_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -1297,6 +1321,7 @@ export type ProductCreateWithoutUpdated_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1330,6 +1355,7 @@ export type ProductUncheckedCreateWithoutUpdated_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -1368,6 +1394,7 @@ export type ProductCreateWithoutDeleted_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1401,6 +1428,7 @@ export type ProductUncheckedCreateWithoutDeleted_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_by_id?: number | null
@@ -1461,6 +1489,7 @@ export type ProductScalarWhereInput = {
   discount_percentage?: Prisma.DecimalNullableFilter<"Product"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFilter<"Product"> | number
   reorder_quantity?: Prisma.IntFilter<"Product"> | number
+  shelf_location?: Prisma.StringNullableFilter<"Product"> | string | null
   status?: Prisma.EnumProductStatusFilter<"Product"> | $Enums.ProductStatus
   deleted_at?: Prisma.DateTimeNullableFilter<"Product"> | Date | string | null
   deleted_by_id?: Prisma.IntNullableFilter<"Product"> | number | null
@@ -1518,6 +1547,7 @@ export type ProductCreateWithoutCategoryInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1550,6 +1580,7 @@ export type ProductUncheckedCreateWithoutCategoryInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -1605,6 +1636,7 @@ export type ProductCreateWithoutManufacturerInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1637,6 +1669,7 @@ export type ProductUncheckedCreateWithoutManufacturerInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -1692,6 +1725,7 @@ export type ProductCreateWithoutImagesInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1725,6 +1759,7 @@ export type ProductUncheckedCreateWithoutImagesInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -1769,6 +1804,7 @@ export type ProductUpdateWithoutImagesInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1802,6 +1838,7 @@ export type ProductUncheckedUpdateWithoutImagesInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1830,6 +1867,7 @@ export type ProductCreateWithoutInventoryBatchesInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -1863,6 +1901,7 @@ export type ProductUncheckedCreateWithoutInventoryBatchesInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -1907,6 +1946,7 @@ export type ProductUpdateWithoutInventoryBatchesInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1940,6 +1980,7 @@ export type ProductUncheckedUpdateWithoutInventoryBatchesInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1968,6 +2009,7 @@ export type ProductCreateWithoutStockMovementsInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -2001,6 +2043,7 @@ export type ProductUncheckedCreateWithoutStockMovementsInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -2045,6 +2088,7 @@ export type ProductUpdateWithoutStockMovementsInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2078,6 +2122,7 @@ export type ProductUncheckedUpdateWithoutStockMovementsInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2106,6 +2151,7 @@ export type ProductCreateWithoutOrderItemsInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_at?: Date | string
@@ -2139,6 +2185,7 @@ export type ProductUncheckedCreateWithoutOrderItemsInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -2183,6 +2230,7 @@ export type ProductUpdateWithoutOrderItemsInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2216,6 +2264,7 @@ export type ProductUncheckedUpdateWithoutOrderItemsInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2247,6 +2296,7 @@ export type ProductCreateManyCreated_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -2274,6 +2324,7 @@ export type ProductCreateManyUpdated_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -2301,6 +2352,7 @@ export type ProductCreateManyDeleted_byInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   created_by_id?: number | null
@@ -2325,6 +2377,7 @@ export type ProductUpdateWithoutCreated_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2358,6 +2411,7 @@ export type ProductUncheckedUpdateWithoutCreated_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2389,6 +2443,7 @@ export type ProductUncheckedUpdateManyWithoutCreated_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2413,6 +2468,7 @@ export type ProductUpdateWithoutUpdated_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2446,6 +2502,7 @@ export type ProductUncheckedUpdateWithoutUpdated_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2477,6 +2534,7 @@ export type ProductUncheckedUpdateManyWithoutUpdated_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2501,6 +2559,7 @@ export type ProductUpdateWithoutDeleted_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2534,6 +2593,7 @@ export type ProductUncheckedUpdateWithoutDeleted_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2565,6 +2625,7 @@ export type ProductUncheckedUpdateManyWithoutDeleted_byInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2591,6 +2652,7 @@ export type ProductCreateManyCategoryInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -2616,6 +2678,7 @@ export type ProductUpdateWithoutCategoryInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2648,6 +2711,7 @@ export type ProductUncheckedUpdateWithoutCategoryInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2679,6 +2743,7 @@ export type ProductUncheckedUpdateManyWithoutCategoryInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2706,6 +2771,7 @@ export type ProductCreateManyManufacturerInput = {
   discount_percentage?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: number
   reorder_quantity?: number
+  shelf_location?: string | null
   status?: $Enums.ProductStatus
   deleted_at?: Date | string | null
   deleted_by_id?: number | null
@@ -2731,6 +2797,7 @@ export type ProductUpdateWithoutManufacturerInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2763,6 +2830,7 @@ export type ProductUncheckedUpdateWithoutManufacturerInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2794,6 +2862,7 @@ export type ProductUncheckedUpdateManyWithoutManufacturerInput = {
   discount_percentage?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   minimum_stock_level?: Prisma.IntFieldUpdateOperationsInput | number
   reorder_quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  shelf_location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumProductStatusFieldUpdateOperationsInput | $Enums.ProductStatus
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deleted_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2880,6 +2949,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   discount_percentage?: boolean
   minimum_stock_level?: boolean
   reorder_quantity?: boolean
+  shelf_location?: boolean
   status?: boolean
   deleted_at?: boolean
   deleted_by_id?: boolean
@@ -2920,6 +2990,7 @@ export type ProductSelectScalar = {
   discount_percentage?: boolean
   minimum_stock_level?: boolean
   reorder_quantity?: boolean
+  shelf_location?: boolean
   status?: boolean
   deleted_at?: boolean
   deleted_by_id?: boolean
@@ -2929,7 +3000,7 @@ export type ProductSelectScalar = {
   updated_at?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "sku" | "category_id" | "manufacturer_id" | "brand_name" | "generic_name" | "product_strength" | "pack_size" | "quantity_per_carton" | "allow_unit_sale" | "minimum_order" | "selling_price" | "last_cost_price" | "final_price" | "discount_percentage" | "minimum_stock_level" | "reorder_quantity" | "status" | "deleted_at" | "deleted_by_id" | "created_by_id" | "updated_by_id" | "created_at" | "updated_at", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "sku" | "category_id" | "manufacturer_id" | "brand_name" | "generic_name" | "product_strength" | "pack_size" | "quantity_per_carton" | "allow_unit_sale" | "minimum_order" | "selling_price" | "last_cost_price" | "final_price" | "discount_percentage" | "minimum_stock_level" | "reorder_quantity" | "shelf_location" | "status" | "deleted_at" | "deleted_by_id" | "created_by_id" | "updated_by_id" | "created_at" | "updated_at", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.Product$categoryArgs<ExtArgs>
   manufacturer?: boolean | Prisma.Product$manufacturerArgs<ExtArgs>
@@ -2975,6 +3046,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     discount_percentage: runtime.Decimal | null
     minimum_stock_level: number
     reorder_quantity: number
+    shelf_location: string | null
     status: $Enums.ProductStatus
     deleted_at: Date | null
     deleted_by_id: number | null
@@ -3378,6 +3450,7 @@ export interface ProductFieldRefs {
   readonly discount_percentage: Prisma.FieldRef<"Product", 'Decimal'>
   readonly minimum_stock_level: Prisma.FieldRef<"Product", 'Int'>
   readonly reorder_quantity: Prisma.FieldRef<"Product", 'Int'>
+  readonly shelf_location: Prisma.FieldRef<"Product", 'String'>
   readonly status: Prisma.FieldRef<"Product", 'ProductStatus'>
   readonly deleted_at: Prisma.FieldRef<"Product", 'DateTime'>
   readonly deleted_by_id: Prisma.FieldRef<"Product", 'Int'>

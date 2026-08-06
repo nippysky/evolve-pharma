@@ -2,6 +2,7 @@ import { NextRequest }          from 'next/server';
 import { db }                   from '@/lib/db';
 import { getSession }           from '@/lib/auth';
 import { uploadToCloudinary }   from '@/lib/cloudinary';
+import { revalidateProducts }   from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -102,6 +103,20 @@ export async function POST(
       where: { product_id: product.id, is_primary: true },
     });
 
+    // Determine which upload index should be primary — exactly one.
+    // If caller requested a specific index, use that.
+    // If no existing primary and no explicit request, auto-promote index 0.
+    const explicitSet = setPrimaryIdx >= 0 && setPrimaryIdx < files.length;
+    const primaryIdx  = explicitSet ? setPrimaryIdx : (!hasPrimary ? 0 : -1);
+
+    // If we're changing the primary, clear existing ones first
+    if (primaryIdx >= 0) {
+      await db.productImage.updateMany({
+        where: { product_id: product.id, is_primary: true },
+        data:  { is_primary: false },
+      });
+    }
+
     // Upload all files to Cloudinary in parallel
     const uploads = await Promise.all(
       files.map(async (file, idx) => {
@@ -109,24 +124,9 @@ export async function POST(
         const result = await uploadToCloudinary(buffer, 'evolve/products', {
           resourceType: 'image',
         });
-        const isPrimary =
-          !hasPrimary && idx === 0          ? true  // first upload if no existing primary
-          : setPrimaryIdx === idx           ? true
-          :                                  false;
-        return { ...result, isPrimary };
+        return { ...result, isPrimary: idx === primaryIdx };
       }),
     );
-
-    // If caller requested a specific primary, unset any existing one first
-    if (setPrimaryIdx >= 0 && setPrimaryIdx < files.length) {
-      await db.productImage.updateMany({
-        where: { product_id: product.id, is_primary: true },
-        data:  { is_primary: false },
-      });
-    } else if (!hasPrimary) {
-      // No existing primary — the first of these uploads becomes primary
-      // (handled inline above); nothing extra needed
-    }
 
     // Persist image records
     const created = await db.$transaction(
@@ -148,6 +148,7 @@ export async function POST(
       orderBy: [{ is_primary: 'desc' }, { created_at: 'asc' }],
     });
 
+    revalidateProducts(sku);
     return apiSuccess({ images: allImages, uploaded: created.length }, 201, 'Images uploaded successfully');
   } catch (err) {
     console.error('[POST /api/products/[sku]/images]', err);

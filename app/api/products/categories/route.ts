@@ -1,7 +1,8 @@
-import { NextRequest } from 'next/server';
-import { z }           from 'zod';
-import { db }          from '@/lib/db';
-import { getSession }  from '@/lib/auth';
+import { NextRequest }          from 'next/server';
+import { z }                    from 'zod';
+import { db }                   from '@/lib/db';
+import { getSession }           from '@/lib/auth';
+import { revalidateProducts }   from '@/lib/revalidate';
 import {
   apiSuccess,
   apiError,
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     if (existing) return apiError('A category with this name already exists.', 409);
 
     const category = await db.category.create({ data: { name: parsed.data.name } });
+    revalidateProducts();
     return apiSuccess({ category }, 201, 'Category created successfully');
   } catch (err) {
     console.error('[POST /api/products/categories]', err);

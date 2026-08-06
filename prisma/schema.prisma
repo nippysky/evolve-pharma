@@ -257,6 +257,7 @@ model Product {
   discount_percentage Decimal?      @db.Decimal(5, 2)
   minimum_stock_level Int           @default(0)
   reorder_quantity    Int           @default(0)
+  shelf_location      String?       @db.VarChar(50)
   status              ProductStatus @default(DRAFT)
   // Soft delete
   deleted_at          DateTime?

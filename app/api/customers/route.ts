@@ -5,6 +5,7 @@ import { getSession }  from '@/lib/auth';
 import { sendCustomerInvitationEmail } from '@/lib/mail';
 import { generateOtp }                 from '@/lib/api/issue-tokens';
 import { customerOnboardSchema }       from '@/lib/schemas';
+import { revalidateCustomers }         from '@/lib/revalidate';
 import {
   apiSuccess,
   apiPaginated,
@@ -210,6 +211,7 @@ export async function POST(req: NextRequest) {
       inviteUrl,
     }).catch((e) => console.error('[POST /api/customers] Invitation email failed:', e));
 
+    revalidateCustomers();
     return apiSuccess(
       {
         customer_id: customer.id,

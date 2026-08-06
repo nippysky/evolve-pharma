@@ -1,6 +1,6 @@
 import { NextRequest }          from 'next/server';
 import { z }                    from 'zod';
-import { revalidateTag }        from 'next/cache';
+import { revalidateProducts }   from '@/lib/revalidate';
 import { db }                   from '@/lib/db';
 import { getSession }           from '@/lib/auth';
 import { deleteFromCloudinary } from '@/lib/cloudinary';
@@ -75,9 +75,7 @@ export async function POST(req: NextRequest) {
         req,
       });
 
-      // Bust catalog cache — published products should appear immediately
-      revalidateTag('products', 'default');
-      revalidateTag('catalog', 'default');
+      revalidateProducts();
 
       return apiSuccess(
         { action: 'publish', published, skipped },
@@ -128,16 +126,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Soft-delete all matched products (1 query)
-    //    Soft-delete preserves the FK target for any existing OrderItems.
-    await db.product.updateMany({
-      where: { id: { in: productIds } },
-      data:  {
-        deleted_at:    new Date(),
-        deleted_by_id: session.userId,
-        status:        'DISCONTINUED',
-      },
-    });
+    // Soft-delete all matched products one by one so we can mangle each SKU
+    // (frees the unique slot so the same drug can be re-imported later).
+    for (const p of products) {
+      await db.product.update({
+        where: { id: p.id },
+        data:  {
+          sku:           `${p.sku}__DEL_${p.id}`,
+          deleted_at:    new Date(),
+          deleted_by_id: session.userId,
+          status:        'DISCONTINUED',
+        },
+      });
+    }
 
     // Fire-and-forget: Cloudinary cleanup + audit log
     if (totalImages > 0) {

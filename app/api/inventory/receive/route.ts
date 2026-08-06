@@ -11,7 +11,8 @@ import {
   apiInternalError,
   handlePrismaError,
 } from '@/lib/api/response';
-import { writeAuditLog } from '@/lib/audit';
+import { writeAuditLog }       from '@/lib/audit';
+import { revalidateInventory } from '@/lib/revalidate';
 
 const schema = z.object({
   product_id:    z.number().int().positive(),
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
       req,
     });
 
+    revalidateInventory();
     return apiSuccess({ batch: { id: batch.id, batch_number: batch.batch_number, quantity: batch.quantity } }, 201, 'Stock received successfully');
   } catch (err) {
     console.error('[POST /api/inventory/receive]', err);

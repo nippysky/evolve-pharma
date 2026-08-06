@@ -10,8 +10,9 @@ import {
   apiNotFound,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog }        from '@/lib/audit';
-import { sendOrderStatusEmail } from '@/lib/mail';
+import { writeAuditLog }          from '@/lib/audit';
+import { sendOrderStatusEmail }   from '@/lib/mail';
+import { revalidateDeliveries }   from '@/lib/revalidate';
 
 const ADMIN_TRANSITIONS: Record<string, string[]> = {
   AWAITING_DISPATCH: ['ASSIGNED'],
@@ -92,6 +93,11 @@ export async function PATCH(
       }
     }
 
+    // Only ADMIN may assign/change driver — Staff can update status but not assign drivers
+    if (driver_id !== undefined && session.role !== 'ADMIN' && session.role !== 'DRIVER') {
+      return apiForbidden();
+    }
+
     // Validate driver exists (if assigning) — sequential
     if (driver_id !== undefined && driver_id !== null) {
       const driverExists = await db.driver.findUnique({
@@ -169,6 +175,7 @@ export async function PATCH(
       req,
     });
 
+    revalidateDeliveries(delivery.order_id);
     return apiSuccess(
       { delivery: { id: updated.id, status: updated.status, driver_id: updated.driver_id } },
       200,

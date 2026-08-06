@@ -1839,6 +1839,7 @@ export const ProductScalarFieldEnum = {
   discount_percentage: 'discount_percentage',
   minimum_stock_level: 'minimum_stock_level',
   reorder_quantity: 'reorder_quantity',
+  shelf_location: 'shelf_location',
   status: 'status',
   deleted_at: 'deleted_at',
   deleted_by_id: 'deleted_by_id',
@@ -2117,7 +2118,8 @@ export const ProductOrderByRelevanceFieldEnum = {
   brand_name: 'brand_name',
   generic_name: 'generic_name',
   product_strength: 'product_strength',
-  pack_size: 'pack_size'
+  pack_size: 'pack_size',
+  shelf_location: 'shelf_location'
 } as const
 
 export type ProductOrderByRelevanceFieldEnum = (typeof ProductOrderByRelevanceFieldEnum)[keyof typeof ProductOrderByRelevanceFieldEnum]

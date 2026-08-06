@@ -15,6 +15,7 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog }              from '@/lib/audit';
 import { sendStaffVerificationEmail } from '@/lib/mail';
+import { revalidateStaff }            from '@/lib/revalidate';
 import type { UserRole, StaffVerificationStatus } from '@db/enums';
 
 const createSchema = z.object({
@@ -250,6 +251,7 @@ export async function POST(req: NextRequest) {
       req,
     });
 
+    revalidateStaff();
     return apiSuccess(
       { user: { id: newUser.id, email: newUser.email, employee_code } },
       201,

@@ -140,73 +140,73 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
         </span>
       </div>
 
-      {/* Navigation */}
-      <nav className="mt-4 flex flex-1 flex-col gap-0.5 overflow-y-auto">
-        {navGroups.map((group) => {
-          const visibleItems = group.items.filter((it) => isVisible(it as Record<string, unknown>));
-          if (visibleItems.length === 0) return null;
-          return (
-            <div key={group.section}>
-              <div className={cn(
-                'mt-3 px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                theme.section,
-              )}>
-                {group.section}
+      {/* Navigation — scrollable, fills available space */}
+      <nav className="mt-4 flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-0.5 pb-2">
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter((it) => isVisible(it as Record<string, unknown>));
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={group.section}>
+                <div className={cn(
+                  'mt-3 px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                  theme.section,
+                )}>
+                  {group.section}
+                </div>
+                {visibleItems.map((item) => {
+                  const active = !!pathname?.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
+                        active ? theme.activeLink : theme.hoverLink,
+                      )}
+                    >
+                      <Icon name={item.icon as IconName} size={16} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
-              {visibleItems.map((item) => {
-                const active = !!pathname?.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-                      active ? theme.activeLink : theme.hoverLink,
-                    )}
-                  >
-                    <Icon name={item.icon as IconName} size={16} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          );
-        })}
-
-        <div className="flex-1" />
-
-        {/* User card */}
-        <div className={cn(
-          'mt-3 overflow-hidden rounded-xl border bg-gradient-to-b',
-          theme.userCard,
-        )}>
-          <div className="flex items-center gap-3 px-3 py-3">
-            <span className={cn(
-              'relative grid h-9 w-9 shrink-0 place-items-center rounded-full',
-              'bg-gradient-to-br text-[13px] font-bold text-white',
-              theme.avatar,
-              theme.avatarRing,
-            )}>
-              {initials}
-              <span className={cn(
-                'absolute -bottom-px -right-px h-2.5 w-2.5 rounded-full border-2',
-                theme.dot,
-              )}
-                style={{ borderColor: 'inherit' }}
-              />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold tracking-[-0.01em] text-white">
-                {displayName || displayEmail}
-              </div>
-              <div className="mt-0.5 truncate text-[11px] text-white/45">
-                {displayEmail}
-              </div>
-            </div>
-            <LogoutButton />
-          </div>
+            );
+          })}
         </div>
       </nav>
+
+      {/* User card — always visible at the bottom, never scrolls away */}
+      <div className={cn(
+        'mt-2 shrink-0 overflow-hidden rounded-xl border bg-gradient-to-b',
+        theme.userCard,
+      )}>
+        <div className="flex items-center gap-3 px-3 py-3">
+          <span className={cn(
+            'relative grid h-9 w-9 shrink-0 place-items-center rounded-full',
+            'bg-gradient-to-br text-[13px] font-bold text-white',
+            theme.avatar,
+            theme.avatarRing,
+          )}>
+            {initials}
+            <span className={cn(
+              'absolute -bottom-px -right-px h-2.5 w-2.5 rounded-full border-2',
+              theme.dot,
+            )}
+              style={{ borderColor: 'inherit' }}
+            />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold tracking-[-0.01em] text-white">
+              {displayName || displayEmail}
+            </div>
+            <div className="mt-0.5 truncate text-[11px] text-white/45">
+              {displayEmail}
+            </div>
+          </div>
+          <LogoutButton />
+        </div>
+      </div>
     </aside>
   );
 }

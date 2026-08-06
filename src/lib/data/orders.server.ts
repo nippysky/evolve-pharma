@@ -157,7 +157,7 @@ export async function getOrderDetail(orderId: number, userId?: number) {
       },
     });
 
-    // 3. Order items + product snapshots
+    // 3. Order items + product snapshots (including pharma fields)
     const rawItems = await db.orderItem.findMany({
       where:   { order_id: o.id },
       orderBy: { id: 'asc' },
@@ -166,7 +166,14 @@ export async function getOrderDetail(orderId: number, userId?: number) {
         product: {
           select: {
             sku: true, brand_name: true, generic_name: true, pack_size: true,
+            product_strength: true,
+            manufacturer: { select: { name: true } },
             images: { where: { is_primary: true }, take: 1, select: { url: true } },
+            inventoryBatches: {
+              orderBy: { expiry_date: 'asc' },
+              take:    1,
+              select:  { batch_number: true, expiry_date: true },
+            },
           },
         },
       },
@@ -207,15 +214,19 @@ export async function getOrderDetail(orderId: number, userId?: number) {
         phone:        (cust?.user?.phone as string | null) ?? '',
       },
       items: rawItems.map((i: any) => ({
-        id:           i.id,
-        quantity:     i.quantity,
-        unit_price:   Number(i.unit_price),
-        subtotal:     Number(i.subtotal),
-        brand_name:   i.product.brand_name,
-        generic_name: i.product.generic_name,
-        sku:          i.product.sku,
-        pack_size:    i.product.pack_size ?? null,
-        image:        i.product.images[0]?.url ?? null,
+        id:               i.id,
+        quantity:         i.quantity,
+        unit_price:       Number(i.unit_price),
+        subtotal:         Number(i.subtotal),
+        brand_name:       i.product.brand_name,
+        generic_name:     i.product.generic_name,
+        sku:              i.product.sku,
+        pack_size:        i.product.pack_size        ?? null,
+        product_strength: i.product.product_strength ?? null,
+        manufacturer:     i.product.manufacturer?.name ?? null,
+        image:            i.product.images[0]?.url      ?? null,
+        batch_number:     i.product.inventoryBatches[0]?.batch_number ?? null,
+        expiry_date:      i.product.inventoryBatches[0]?.expiry_date  ?? null,
       })),
       delivery: delivery ? {
         status:        delivery.status,
