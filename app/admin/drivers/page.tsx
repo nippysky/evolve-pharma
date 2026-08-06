@@ -11,13 +11,20 @@ import {
   ChevronRight,
   RotateCw,
   AlertTriangle,
+  XCircle,
+  Trash,
 } from '@/components/icons';
 import { PageHead }          from '@/components/shared/PageHead';
 import { Avatar }            from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { DriversActions }    from '@/components/admin/DriversActions';
-import { useDrivers }        from '@/hooks/staff/useStaff';
+import {
+  useDrivers,
+  useToggleDriverStatus,
+  useDeleteDriver,
+} from '@/hooks/staff/useStaff';
 import type { DriverRecord } from '@/hooks/staff/useStaff';
+import { useToast }          from '@/contexts/ToastContext';
 import { formatDate, cn }    from '@/lib/utils';
 
 const PAGE_SIZE = 15;
@@ -83,6 +90,144 @@ const FILTER_CONFIG: Record<DriverFilter, FilterConfig> = {
 };
 
 const FILTER_ORDER: DriverFilter[] = ['all', 'AVAILABLE', 'ON_DELIVERY', 'OFFLINE', 'INACTIVE'];
+
+// ── Delete confirmation modal ─────────────────────────────────────────────────
+function DeleteDriverModal({
+  driver,
+  onClose,
+  onConfirm,
+  busy,
+}: {
+  driver:    DriverRecord;
+  onClose:   () => void;
+  onConfirm: () => void;
+  busy:      boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-xl">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-danger/10">
+          <Trash size={20} className="text-danger" />
+        </div>
+        <h2 className="text-base font-semibold text-ink">Delete {driver.first_name} {driver.last_name}?</h2>
+        <p className="mt-2 text-sm text-ink-3">
+          This will permanently remove this driver and all associated data. This action cannot be undone.
+        </p>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-bg-muted disabled:opacity-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className="flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 disabled:opacity-50 transition-colors"
+          >
+            {busy && <RotateCw size={13} className="animate-spin" />}
+            Delete permanently
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Row actions ───────────────────────────────────────────────────────────────
+function DriverRowActions({
+  driver,
+  onRefresh,
+}: {
+  driver:    DriverRecord;
+  onRefresh: () => void;
+}) {
+  const toast          = useToast();
+  const toggle         = useToggleDriverStatus();
+  const del            = useDeleteDriver();
+  const [confirm, setConfirm] = useState(false);
+
+  const isDisabled = driver.status === 'INACTIVE';
+
+  async function handleToggle() {
+    const newStatus = isDisabled ? 'ACTIVE' : 'INACTIVE';
+    try {
+      await toggle.mutateAsync({ id: driver.id, status: newStatus });
+      toast.show({
+        tone:        isDisabled ? 'success' : 'info',
+        title:       isDisabled ? 'Account enabled' : 'Account disabled',
+        description: isDisabled
+          ? `${driver.first_name} can now sign in.`
+          : `${driver.first_name} can no longer sign in.`,
+      });
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Failed', description: (err as Error).message });
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      await del.mutateAsync(driver.id);
+      toast.show({
+        tone:        'success',
+        title:       'Driver deleted',
+        description: `${driver.first_name} ${driver.last_name} has been removed.`,
+      });
+      setConfirm(false);
+      onRefresh();
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Delete failed', description: (err as Error).message });
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={toggle.isPending}
+          title={isDisabled ? 'Re-enable account' : 'Disable account'}
+          className={cn(
+            'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
+            isDisabled
+              ? 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100 ring-1 ring-leaf-200'
+              : 'bg-bg-muted text-ink-2 hover:bg-amber-50 hover:text-amber-700',
+          )}
+        >
+          {toggle.isPending
+            ? <RotateCw size={11} className="animate-spin" />
+            : isDisabled
+              ? <CheckCircle size={11} />
+              : <XCircle size={11} />}
+          {isDisabled ? 'Enable' : 'Disable'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setConfirm(true)}
+          title="Delete permanently"
+          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-3 hover:bg-danger/10 hover:text-danger transition-colors"
+        >
+          <Trash size={11} />
+          Delete
+        </button>
+      </div>
+
+      {confirm && (
+        <DeleteDriverModal
+          driver={driver}
+          onClose={() => setConfirm(false)}
+          onConfirm={handleDelete}
+          busy={del.isPending}
+        />
+      )}
+    </>
+  );
+}
 
 function StatusBadge({ record }: { record: DriverRecord }) {
   const filter: DriverFilter = record.status === 'INACTIVE'
@@ -264,11 +409,13 @@ function DriverTable({
   isLoading,
   activeFilter,
   query,
+  onRefresh,
 }: {
   records:      DriverRecord[];
   isLoading:    boolean;
   activeFilter: DriverFilter;
   query:        string;
+  onRefresh:    () => void;
 }) {
   const [page, setPage] = useState(1);
 
@@ -338,6 +485,7 @@ function DriverTable({
               <Th>Vehicle</Th>
               <Th>Status</Th>
               <Th>Added</Th>
+              <Th>Actions</Th>
             </tr>
           </Thead>
           <Tbody>
@@ -398,6 +546,11 @@ function DriverTable({
 
                 {/* Added */}
                 <Td muted>{formatDate(d.created_at)}</Td>
+
+                {/* Actions */}
+                <Td>
+                  <DriverRowActions driver={d} onRefresh={onRefresh} />
+                </Td>
               </Tr>
             ))}
           </Tbody>
@@ -553,6 +706,7 @@ export default function AdminDriversPage() {
         isLoading={isLoading}
         activeFilter={activeFilter}
         query={query}
+        onRefresh={() => void refetch()}
       />
     </>
   );

@@ -57,6 +57,20 @@ export async function POST(req: NextRequest) {
     // Delete old jti (single-use rotation)
     await db.refreshToken.delete({ where: { jti: payload.jti } });
 
+    // Block disabled/suspended users from obtaining new tokens
+    const currentUser = await db.user.findUnique({
+      where:  { id: payload.userId },
+      select: { status: true },
+    });
+    if (!currentUser || currentUser.status === 'INACTIVE' || currentUser.status === 'SUSPENDED') {
+      const res = NextResponse.json(
+        { status: 'error', message: 'Your account has been disabled. Contact your administrator.' },
+        { status: 403 },
+      );
+      clearAuthCookies(res);
+      return res;
+    }
+
     // ── 5-6. Issue new token pair + store new jti ─────────────────────────
     const params = {
       userId:     payload.userId,

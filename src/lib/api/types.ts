@@ -360,6 +360,7 @@ export interface StaffRecord {
   department?:         string | null;
   job_title?:          string | null;
   verification_status: StaffVerificationStatus;
+  status:              UserStatus;
   // Flattened from user relation
   first_name:          string;
   last_name:           string;

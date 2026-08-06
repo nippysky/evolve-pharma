@@ -2,7 +2,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import {
   Users,
-  User,
   Mail,
   CheckCircle,
   Clock,
@@ -13,6 +12,9 @@ import {
   RotateCw,
   Building,
   FileText,
+  Send,
+  XCircle,
+  Trash,
 } from '@/components/icons';
 import { PageHead }   from '@/components/shared/PageHead';
 import { Avatar }     from '@/components/ui/Primitives';
@@ -20,65 +22,261 @@ import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Tabl
 import { StaffActions } from '@/components/admin/StaffActions';
 import {
   useAllStaff,
+  useToggleStaffStatus,
+  useDeleteStaff,
   type StaffStatus,
   type TaggedStaffRecord,
 } from '@/hooks/staff/useStaff';
+import { useToast }      from '@/contexts/ToastContext';
 import { formatDate, cn } from '@/lib/utils';
 
+// ── Resend invite button ──────────────────────────────────────────────────────
+function ResendInviteButton({ staffId }: { staffId: number }) {
+  const toast           = useToast();
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function handleResend() {
+    setBusy(true);
+    try {
+      const res  = await fetch(`/api/staff/${staffId}/resend-invite`, {
+        method: 'POST', credentials: 'include',
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message ?? 'Failed to resend');
+      setSent(true);
+      toast.show({ tone: 'success', title: 'Invite resent', description: 'A new verification email has been sent.' });
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Resend failed', description: (err as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <span className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-leaf-600">
+        <CheckCircle size={11} /> Invite sent
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleResend}
+      disabled={busy}
+      className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50 transition-colors"
+    >
+      {busy
+        ? <><RotateCw size={11} className="animate-spin" /> Sending…</>
+        : <><Send size={11} /> Resend invite</>}
+    </button>
+  );
+}
+
+// ── Delete confirmation modal ─────────────────────────────────────────────────
+function DeleteModal({
+  staff,
+  onClose,
+  onConfirm,
+  busy,
+}: {
+  staff:     TaggedStaffRecord;
+  onClose:   () => void;
+  onConfirm: () => void;
+  busy:      boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-xl">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-danger/10">
+          <Trash size={20} className="text-danger" />
+        </div>
+        <h2 className="text-base font-semibold text-ink">Delete {staff.first_name} {staff.last_name}?</h2>
+        <p className="mt-2 text-sm text-ink-3">
+          This will permanently remove their account and all associated data. This action cannot be undone.
+        </p>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-bg-muted disabled:opacity-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className="flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 disabled:opacity-50 transition-colors"
+          >
+            {busy && <RotateCw size={13} className="animate-spin" />}
+            Delete permanently
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Row action buttons ────────────────────────────────────────────────────────
+function RowActions({
+  record,
+  onDeleted,
+}: {
+  record:    TaggedStaffRecord;
+  onDeleted: () => void;
+}) {
+  const toast          = useToast();
+  const toggle         = useToggleStaffStatus();
+  const del            = useDeleteStaff();
+  const [confirm, setConfirm] = useState(false);
+
+  const isDisabled = record._status === 'DISABLED';
+
+  async function handleToggle() {
+    const newStatus = isDisabled ? 'ACTIVE' : 'INACTIVE';
+    try {
+      await toggle.mutateAsync({ id: record.id, status: newStatus });
+      toast.show({
+        tone:        isDisabled ? 'success' : 'info',
+        title:       isDisabled ? 'Account enabled' : 'Account disabled',
+        description: isDisabled
+          ? `${record.first_name} can now sign in.`
+          : `${record.first_name} can no longer sign in.`,
+      });
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Failed', description: (err as Error).message });
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      await del.mutateAsync(record.id);
+      toast.show({
+        tone:        'success',
+        title:       'Staff member deleted',
+        description: `${record.first_name} ${record.last_name} has been removed.`,
+      });
+      setConfirm(false);
+      onDeleted();
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Delete failed', description: (err as Error).message });
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={toggle.isPending}
+          title={isDisabled ? 'Re-enable account' : 'Disable account'}
+          className={cn(
+            'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
+            isDisabled
+              ? 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100 ring-1 ring-leaf-200'
+              : 'bg-bg-muted text-ink-2 hover:bg-amber-50 hover:text-amber-700',
+          )}
+        >
+          {toggle.isPending
+            ? <RotateCw size={11} className="animate-spin" />
+            : isDisabled
+              ? <CheckCircle size={11} />
+              : <XCircle size={11} />}
+          {isDisabled ? 'Enable' : 'Disable'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setConfirm(true)}
+          title="Delete permanently"
+          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-3 hover:bg-danger/10 hover:text-danger transition-colors"
+        >
+          <Trash size={11} />
+          Delete
+        </button>
+      </div>
+
+      {confirm && (
+        <DeleteModal
+          staff={record}
+          onClose={() => setConfirm(false)}
+          onConfirm={handleDelete}
+          busy={del.isPending}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Page config ───────────────────────────────────────────────────────────────
 const PAGE_SIZE = 15;
 
 type StaffFilter = StaffStatus | 'all';
 
 interface FilterConfig {
-  label: string;
-  shortDesc: string;
-  icon: React.ReactNode;
+  label:      string;
+  shortDesc:  string;
+  icon:       React.ReactNode;
   cardBorder: string;
-  cardBg: string;
-  cardText: string;
+  cardBg:     string;
+  cardText:   string;
   badgeClass: string;
   attention?: boolean;
 }
 
 const FILTER_CONFIG: Record<StaffFilter, FilterConfig> = {
   all: {
-    label: 'All staff',
-    shortDesc: 'Everyone on the team',
-    icon: <Users size={15} />,
+    label:      'All staff',
+    shortDesc:  'Everyone on the team',
+    icon:       <Users size={15} />,
     cardBorder: 'border-brand-500',
-    cardBg: 'bg-brand-50',
-    cardText: 'text-brand-700',
+    cardBg:     'bg-brand-50',
+    cardText:   'text-brand-700',
     badgeClass: '',
   },
   VERIFIED: {
-    label: 'Verified',
-    shortDesc: 'Email confirmed, account active',
-    icon: <CheckCircle size={15} />,
+    label:      'Verified',
+    shortDesc:  'Email confirmed, account active',
+    icon:       <CheckCircle size={15} />,
     cardBorder: 'border-leaf-500',
-    cardBg: 'bg-leaf-50',
-    cardText: 'text-leaf-700',
+    cardBg:     'bg-leaf-50',
+    cardText:   'text-leaf-700',
     badgeClass: 'bg-leaf-50 text-leaf-700 ring-leaf-200',
   },
   UNVERIFIED: {
-    label: 'Pending setup',
-    shortDesc: 'Invited, email not verified yet',
-    icon: <Clock size={15} />,
+    label:      'Pending setup',
+    shortDesc:  'Invited, email not verified yet',
+    icon:       <Clock size={15} />,
     cardBorder: 'border-amber-400',
-    cardBg: 'bg-amber-50',
-    cardText: 'text-amber-700',
+    cardBg:     'bg-amber-50',
+    cardText:   'text-amber-700',
     badgeClass: 'bg-amber-50 text-amber-700 ring-amber-200',
-    attention: true,
+    attention:  true,
+  },
+  DISABLED: {
+    label:      'Disabled',
+    shortDesc:  'Account deactivated by admin',
+    icon:       <XCircle size={15} />,
+    cardBorder: 'border-ink-3',
+    cardBg:     'bg-bg-muted',
+    cardText:   'text-ink-3',
+    badgeClass: 'bg-bg-muted text-ink-3 ring-line',
   },
 };
 
-const FILTER_ORDER: StaffFilter[] = ['all', 'VERIFIED', 'UNVERIFIED'];
+const FILTER_ORDER: StaffFilter[] = ['all', 'VERIFIED', 'UNVERIFIED', 'DISABLED'];
 
 function StatusBadge({ status }: { status: StaffStatus }) {
   const cfg = FILTER_CONFIG[status];
   return (
     <span className={cn(
       'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset',
-      cfg.badgeClass,
+      cfg.badgeClass || 'bg-bg-muted text-ink-3 ring-line',
     )}>
       {cfg.icon}
       {cfg.label}
@@ -93,14 +291,14 @@ function FilterCard({
   isActive,
   onClick,
 }: {
-  filter: StaffFilter;
-  count: number;
+  filter:    StaffFilter;
+  count:     number;
   isLoading: boolean;
-  isActive: boolean;
-  onClick: () => void;
+  isActive:  boolean;
+  onClick:   () => void;
 }) {
-  const cfg            = FILTER_CONFIG[filter];
-  const showAttention  = !!(cfg.attention && count > 0);
+  const cfg           = FILTER_CONFIG[filter];
+  const showAttention = !!(cfg.attention && count > 0);
 
   if (isLoading) {
     return (
@@ -126,7 +324,6 @@ function FilterCard({
         showAttention && !isActive && 'border-amber-200 bg-amber-50/40',
       )}
     >
-      {/* Icon + attention */}
       <div className="mb-2 flex items-center justify-between">
         <span className={cn('transition-colors', isActive ? cfg.cardText : 'text-ink-3 group-hover:text-ink-2')}>
           {cfg.icon}
@@ -138,18 +335,12 @@ function FilterCard({
           </span>
         )}
       </div>
-
-      {/* Count */}
       <p className={cn('text-2xl font-bold leading-none tracking-tight', isActive ? cfg.cardText : 'text-ink')}>
         {count}
       </p>
-
-      {/* Label */}
       <p className={cn('mt-1.5 text-xs font-semibold', isActive ? cfg.cardText : 'text-ink-2')}>
         {cfg.label}
       </p>
-
-      {/* Desc */}
       <p className={cn('mt-0.5 text-[11px] leading-tight', isActive ? cn(cfg.cardText, 'opacity-60') : 'text-ink-4')}>
         {cfg.shortDesc}
       </p>
@@ -181,23 +372,24 @@ function TableSkeleton() {
           </div>
           <div className="h-6 w-24 rounded-full bg-bg-muted" />
           <div className="h-3 w-16 rounded bg-bg-muted" />
+          <div className="h-7 w-28 rounded bg-bg-muted" />
         </div>
       ))}
     </div>
   );
 }
 
-function Pagination({
+function PaginationBar({
   page,
   totalPages,
   total,
   pageSize,
   onPageChange,
 }: {
-  page: number;
-  totalPages: number;
-  total: number;
-  pageSize: number;
+  page:         number;
+  totalPages:   number;
+  total:        number;
+  pageSize:     number;
   onPageChange: (p: number) => void;
 }) {
   if (totalPages <= 1) return null;
@@ -259,11 +451,13 @@ function StaffTable({
   isLoading,
   activeFilter,
   query,
+  refetchAll,
 }: {
-  records: TaggedStaffRecord[];
-  isLoading: boolean;
+  records:      TaggedStaffRecord[];
+  isLoading:    boolean;
   activeFilter: StaffFilter;
-  query: string;
+  query:        string;
+  refetchAll:   () => void;
 }) {
   const [page, setPage] = useState(1);
 
@@ -287,7 +481,6 @@ function StaffTable({
     return list;
   }, [records, activeFilter, query]);
 
-  // Reset page when filter or search changes
   const prevFilterRef = useRef(activeFilter);
   const prevQueryRef  = useRef(query);
   if (prevFilterRef.current !== activeFilter || prevQueryRef.current !== query) {
@@ -337,6 +530,7 @@ function StaffTable({
               <Th>Department / Role</Th>
               <Th>Status</Th>
               <Th>Joined</Th>
+              <Th>Actions</Th>
             </tr>
           </Thead>
           <Tbody>
@@ -345,12 +539,9 @@ function StaffTable({
                 {/* Employee */}
                 <Td>
                   <div className="flex items-center gap-2.5">
-                    <Avatar
-                      name={`${s.first_name} ${s.last_name}`}
-                      size={36}
-                    />
+                    <Avatar name={`${s.first_name} ${s.last_name}`} size={36} />
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-ink">
+                      <div className={cn('truncate text-sm font-semibold', s._status === 'DISABLED' ? 'text-ink-3' : 'text-ink')}>
                         {s.first_name} {s.last_name}
                       </div>
                       {s.employee_code && (
@@ -400,17 +591,25 @@ function StaffTable({
                       Verified {formatDate(s.email_verified_at)}
                     </p>
                   )}
+                  {s._status === 'UNVERIFIED' && (
+                    <ResendInviteButton staffId={s.id} />
+                  )}
                 </Td>
 
                 {/* Joined */}
                 <Td muted>{formatDate(s.created_at)}</Td>
+
+                {/* Actions */}
+                <Td>
+                  <RowActions record={s} onDeleted={refetchAll} />
+                </Td>
               </Tr>
             ))}
           </Tbody>
         </Table>
       </TableWrap>
 
-      <Pagination
+      <PaginationBar
         page={safePage}
         totalPages={totalPages}
         total={filtered.length}
@@ -431,6 +630,7 @@ export default function ConsoleStaffPage() {
     all:        allRecords.length,
     VERIFIED:   counts.VERIFIED,
     UNVERIFIED: counts.UNVERIFIED,
+    DISABLED:   counts.DISABLED,
   };
 
   const handleFilter = (f: StaffFilter) => {
@@ -443,7 +643,6 @@ export default function ConsoleStaffPage() {
 
   return (
     <>
-      {/* ── Page header ── */}
       <PageHead
         title="Staff"
         subtitle="Internal team members — admins, sales staff, and drivers."
@@ -451,7 +650,7 @@ export default function ConsoleStaffPage() {
       />
 
       {/* ── Filter cards ── */}
-      <div className="mb-6 flex items-stretch gap-3">
+      <div className="mb-6 flex items-stretch gap-3 overflow-x-auto pb-0.5">
         {FILTER_ORDER.map((f) => (
           <FilterCard
             key={f}
@@ -520,9 +719,7 @@ export default function ConsoleStaffPage() {
             <span className="font-semibold">
               {unverifiedCount} staff member{unverifiedCount !== 1 ? 's' : ''}
             </span>{' '}
-            {unverifiedCount === 1 ? 'has' : 'have'} not yet verified{' '}
-            {unverifiedCount === 1 ? 'their' : 'their'} email and set up{' '}
-            {unverifiedCount === 1 ? 'a' : ''} password.
+            {unverifiedCount === 1 ? 'has' : 'have'} not yet verified their email and set up a password.
           </p>
           <button
             type="button"
@@ -562,6 +759,7 @@ export default function ConsoleStaffPage() {
         isLoading={isLoading}
         activeFilter={activeFilter}
         query={query}
+        refetchAll={refetchAll}
       />
     </>
   );

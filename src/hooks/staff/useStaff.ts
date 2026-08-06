@@ -68,10 +68,15 @@ export function useBulkUploadStaff() {
   });
 }
 
-export type StaffStatus = 'VERIFIED' | 'UNVERIFIED';
+export type StaffStatus = 'VERIFIED' | 'UNVERIFIED' | 'DISABLED';
 
 export interface TaggedStaffRecord extends StaffRecord {
   _status: StaffStatus;
+}
+
+function deriveStaffStatus(r: StaffRecord, verificationStatus: 'VERIFIED' | 'UNVERIFIED'): StaffStatus {
+  if (r.status === 'INACTIVE' || r.status === 'SUSPENDED') return 'DISABLED';
+  return verificationStatus;
 }
 
 export function useVerifiedStaff() {
@@ -103,13 +108,14 @@ export function useAllStaff() {
   const errors    = [verifiedQ.error, unverifiedQ.error].filter((e: unknown): e is Error => e instanceof Error);
 
   const allRecords: TaggedStaffRecord[] = [
-    ...(verifiedQ.data?.records   ?? []).map((r: StaffRecord) => ({ ...r, _status: 'VERIFIED'   as const })),
-    ...(unverifiedQ.data?.records ?? []).map((r: StaffRecord) => ({ ...r, _status: 'UNVERIFIED' as const })),
+    ...(verifiedQ.data?.records   ?? []).map((r: StaffRecord) => ({ ...r, _status: deriveStaffStatus(r, 'VERIFIED') })),
+    ...(unverifiedQ.data?.records ?? []).map((r: StaffRecord) => ({ ...r, _status: deriveStaffStatus(r, 'UNVERIFIED') })),
   ];
 
   const counts: Record<StaffStatus, number> = {
-    VERIFIED:   verifiedQ.data?.records?.length   ?? 0,
-    UNVERIFIED: unverifiedQ.data?.records?.length ?? 0,
+    VERIFIED:   allRecords.filter(r => r._status === 'VERIFIED').length,
+    UNVERIFIED: allRecords.filter(r => r._status === 'UNVERIFIED').length,
+    DISABLED:   allRecords.filter(r => r._status === 'DISABLED').length,
   };
 
   const refetchAll = () => {
@@ -118,6 +124,78 @@ export function useAllStaff() {
   };
 
   return { allRecords, counts, isLoading, errors, refetchAll };
+}
+
+export function useToggleStaffStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: 'ACTIVE' | 'INACTIVE' }) =>
+      fetch(`/api/staff/${id}`, {
+        method:      'PATCH',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ status }),
+      }).then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message ?? 'Failed to update status');
+        return json;
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.verified });
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.unverified });
+    },
+  });
+}
+
+export function useDeleteStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      fetch(`/api/staff/${id}`, { method: 'DELETE', credentials: 'include' }).then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message ?? 'Failed to delete staff member');
+        return json;
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.verified });
+      void queryClient.invalidateQueries({ queryKey: STAFF_KEYS.unverified });
+    },
+  });
+}
+
+export function useToggleDriverStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: 'ACTIVE' | 'INACTIVE' }) =>
+      fetch(`/api/staff/${id}`, {
+        method:      'PATCH',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ status }),
+      }).then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message ?? 'Failed to update status');
+        return json;
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: DRIVER_KEYS.all });
+    },
+  });
+}
+
+export function useDeleteDriver() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      fetch(`/api/staff/${id}`, { method: 'DELETE', credentials: 'include' }).then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message ?? 'Failed to delete driver');
+        return json;
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: DRIVER_KEYS.all });
+    },
+  });
 }
 
 export { type DriverRecord };
