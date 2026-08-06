@@ -1,5 +1,6 @@
 import type { ReactNode }      from 'react';
 import { redirect }             from 'next/navigation';
+import { headers }              from 'next/headers';
 import { getSession }           from '@/lib/auth';
 import { PortalSidebar }        from '@/components/portal/PortalSidebar';
 import { PortalTopbar }         from '@/components/portal/PortalTopbar';
@@ -8,8 +9,13 @@ import { PortalAuthProvider }   from '@/providers/PortalAuthProvider';
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
 
-  // Not logged in → sign-in
-  if (!session) redirect('/sign-in');
+  // Not logged in → sign-in (carry the current path so the customer lands back
+  // where they intended after entering their credentials).
+  if (!session) {
+    const h        = await headers();
+    const pathname = h.get('x-pathname') ?? '/portal/catalog';
+    redirect(`/sign-in?redirect=${encodeURIComponent(pathname)}`);
+  }
 
   // Wrong role → their dashboard
   if (session.role !== 'CUSTOMER') redirect('/admin');

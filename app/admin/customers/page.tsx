@@ -8,7 +8,7 @@ export const metadata = {
 
 export default async function ConsoleCustomersPage() {
   const session = await getSession();
-  if (!session) redirect('/sign-in');
+  if (!session) redirect('/staff/sign-in');
   if (session.role === 'CUSTOMER') redirect('/portal/catalog');
 
   return <CustomersView role={session.role} />;

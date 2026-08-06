@@ -14,6 +14,13 @@ import { classifyLoginError } from '@/lib/errors';
 
 type StaffLoginData = { status: string; role: string; email: string };
 
+function getRedirectTarget(role: string): string {
+  const defaultPath = role.toUpperCase() === 'DRIVER' ? '/driver' : '/admin/overview';
+  if (typeof window === 'undefined') return defaultPath;
+  const p = new URLSearchParams(window.location.search).get('redirect') ?? '';
+  return p.startsWith('/') ? p : defaultPath;
+}
+
 export default function StaffSignInPage() {
   const router = useRouter();
   const toast  = useToast();
@@ -59,7 +66,7 @@ export default function StaffSignInPage() {
 
           toast.success('Welcome back', 'Opening the console…');
 
-          router.push(data.role.toUpperCase() === 'DRIVER' ? '/driver' : '/admin/overview');
+          router.push(getRedirectTarget(data.role));
         },
 
         onError: (err: Error) => {

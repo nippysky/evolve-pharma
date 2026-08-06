@@ -1,5 +1,6 @@
 import type { ReactNode }     from 'react';
 import { redirect }            from 'next/navigation';
+import { headers }             from 'next/headers';
 import { getSession }          from '@/lib/auth';
 import { AdminSidebar }      from '@/components/admin/AdminSidebar';
 import { AdminTopbar }       from '@/components/admin/AdminTopbar';
@@ -8,7 +9,11 @@ import { AdminAuthProvider } from '@/providers/AdminAuthProvider';
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
 
-  if (!session)                    redirect('/staff/sign-in');
+  if (!session) {
+    const h        = await headers();
+    const pathname = h.get('x-pathname') ?? '/admin/overview';
+    redirect(`/staff/sign-in?redirect=${encodeURIComponent(pathname)}`);
+  }
   if (session.role === 'CUSTOMER') redirect('/portal/catalog');
   if (session.role === 'DRIVER')   redirect('/driver');
 

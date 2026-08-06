@@ -53,7 +53,7 @@ const BADGE_COLOR: Record<StaffPermissionPreset, string> = {
 
 export default async function ConsoleRolesPage() {
   const session = await getSession();
-  if (!session) redirect('/sign-in');
+  if (!session) redirect('/staff/sign-in');
   if (session.role !== 'ADMIN') redirect('/admin/overview');
 
   // Staff counts will populate via API when integrated

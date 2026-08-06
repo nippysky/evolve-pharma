@@ -133,6 +133,16 @@ async function trySilentRefresh(
   const reqHeaders = new Headers(req.headers);
   reqHeaders.set('x-user-id',   String(refreshPayload.userId));
   reqHeaders.set('x-user-role', refreshPayload.role);
+  reqHeaders.set('x-pathname',  req.nextUrl.pathname);
+
+  // Forward the new access token in the request cookie header so server components
+  // calling getSession() in this same request can read it immediately.
+  // (Response cookies only apply to future requests.)
+  const existingCookies = req.headers.get('cookie') ?? '';
+  reqHeaders.set(
+    'cookie',
+    `${ACCESS_COOKIE}=${newAccessToken}${existingCookies ? `; ${existingCookies}` : ''}`,
+  );
 
   const res = NextResponse.next({ request: { headers: reqHeaders } });
   res.cookies.set(ACCESS_COOKIE, newAccessToken, {
@@ -147,17 +157,23 @@ async function trySilentRefresh(
 
 function loginRedirect(req: NextRequest, route: typeof PROTECTED_ROUTES[number]): NextResponse {
   const fullPath = req.nextUrl.pathname + (req.nextUrl.search ?? '');
-  const res = NextResponse.redirect(
+  // Do NOT clear cookies here — the tokens may still be valid for other requests
+  // (e.g. a stale prefetch failing auth must not wipe cookies for the real navigation).
+  return NextResponse.redirect(
     new URL(`${route.loginPath}?redirect=${encodeURIComponent(fullPath)}`, req.url),
   );
-  // Clear stale cookies so the browser doesn't send them on the next request
-  res.cookies.set(ACCESS_COOKIE,  '', { maxAge: 0, path: '/' });
-  res.cookies.set(REFRESH_COOKIE, '', { maxAge: 0, path: '/' });
-  return res;
 }
 
 export default async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
+
+  // Next.js prefetch requests must pass through without auth checks.
+  // If a prefetch returns a redirect with Set-Cookie: maxAge=0, the browser
+  // will wipe the user's auth cookies before they even click the link.
+  const isPrefetch =
+    req.headers.get('next-router-prefetch') === '1' ||
+    req.headers.get('purpose') === 'prefetch';
+  if (isPrefetch) return NextResponse.next();
 
   // Auth pages are always public — never run the token check on them
   if (BYPASS_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
@@ -224,11 +240,14 @@ export default async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── ✅ Authorised ────────────────────────────────────────────────────────────
-  // Inject user info as request headers so route handlers don't need to
-  // re-verify the JWT (minor perf win).
+  // Inject user info as request headers so route handlers and server components
+  // don't need to re-verify the JWT (minor perf win).
   const reqHeaders = new Headers(req.headers);
   reqHeaders.set('x-user-id',   String(payload.userId));
   reqHeaders.set('x-user-role', payload.role);
+  // x-pathname lets layouts build a correct ?redirect= fallback without needing
+  // to parse the URL themselves (headers() is simpler than request params).
+  reqHeaders.set('x-pathname',  pathname);
 
   return NextResponse.next({ request: { headers: reqHeaders } });
 }

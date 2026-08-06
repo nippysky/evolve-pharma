@@ -8,8 +8,15 @@ import { Button } from '@/components/ui/Button';
 import { ArrowRight, AlertTriangle } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { useLoginCustomer } from '@/hooks/auth/useCustomerAuth';
+
+function getRedirectTarget(): string {
+  if (typeof window === 'undefined') return '/portal/catalog';
+  const p = new URLSearchParams(window.location.search).get('redirect') ?? '';
+  return p.startsWith('/') ? p : '/portal/catalog';
+}
+
 export default function SignInPage() {
-  const router = useRouter();
+  const router    = useRouter();
   const toast = useToast();
 
   const [email, setEmail] = useState('');
@@ -35,7 +42,7 @@ export default function SignInPage() {
             title: `Welcome back, ${data.customer.first_name}`,
             description: 'Routing you to your portal…',
           });
-          router.push('/portal/catalog');
+          router.push(getRedirectTarget());
         },
         onError: (err: Error) => {
           const msg = err.message?.toLowerCase() ?? '';

@@ -36,7 +36,9 @@ export default async function CustomerOrderDetailPage({ params }: Props) {
   const orderId = parseInt(id, 10);
 
   const session = await getSession();
-  if (!session || session.role !== 'CUSTOMER') redirect('/sign-in');
+  if (!session || session.role !== 'CUSTOMER') {
+    redirect(`/sign-in?redirect=${encodeURIComponent(`/portal/orders/${id}`)}`);
+  }
 
   if (isNaN(orderId)) notFound();
 
