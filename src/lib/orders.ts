@@ -230,28 +230,32 @@ export async function createOrder(
         select: { user: { select: { email: true, first_name: true } } },
       });
       if (custRecord?.user) {
-        void sendOrderReceiptEmail({
-          to:            custRecord.user.email,
-          name:          custRecord.user.first_name,
-          orderNumber,
-          orderId:       order.id,
-          items:         lineItems.map(li => {
-            const p = productMap.get(li.product_id)!;
-            return {
-              brand_name:   p.brand_name,
-              generic_name: null, // not loaded in this query; kept minimal
-              quantity:     li.quantity,
-              unit_price:   li.unit_price,
-              subtotal:     li.subtotal,
-            };
-          }),
-          subtotal,
-          deliveryFee,
-          vat,
-          total,
-          paymentMethod,
-          isPaid,
-        }).catch(err => console.error('[createOrder] receipt email failed:', err));
+        try {
+          await sendOrderReceiptEmail({
+            to:            custRecord.user.email,
+            name:          custRecord.user.first_name,
+            orderNumber,
+            orderId:       order.id,
+            items:         lineItems.map(li => {
+              const p = productMap.get(li.product_id)!;
+              return {
+                brand_name:   p.brand_name,
+                generic_name: null,
+                quantity:     li.quantity,
+                unit_price:   li.unit_price,
+                subtotal:     li.subtotal,
+              };
+            }),
+            subtotal,
+            deliveryFee,
+            vat,
+            total,
+            paymentMethod,
+            isPaid,
+          });
+        } catch (mailErr) {
+          console.error('[createOrder] receipt email failed:', mailErr);
+        }
       }
     } catch (e) {
       console.error('[createOrder] receipt email lookup failed (non-fatal)', e);

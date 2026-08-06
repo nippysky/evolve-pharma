@@ -203,13 +203,16 @@ export async function POST(req: NextRequest) {
     const siteUrl   = process.env.FRONTEND_URL ?? 'https://www.envolvepharm.com.ng';
     const inviteUrl = `${siteUrl}/sign-up/invited?email=${encodeURIComponent(email.toLowerCase())}`;
 
-    // Fire invitation email (non-blocking — record is already persisted)
-    void sendCustomerInvitationEmail({
-      to:          email.toLowerCase(),
-      name:        first_name,
-      companyName: company_name,
-      inviteUrl,
-    }).catch((e) => console.error('[POST /api/customers] Invitation email failed:', e));
+    try {
+      await sendCustomerInvitationEmail({
+        to:          email.toLowerCase(),
+        name:        first_name,
+        companyName: company_name,
+        inviteUrl,
+      });
+    } catch (mailErr) {
+      console.error('[POST /api/customers] Invitation email failed:', mailErr);
+    }
 
     revalidateCustomers();
     return apiSuccess(

@@ -143,15 +143,19 @@ export async function PATCH(
     });
 
     if (customer?.user && newStatus !== 'PENDING') {
-      void sendOrderStatusEmail({
-        to:           customer.user.email,
-        name:         customer.user.first_name,
-        orderNumber:  order.order_number,
-        orderId:      order.id,
-        newStatus:    newStatus as 'CONFIRMED' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED',
-        total:        Number(order.total),
-        trackingCode,
-      }).catch(err => console.error('[status email]', err));
+      try {
+        await sendOrderStatusEmail({
+          to:           customer.user.email,
+          name:         customer.user.first_name,
+          orderNumber:  order.order_number,
+          orderId:      order.id,
+          newStatus:    newStatus as 'CONFIRMED' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED',
+          total:        Number(order.total),
+          trackingCode,
+        });
+      } catch (mailErr) {
+        console.error('[status email]', mailErr);
+      }
     }
 
     return apiSuccess({ order_id: orderId, status: newStatus }, 200, 'Order status updated');

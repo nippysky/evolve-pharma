@@ -25,10 +25,11 @@ const transport = nodemailer.createTransport({
     user: process.env.MAIL_USERNAME!,
     pass: process.env.MAIL_PASSWORD!,
   },
-  // Connection pool — reuse connections for bulk sends
-  pool:           true,
-  maxConnections: 3,
-  maxMessages:    100,
+  // No connection pool — each Vercel Lambda invocation is isolated; pooling
+  // causes connections to leak and mails to drop in serverless environments.
+  connectionTimeout: 10_000,
+  greetingTimeout:   10_000,
+  socketTimeout:     15_000,
 });
 
 interface MailOptions {

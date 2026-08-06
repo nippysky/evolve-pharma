@@ -62,10 +62,14 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    void sendPcnUnderReviewEmail({
-      to:   payload.email,
-      name: user.first_name,
-    }).catch((e) => console.error('[create-password] PCN review email failed:', e));
+    try {
+      await sendPcnUnderReviewEmail({
+        to:   payload.email,
+        name: user.first_name,
+      });
+    } catch (mailErr) {
+      console.error('[create-password] PCN review email failed:', mailErr);
+    }
 
     return apiSuccess(
       { email: payload.email },

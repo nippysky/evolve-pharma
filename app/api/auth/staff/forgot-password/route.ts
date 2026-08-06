@@ -59,14 +59,16 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      sendOtpEmail({
-        to:   email,
-        name: user.first_name,
-        otp,
-        type: 'PASSWORD_RESET',
-      }).catch((err: unknown) => {
-        console.error('[staff/forgot-password] Failed to send OTP email:', err);
-      });
+      try {
+        await sendOtpEmail({
+          to:   email,
+          name: user.first_name,
+          otp,
+          type: 'PASSWORD_RESET',
+        });
+      } catch (mailErr) {
+        console.error('[staff/forgot-password] Failed to send OTP email:', mailErr);
+      }
     }
 
     // Always return 200 — same message whether email exists or not

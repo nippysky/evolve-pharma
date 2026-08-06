@@ -68,10 +68,14 @@ export async function POST(req: NextRequest) {
     }
     await db.$transaction(ops);
 
-    void sendStaffActivationEmail({
-      to:   payload.email,
-      name: user.first_name,
-    }).catch((e) => console.error('[staff/create-password] activation email failed:', e));
+    try {
+      await sendStaffActivationEmail({
+        to:   payload.email,
+        name: user.first_name,
+      });
+    } catch (mailErr) {
+      console.error('[staff/create-password] activation email failed:', mailErr);
+    }
 
     return apiSuccess(
       { email: payload.email },

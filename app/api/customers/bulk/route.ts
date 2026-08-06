@@ -185,14 +185,18 @@ async function processBatch(
         return;
       }
 
-      // ── Fire invitation email (non-blocking) ─────────────────────────────
+      // ── Send invitation email ─────────────────────────────────────────────
       const inviteUrl = `${siteUrl}/sign-up/invited?email=${encodeURIComponent(normalEmail)}`;
-      void sendCustomerInvitationEmail({
-        to:          normalEmail,
-        name:        first_name,
-        companyName: company_name,
-        inviteUrl,
-      }).catch((e) => console.error(`[bulk] Email failed for row ${rowIndex} (${normalEmail}):`, e));
+      try {
+        await sendCustomerInvitationEmail({
+          to:          normalEmail,
+          name:        first_name,
+          companyName: company_name,
+          inviteUrl,
+        });
+      } catch (mailErr) {
+        console.error(`[bulk] Email failed for row ${rowIndex} (${normalEmail}):`, mailErr);
+      }
 
       successCount++;
     }),

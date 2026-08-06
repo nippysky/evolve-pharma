@@ -213,11 +213,15 @@ export async function POST(req: NextRequest) {
         });
 
         const verificationUrl = `${frontendUrl}/staff/verify?token=${verifyToken}`;
-        void sendStaffVerificationEmail({
-          to:              row.email,
-          name:            row.first_name,
-          verificationUrl,
-        }).catch((e) => console.error(`[bulk-upload] email failed for ${row.email}:`, e));
+        try {
+          await sendStaffVerificationEmail({
+            to:              row.email,
+            name:            row.first_name,
+            verificationUrl,
+          });
+        } catch (mailErr) {
+          console.error(`[bulk-upload] email failed for ${row.email}:`, mailErr);
+        }
 
         inserted++;
       } catch {

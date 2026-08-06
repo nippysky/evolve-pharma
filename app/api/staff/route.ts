@@ -229,15 +229,23 @@ export async function POST(req: NextRequest) {
       throw innerErr;
     }
 
-    // Fire-and-forget: verification email + audit log
+    // Send verification email — must be awaited before returning.
+    // Vercel freezes the Lambda the moment the response is sent; fire-and-forget
+    // promises are killed before the SMTP handshake completes.
     const frontendUrl     = process.env.FRONTEND_URL ?? 'https://www.envolvepharm.com.ng';
     const verificationUrl = `${frontendUrl}/staff/verify?token=${verifyToken}`;
 
-    void sendStaffVerificationEmail({
-      to:   email,
-      name: first_name,
-      verificationUrl,
-    }).catch(e => console.error('[staff/create] verification email failed:', e));
+    try {
+      await sendStaffVerificationEmail({
+        to:   email,
+        name: first_name,
+        verificationUrl,
+      });
+    } catch (mailErr) {
+      // Log but don't fail the request — the staff record is created and the
+      // admin can resend the invite manually if needed.
+      console.error('[staff/create] verification email failed:', mailErr);
+    }
 
     void writeAuditLog({
       userId:      session.userId,

@@ -91,17 +91,21 @@ export async function PATCH(
 
     const name = `${customer.user.first_name} ${customer.user.last_name}`;
 
-    if (decision === 'approve') {
-      void sendCustomerApprovalEmail({
-        to:   customer.user.email,
-        name: customer.user.first_name,
-      }).catch((e) => console.error('[review] approval email failed:', e));
-    } else {
-      void sendCustomerRejectionEmail({
-        to:         customer.user.email,
-        name:       customer.user.first_name,
-        reviewNote: review_note ?? 'No reason provided.',
-      }).catch((e) => console.error('[review] rejection email failed:', e));
+    try {
+      if (decision === 'approve') {
+        await sendCustomerApprovalEmail({
+          to:   customer.user.email,
+          name: customer.user.first_name,
+        });
+      } else {
+        await sendCustomerRejectionEmail({
+          to:         customer.user.email,
+          name:       customer.user.first_name,
+          reviewNote: review_note ?? 'No reason provided.',
+        });
+      }
+    } catch (mailErr) {
+      console.error('[review] email failed:', mailErr);
     }
 
     void writeAuditLog({

@@ -57,15 +57,16 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      sendOtpEmail({
-        to:   email,
-        name: user.first_name,
-        otp,
-        type: 'PASSWORD_RESET',
-      }).catch((err: unknown) => {
-        console.error('[forgot-password] Failed to send OTP email:', err);
-    return handlePrismaError(err) ?? apiInternalError();
-      });
+      try {
+        await sendOtpEmail({
+          to:   email,
+          name: user.first_name,
+          otp,
+          type: 'PASSWORD_RESET',
+        });
+      } catch (mailErr) {
+        console.error('[forgot-password] Failed to send OTP email:', mailErr);
+      }
     }
 
     return apiSuccess(

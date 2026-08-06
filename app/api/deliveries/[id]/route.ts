@@ -145,15 +145,19 @@ export async function PATCH(
           select: { user: { select: { email: true, first_name: true } } },
         });
         if (customerData?.user) {
-          void sendOrderStatusEmail({
-            to:           customerData.user.email,
-            name:         customerData.user.first_name,
-            orderNumber:  orderData.order_number,
-            orderId:      delivery.order_id,
-            newStatus:    'DELIVERED',
-            total:        Number(orderData.total),
-            trackingCode: delivery.tracking_code,
-          }).catch(err => console.error('[delivery DELIVERED email]', err));
+          try {
+            await sendOrderStatusEmail({
+              to:           customerData.user.email,
+              name:         customerData.user.first_name,
+              orderNumber:  orderData.order_number,
+              orderId:      delivery.order_id,
+              newStatus:    'DELIVERED',
+              total:        Number(orderData.total),
+              trackingCode: delivery.tracking_code,
+            });
+          } catch (mailErr) {
+            console.error('[delivery DELIVERED email]', mailErr);
+          }
         }
       }
     }

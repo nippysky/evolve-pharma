@@ -66,16 +66,20 @@ export async function PATCH(
 
     revalidateOrders({ orderId, userId: cust?.user_id });
 
-    // 4. Fire-and-forget email for PAID and REFUNDED status changes
+    // 4. Send payment status email — awaited so Vercel doesn't kill it mid-send
     if (cust?.user && (newStatus === 'PAID' || newStatus === 'REFUNDED')) {
-      void sendPaymentStatusEmail({
-        to:            cust.user.email,
-        name:          cust.user.first_name,
-        orderNumber:   order.order_number,
-        orderId:       order.id,
-        paymentStatus: newStatus,
-        total:         Number(order.total),
-      }).catch(err => console.error('[payment email]', err));
+      try {
+        await sendPaymentStatusEmail({
+          to:            cust.user.email,
+          name:          cust.user.first_name,
+          orderNumber:   order.order_number,
+          orderId:       order.id,
+          paymentStatus: newStatus,
+          total:         Number(order.total),
+        });
+      } catch (mailErr) {
+        console.error('[payment email]', mailErr);
+      }
     }
 
     // 5. Audit log
