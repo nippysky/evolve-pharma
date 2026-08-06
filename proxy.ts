@@ -87,6 +87,17 @@ function isMobileRequest(req: NextRequest): boolean {
 //
 // Pass these through unconditionally before any token check.
 
+// Sub-paths within /admin that only ADMIN role may access.
+// STAFF is allowed on /admin/* broadly, but not these specific paths.
+const ADMIN_ONLY_PATHS = [
+  '/admin/drivers',
+  '/admin/staff',
+  '/admin/roles',
+  '/admin/audit-logs',
+  '/admin/login-activity',
+  '/admin/settings',
+] as const;
+
 const BYPASS_PATHS = [
   '/staff/sign-in',
   '/staff/forgot-password',
@@ -202,6 +213,14 @@ export default async function proxy(req: NextRequest): Promise<NextResponse> {
     return isMobileRequest(req)
       ? NextResponse.json({ status: 'error', message: 'Forbidden' }, { status: 403 })
       : NextResponse.redirect(new URL(roleHome[payload.role], req.url));
+  }
+
+  // ── Case 4: ADMIN-only sub-path accessed by STAFF ────────────────────────────
+  const isAdminOnly = ADMIN_ONLY_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'));
+  if (isAdminOnly && payload.role !== 'ADMIN') {
+    return isMobileRequest(req)
+      ? NextResponse.json({ status: 'error', message: 'Forbidden' }, { status: 403 })
+      : NextResponse.redirect(new URL('/admin/overview', req.url));
   }
 
   // ── ✅ Authorised ────────────────────────────────────────────────────────────

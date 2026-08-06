@@ -105,7 +105,7 @@ export const CONSOLE_NAV = [
         label: 'Drivers',
         href: '/admin/drivers',
         icon: 'Truck' as const,
-        roles: ['ADMIN', 'STAFF'] as Role[],
+        roles: ['ADMIN'] as Role[],
       },
       {
         label: 'Roles',
