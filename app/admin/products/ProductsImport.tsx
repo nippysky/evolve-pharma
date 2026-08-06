@@ -63,19 +63,22 @@ function validateRow(row: unknown[], headers: Record<string, number>, rowNum: nu
 
 async function downloadTemplate() {
   const XLSX = await import('xlsx');
+  // Column order matches /api/products/bulk-import exactly.
+  // The API uses headerKey() so order doesn't matter, but keeping it logical here.
   const header = [
-    'manufacturer', 'brand_name', 'generic_name', 'product_strength', 'pack_size',
-    'product_category', 'batch_no', 'expiry_date', 'minimum_order', 'quantity_per_carton',
-    'quantity_received', 'shelf_location', 'cost_price', 'selling_price',
+    'brand_name', 'generic_name', 'manufacturer', 'product_category', 'selling_price',
+    'product_strength', 'pack_size', 'quantity_per_carton', 'minimum_order', 'cost_price',
     'minimum_stock_level', 'reorder_quantity',
+    'batch_no', 'expiry_date', 'quantity_received',
   ];
   const sample = [
-    'Neimeth', 'Pyrantrin Tablets', 'Pyrantel Pamoate', '125mg', '1x6x25',
-    'Anti-Helmintics', 'PC0601', '2026-12-31', '1', '25',
-    '100', 'AB001', '16200', '17415', '10', '20',
+    'Pyrantrin Tablets', 'Pyrantel Pamoate', 'Neimeth', 'Anti-Helmintics', '17415',
+    '125mg', '1x6x25', '25', '1', '16200',
+    '10', '20',
+    'PC0601', '2026-12-31', '100',
   ];
-  const wb  = XLSX.utils.book_new();
-  const ws  = XLSX.utils.aoa_to_sheet([header, sample]);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([header, sample]);
   XLSX.utils.book_append_sheet(wb, ws, 'Products');
   XLSX.writeFile(wb, 'products_import_template.xlsx');
 }

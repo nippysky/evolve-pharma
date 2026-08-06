@@ -432,7 +432,7 @@ export default function CheckoutClient({ userEmail, prefill }: Props) {
         const handler = window.PaystackPop.setup({
           key:      PAYSTACK_KEY,
           email:    userEmail,           // ← real session email (not hardcoded)
-          amount:   total * 100,         // kobo
+          amount:   Math.round(total * 100), // kobo — must be integer
           currency: 'NGN',
           ref,
           metadata: {
