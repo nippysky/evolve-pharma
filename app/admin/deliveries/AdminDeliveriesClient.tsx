@@ -346,7 +346,6 @@ function DriverRow({
 
 function DetailPanel({
   delivery,
-  drivers,
   onClose,
   onReassign,
 }: {
@@ -693,7 +692,7 @@ export default function AdminDeliveriesClient() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[780px] text-sm">
+            <table className="w-full min-w-195 text-sm">
               <thead>
                 <tr className="border-b border-line bg-bg-subtle">
                   {[
@@ -735,7 +734,7 @@ export default function AdminDeliveriesClient() {
 
                     {/* Customer */}
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2.5 max-w-[160px]">
+                      <div className="flex items-center gap-2.5 max-w-40">
                         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
                           {d.order?.customer
                             ? initials(d.order.customer.first_name, d.order.customer.last_name)
