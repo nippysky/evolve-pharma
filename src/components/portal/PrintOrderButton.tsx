@@ -30,7 +30,10 @@ export interface OrderDetailForPrint {
     brand_name:   string;
     generic_name: string;
     sku:          string;
-    pack_size?:   string | null;
+    pack_size?:        string | null;
+    product_strength?: string | null;
+    batch_number?:     string | null;
+    expiry_date?:      string | Date | null;
     quantity:     number;
     unit_price:   number;
     subtotal:     number;
@@ -39,14 +42,28 @@ export interface OrderDetailForPrint {
 
 function buildInvoiceHTML(order: OrderDetailForPrint, isAdmin = false): string {
   const isPaid   = order.payment_status === 'paid' || order.payment_status === 'PAID';
+  const fmtExpiry = (d: string | Date | null | undefined): string => {
+    if (!d) return '—';
+    const date = d instanceof Date ? d : new Date(d);
+    return date.toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   const rows     = order.items.map((item, idx) => `
     <tr style="background:${idx % 2 === 0 ? '#f8fafc' : '#fff'};border-bottom:1px solid #e2e8f0;">
       <td style="padding:10px 12px;font-size:12px;color:#64748b;">${idx + 1}</td>
       <td style="padding:10px 12px;">
         <div style="font-size:13px;font-weight:600;color:#0f172a;">${escHtml(item.brand_name)}</div>
-        <div style="font-size:11px;color:#64748b;">${escHtml(item.generic_name)}${item.pack_size ? ` · ${escHtml(item.pack_size)}` : ''}</div>
+        <div style="font-size:11px;color:#64748b;">
+          ${escHtml(item.generic_name)}${item.pack_size ? ` · ${escHtml(item.pack_size)}` : ''}${item.product_strength ? ` · ${escHtml(item.product_strength)}` : ''}
+        </div>
       </td>
       <td style="padding:10px 12px;font-size:11px;font-family:monospace;color:#64748b;">${escHtml(item.sku)}</td>
+      <td style="padding:10px 12px;font-size:11px;font-family:monospace;color:#475569;">
+        ${item.batch_number ? escHtml(item.batch_number) : '—'}
+      </td>
+      <td style="padding:10px 12px;font-size:11px;color:#475569;">
+        ${fmtExpiry(item.expiry_date)}
+      </td>
       <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;">${item.quantity}</td>
       <td style="padding:10px 12px;text-align:right;font-size:13px;">${formatNaira(item.unit_price)}</td>
       <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:700;color:#042a36;">${formatNaira(item.subtotal)}</td>
@@ -159,6 +176,8 @@ function buildInvoiceHTML(order: OrderDetailForPrint, isAdmin = false): string {
           <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;border-radius:4px 0 0 0;">#</th>
           <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;">PRODUCT</th>
           <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;">SKU</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;">BATCH NO.</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;">EXPIRY</th>
           <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;letter-spacing:0.06em;">QTY</th>
           <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;letter-spacing:0.06em;">UNIT PRICE</th>
           <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;letter-spacing:0.06em;border-radius:0 4px 0 0;">SUBTOTAL</th>
