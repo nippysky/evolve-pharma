@@ -5,6 +5,7 @@ import Image              from 'next/image';
 import Link               from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { Field, Input, Select } from '@/components/ui/Field';
+import { ComboboxField }  from '@/components/ui/ComboboxField';
 import { Button }         from '@/components/ui/Button';
 import { PageHead }       from '@/components/shared/PageHead';
 import {
@@ -12,7 +13,7 @@ import {
   Upload, X, Box, RotateCw,
 } from '@/components/icons';
 import { useToast }             from '@/contexts/ToastContext';
-import { useProductCategories } from '@/hooks/admin/useAdminProducts';
+import { useProductCategories, useProductManufacturers } from '@/hooks/admin/useAdminProducts';
 import { cn }                   from '@/lib/utils';
 import type { ProductDTO, ProductImageDTO } from '@/lib/api/types';
 
@@ -283,15 +284,14 @@ export default function ProductEditPage({
   // New images to upload on form save
   const [newImages,      setNewImages]      = useState<NewImage[]>([]);
 
-  // Category autocomplete
+  // Category + Manufacturer data for comboboxes
   const { data: categoryData, isLoading: catsLoading } = useProductCategories();
-  const allCategories = (categoryData ?? []) as { id: number; name: string }[];
-  const [categoryInput, setCategoryInput] = useState('');
-  const [catSuggest,    setCatSuggest]    = useState(false);
-  const filteredCats = allCategories.filter(c =>
-    categoryInput.length > 0 &&
-    c.name.toLowerCase().includes(categoryInput.toLowerCase()),
-  );
+  const { data: mfrData,      isLoading: mfrsLoading  } = useProductManufacturers();
+  const allCategories    = (categoryData ?? []) as { id: number; name: string }[];
+  const allManufacturers = (mfrData      ?? []) as { id: number; name: string }[];
+
+  const [categoryInput,     setCategoryInput]     = useState('');
+  const [manufacturerInput, setManufacturerInput] = useState('');
 
   // Form
   const [saving,    setSaving]    = useState(false);
@@ -314,6 +314,7 @@ export default function ProductEditPage({
         setProduct(p);
         setExistingImages(p.images ?? []);
         setCategoryInput(p.category?.name ?? '');
+        setManufacturerInput(p.manufacturer?.name ?? '');
       })
       .catch(err => { if (!cancelled) setFetchErr((err as Error).message); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -388,7 +389,7 @@ export default function ProductEditPage({
     }
 
     // Resolve manufacturer
-    const manufacturerName = ((fd.get('manufacturer') as string) || '').trim();
+    const manufacturerName = manufacturerInput.trim();
     if (manufacturerName && manufacturerName !== product.manufacturer?.name) {
       try {
         const mfrRes  = await fetch('/api/products/manufacturers', {
@@ -575,53 +576,37 @@ export default function ProductEditPage({
           {/* ── Classification ── */}
           <section className="mb-4 rounded-xl border border-line bg-white p-5">
             <h2 className="mb-4 text-sm font-semibold text-ink">Classification</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="SKU" hint="Cannot be changed after creation">
-                <Input
-                  value={product.sku}
-                  readOnly
-                  className="cursor-not-allowed bg-bg-subtle font-mono text-xs text-ink-3"
-                />
-              </Field>
-              <Field label="Manufacturer" error={errors.manufacturer}>
-                <Input
-                  name="manufacturer"
-                  defaultValue={product.manufacturer?.name ?? ''}
-                  placeholder="e.g. Neimeth"
-                />
-              </Field>
-            </div>
-            <Field label="Category" error={errors.category_id}>
-              <div className="relative">
-                <Input
-                  value={categoryInput}
-                  onChange={e => { setCategoryInput(e.target.value); setCatSuggest(true); }}
-                  onFocus={() => setCatSuggest(true)}
-                  onBlur={() => setTimeout(() => setCatSuggest(false), 150)}
-                  placeholder={catsLoading ? 'Loading categories…' : 'e.g. Anti-Helmintics'}
-                  disabled={catsLoading}
-                />
-                {catSuggest && filteredCats.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-line bg-white shadow-xl">
-                    {filteredCats.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="flex w-full items-center px-3 py-2 text-left text-sm text-ink hover:bg-bg-subtle transition-colors"
-                        onMouseDown={() => { setCategoryInput(c.name); setCatSuggest(false); }}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {catSuggest && categoryInput.length > 0 && filteredCats.length === 0 && (
-                  <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-line bg-white px-3 py-2 text-xs text-ink-3 shadow-xl">
-                    "<span className="font-medium text-ink">{categoryInput}</span>" will be created as a new category.
-                  </div>
-                )}
-              </div>
+            <Field label="SKU" hint="Cannot be changed after creation">
+              <Input
+                value={product.sku}
+                readOnly
+                className="cursor-not-allowed bg-bg-subtle font-mono text-xs text-ink-3"
+              />
             </Field>
+            <div className="grid gap-0 sm:grid-cols-2 sm:gap-3">
+              <ComboboxField
+                label="Manufacturer"
+                options={allManufacturers}
+                value={manufacturerInput}
+                onChange={setManufacturerInput}
+                placeholder="Search or add manufacturer…"
+                loading={mfrsLoading}
+                allowCreate
+                createLabel="Add manufacturer"
+                error={errors.manufacturer}
+              />
+              <ComboboxField
+                label="Category"
+                options={allCategories}
+                value={categoryInput}
+                onChange={setCategoryInput}
+                placeholder="Search or add category…"
+                loading={catsLoading}
+                allowCreate
+                createLabel="Add category"
+                error={errors.category_id}
+              />
+            </div>
           </section>
 
           {/* ── Pricing ── */}

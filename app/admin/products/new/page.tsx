@@ -5,6 +5,7 @@ import Image           from 'next/image';
 import Link            from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { Field, Input, Select } from '@/components/ui/Field';
+import { ComboboxField } from '@/components/ui/ComboboxField';
 import { Button }      from '@/components/ui/Button';
 import { PageHead }    from '@/components/shared/PageHead';
 import {
@@ -12,7 +13,7 @@ import {
   Upload, X, Box, RotateCw,
 } from '@/components/icons';
 import { useToast }              from '@/contexts/ToastContext';
-import { useProductCategories }  from '@/hooks/admin/useAdminProducts';
+import { useProductCategories, useProductManufacturers } from '@/hooks/admin/useAdminProducts';
 import { cn }                    from '@/lib/utils';
 
 interface FormErrors { [field: string]: string }
@@ -156,8 +157,10 @@ export default function NewProductPage() {
   const queryClient = useQueryClient();
 
   // Category + Manufacturer data
-  const { data: categoryData, isLoading: catsLoading } = useProductCategories();
-  const allCategories = (categoryData ?? []) as { id: number; name: string }[];
+  const { data: categoryData,     isLoading: catsLoading } = useProductCategories();
+  const { data: mfrData,          isLoading: mfrsLoading  } = useProductManufacturers();
+  const allCategories    = (categoryData ?? []) as { id: number; name: string }[];
+  const allManufacturers = (mfrData      ?? []) as { id: number; name: string }[];
 
   // Form state
   const [images,     setImages]     = useState<ImagePreview[]>([]);
@@ -165,12 +168,9 @@ export default function NewProductPage() {
   const [errors,     setErrors]     = useState<FormErrors>({});
   const [serverErr,  setServerErr]  = useState('');
 
-  // For category/manufacturer: use text input (API auto-creates)
-  const [categoryInput, setCategoryInput] = useState('');
-  const [catSuggest,    setCatSuggest]    = useState(false);
-  const filteredCats = allCategories.filter(c =>
-    categoryInput && c.name.toLowerCase().includes(categoryInput.toLowerCase()),
-  );
+  // Combobox state
+  const [categoryInput,     setCategoryInput]     = useState('');
+  const [manufacturerInput, setManufacturerInput] = useState('');
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -205,7 +205,7 @@ export default function NewProductPage() {
 
     // Resolve category & manufacturer IDs (API auto-creates if not found)
     const categoryName     = categoryInput.trim();
-    const manufacturerName = (fd.get('manufacturer') as string)?.trim();
+    const manufacturerName = manufacturerInput.trim();
 
     if (categoryName) {
       // Upsert category via API and get ID
@@ -356,45 +356,30 @@ export default function NewProductPage() {
           <section className="mb-4 rounded-xl border border-line bg-white p-5">
             <h2 className="mb-4 text-sm font-semibold text-ink">Classification</h2>
             <p className="mb-3 text-xs text-ink-3">SKU is auto-generated from manufacturer + brand name after you save.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Manufacturer" error={errors.manufacturer}>
-                <Input name="manufacturer" placeholder="Neimeth" />
-              </Field>
+            <div className="grid gap-0 sm:grid-cols-2 sm:gap-3">
+              <ComboboxField
+                label="Manufacturer"
+                options={allManufacturers}
+                value={manufacturerInput}
+                onChange={setManufacturerInput}
+                placeholder="Search or add manufacturer…"
+                loading={mfrsLoading}
+                allowCreate
+                createLabel="Add manufacturer"
+                error={errors.manufacturer}
+              />
+              <ComboboxField
+                label="Category"
+                options={allCategories}
+                value={categoryInput}
+                onChange={setCategoryInput}
+                placeholder="Search or add category…"
+                loading={catsLoading}
+                allowCreate
+                createLabel="Add category"
+                error={errors.category_id}
+              />
             </div>
-            {/* Category with autocomplete */}
-            <Field label="Category" error={errors.category_id}>
-              <div className="relative">
-                <Input
-                  value={categoryInput}
-                  onChange={e => { setCategoryInput(e.target.value); setCatSuggest(true); }}
-                  onFocus={() => setCatSuggest(true)}
-                  onBlur={() => setTimeout(() => setCatSuggest(false), 150)}
-                  placeholder={catsLoading ? 'Loading categories…' : 'e.g. Anti-Helmintics'}
-                  disabled={catsLoading}
-                />
-                {catSuggest && filteredCats.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-line bg-white shadow-xl">
-                    {filteredCats.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="flex w-full items-center px-3 py-2 text-left text-sm text-ink hover:bg-bg-subtle transition-colors"
-                        onMouseDown={() => { setCategoryInput(c.name); setCatSuggest(false); }}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {catSuggest && categoryInput && filteredCats.length === 0 && (
-                  <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-line bg-white px-3 py-2 shadow-xl">
-                    <p className="text-xs text-ink-3">
-                      Press Enter or continue typing — "<span className="font-medium text-ink">{categoryInput}</span>" will be created as a new category.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </Field>
           </section>
 
           {/* ── Pricing ── */}

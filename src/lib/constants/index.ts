@@ -78,6 +78,12 @@ export const CONSOLE_NAV = [
         roles: ['ADMIN', 'STAFF'] as Role[],
       },
       {
+        label: 'Manufacturers',
+        href: '/admin/manufacturers',
+        icon: 'Building' as const,
+        roles: ['ADMIN', 'STAFF'] as Role[],
+      },
+      {
         label: 'Inventory',
         href: '/admin/inventory',
         icon: 'Boxes' as const,

@@ -97,6 +97,54 @@ const BYPASS_PATHS = [
   '/driver/reset-password',
 ];
 
+/**
+ * Attempt a silent token refresh using the refresh cookie.
+ * Returns a NextResponse with the new access token set, or null if recovery
+ * is not possible (refresh token missing, invalid, or wrong role for route).
+ */
+async function trySilentRefresh(
+  req:   NextRequest,
+  route: typeof PROTECTED_ROUTES[number],
+): Promise<NextResponse | null> {
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
+  if (!refreshToken) return null;
+
+  const refreshPayload = await verifyRefreshJwt(refreshToken);
+  if (!refreshPayload || refreshPayload.type !== 'refresh') return null;
+
+  // Ensure the role in the refresh token is actually allowed on this route
+  if (!route.roles.includes(refreshPayload.role)) return null;
+
+  // Mint a fresh access token inline — no DB round-trip needed here.
+  // (jti rotation is handled by the explicit /api/auth/refresh endpoint.)
+  const newAccessToken = await mintAccessToken(refreshPayload);
+
+  const reqHeaders = new Headers(req.headers);
+  reqHeaders.set('x-user-id',   String(refreshPayload.userId));
+  reqHeaders.set('x-user-role', refreshPayload.role);
+
+  const res = NextResponse.next({ request: { headers: reqHeaders } });
+  res.cookies.set(ACCESS_COOKIE, newAccessToken, {
+    httpOnly: true,
+    secure:   IS_PROD,
+    sameSite: 'lax',
+    path:     '/',
+    maxAge:   60 * 15,
+  });
+  return res;
+}
+
+function loginRedirect(req: NextRequest, route: typeof PROTECTED_ROUTES[number]): NextResponse {
+  const fullPath = req.nextUrl.pathname + (req.nextUrl.search ?? '');
+  const res = NextResponse.redirect(
+    new URL(`${route.loginPath}?redirect=${encodeURIComponent(fullPath)}`, req.url),
+  );
+  // Clear stale cookies so the browser doesn't send them on the next request
+  res.cookies.set(ACCESS_COOKIE,  '', { maxAge: 0, path: '/' });
+  res.cookies.set(REFRESH_COOKIE, '', { maxAge: 0, path: '/' });
+  return res;
+}
+
 export default async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
@@ -111,69 +159,43 @@ export default async function proxy(req: NextRequest): Promise<NextResponse> {
   // Unprotected path — pass through
   if (!route) return NextResponse.next();
 
-  // Read token from cookie or Authorization header
+  // Read access token from cookie or Authorization header
   const token =
     req.cookies.get(ACCESS_COOKIE)?.value ??
     req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
 
+  // ── Case 1: No access token at all ──────────────────────────────────────────
+  // The browser deletes the cookie when its maxAge (15 min) elapses, so an
+  // absent cookie is the most common "logged out during inactivity" symptom.
+  // Try to recover from the refresh token before redirecting to login.
   if (!token) {
-    // Preserve the full URL (path + query string) so redirected users land
-    // back on the right page after signing in.
-    const fullPath = req.nextUrl.pathname + (req.nextUrl.search ?? '');
+    if (!isMobileRequest(req)) {
+      const recovered = await trySilentRefresh(req, route);
+      if (recovered) return recovered;
+    }
     return isMobileRequest(req)
       ? NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 })
-      : NextResponse.redirect(new URL(`${route.loginPath}?redirect=${encodeURIComponent(fullPath)}`, req.url));
+      : loginRedirect(req, route);
   }
 
+  // ── Case 2: Access token present but invalid/expired ────────────────────────
   const payload = await verifyToken(token);
 
   if (!payload) {
-    // Access token expired/invalid — try a silent refresh before kicking the user out.
-    // This covers the case where the 15-min access token expired during normal navigation
-    // but the 7-day refresh token is still valid (the common "logout after 15 min" bug).
     if (!isMobileRequest(req)) {
-      const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
-      if (refreshToken) {
-        const refreshPayload = await verifyRefreshJwt(refreshToken);
-        if (refreshPayload?.type === 'refresh') {
-          // Issue a new access token inline — no DB lookup needed here.
-          // (The explicit /api/auth/refresh endpoint handles jti rotation for API clients.)
-          const newAccessToken = await mintAccessToken(refreshPayload);
-
-          const reqHeaders = new Headers(req.headers);
-          reqHeaders.set('x-user-id',   String(refreshPayload.userId));
-          reqHeaders.set('x-user-role', refreshPayload.role);
-
-          const res = NextResponse.next({ request: { headers: reqHeaders } });
-          res.cookies.set(ACCESS_COOKIE, newAccessToken, {
-            httpOnly: true,
-            secure:   IS_PROD,
-            sameSite: 'lax',
-            path:     '/',
-            maxAge:   60 * 15,
-          });
-          return res;
-        }
-      }
+      const recovered = await trySilentRefresh(req, route);
+      if (recovered) return recovered;
     }
-
-    // No valid refresh token — redirect to sign-in
-    const fullPath = req.nextUrl.pathname + (req.nextUrl.search ?? '');
-    const res = isMobileRequest(req)
+    return isMobileRequest(req)
       ? NextResponse.json({ status: 'error', message: 'Token expired or invalid' }, { status: 401 })
-      : NextResponse.redirect(new URL(`${route.loginPath}?redirect=${encodeURIComponent(fullPath)}`, req.url));
-
-    // Clear stale cookies on redirect
-    res.cookies.set(ACCESS_COOKIE,  '', { maxAge: 0, path: '/' });
-    res.cookies.set(REFRESH_COOKIE, '', { maxAge: 0, path: '/' });
-    return res;
+      : loginRedirect(req, route);
   }
 
+  // ── Case 3: Valid token but wrong role ───────────────────────────────────────
   if (!route.roles.includes(payload.role)) {
-    // Authenticated but wrong role — send to their own dashboard
     const roleHome: Record<UserRole, string> = {
       ADMIN:    '/admin/overview',
-      STAFF:    '/admin/overview',  // STAFF uses the same console as ADMIN
+      STAFF:    '/admin/overview',
       DRIVER:   '/driver',
       CUSTOMER: '/portal',
     };
@@ -182,8 +204,9 @@ export default async function proxy(req: NextRequest): Promise<NextResponse> {
       : NextResponse.redirect(new URL(roleHome[payload.role], req.url));
   }
 
-  // ✅ Authorised — inject user info as headers so route handlers can read it
-  // without verifying the JWT a second time (minor perf win)
+  // ── ✅ Authorised ────────────────────────────────────────────────────────────
+  // Inject user info as request headers so route handlers don't need to
+  // re-verify the JWT (minor perf win).
   const reqHeaders = new Headers(req.headers);
   reqHeaders.set('x-user-id',   String(payload.userId));
   reqHeaders.set('x-user-role', payload.role);

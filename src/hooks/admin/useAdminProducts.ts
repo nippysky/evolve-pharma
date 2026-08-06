@@ -21,6 +21,7 @@ export const PRODUCT_KEYS = {
   list:           (params: GetAdminProductsParams) =>
                     ['products', 'list', params]                 as const,
   categories:     ['product', 'categories']                      as const,
+  manufacturers:  ['product', 'manufacturers']                   as const,
   inventoryStats: ['inventory-stats']                            as const,
 };
 
@@ -39,6 +40,19 @@ export function useProductCategories() {
   return useQuery({
     queryKey: PRODUCT_KEYS.categories,
     queryFn:  getProductCategories,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+/** All manufacturers, cached 30 min. */
+export function useProductManufacturers() {
+  return useQuery<{ id: number; name: string; product_count: number; created_at: string }[]>({
+    queryKey: PRODUCT_KEYS.manufacturers,
+    queryFn:  async () => {
+      const res  = await fetch('/api/products/manufacturers', { credentials: 'include' });
+      const json = await res.json();
+      return json?.data?.manufacturers ?? [];
+    },
     staleTime: 30 * 60 * 1000,
   });
 }
