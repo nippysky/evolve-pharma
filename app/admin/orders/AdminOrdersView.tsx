@@ -3,13 +3,10 @@ import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Search, Box, Eye, Printer, X, ChevronLeft, ChevronRight,
-  Pill, MapPin, Phone, Building, Check, AlertTriangle, Refresh,
-  Download, FileText, Truck, User, Plus, CheckCircle, RotateCw,
-} from '@/components/icons';
+import {Search, Box, Eye, Printer, X, ChevronLeft, ChevronRight, Pill, MapPin, Phone, Building, Check, Refresh, FileText, Truck, User, CheckCircle, RotateCw} from '@/components/icons';
 import { formatNaira, formatDate, cn } from '@/lib/utils';
 import { useToast } from '@/contexts/ToastContext';
+import { SITE } from '@/lib/constants';
 import { useUser } from '@/contexts/UserContext';
 
 interface AdminOrder {
@@ -334,9 +331,10 @@ function buildInvoiceHTML(order: OrderDetail): string {
 <div style="max-width:800px;margin:0 auto;">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2.5px solid #0d9488;">
     <div>
-      <div style="font-size:22px;font-weight:800;color:#042a36;letter-spacing:-0.03em;">Envolve Phamaceutical Limited</div>
+      <div style="font-size:22px;font-weight:800;color:#042a36;letter-spacing:-0.03em;">${SITE.legalName}</div>
       <div style="font-size:11px;color:#64748b;margin-top:4px;">EnvolveCare Express · Licensed Pharma Distributor</div>
-      <div style="font-size:11px;color:#64748b;">Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos</div>
+      <div style="font-size:11px;color:#64748b;">${SITE.address}</div>
+      <div style="font-size:11px;color:#64748b;">${SITE.email} · ${SITE.phone}</div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:28px;font-weight:800;color:#0d9488;letter-spacing:-0.04em;">INVOICE</div>
@@ -385,7 +383,7 @@ function buildInvoiceHTML(order: OrderDetail): string {
     </div>
   </div>
   <div style="border-top:1px solid #e2e8f0;padding-top:16px;display:flex;justify-content:space-between;">
-    <div style="font-size:10px;color:#94a3b8;line-height:1.7;"><div>Computer-generated invoice — no physical signature required.</div><div>For queries: orders@ece.envolvepharm.com.ng</div></div>
+    <div style="font-size:10px;color:#94a3b8;line-height:1.7;"><div>Computer-generated invoice — no physical signature required.</div><div>For queries: ${SITE.email} · ${SITE.phone}</div></div>
     <div style="font-size:10px;color:#94a3b8;text-align:right;"><div>EnvolveCare Express</div><div>Licensed Pharma Distributor</div></div>
   </div>
 </div></body></html>`;
@@ -425,7 +423,7 @@ function buildPicklistHTML(order: OrderDetail): string {
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #042a36;">
     <div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#64748b;margin-bottom:4px;">WAREHOUSE PICKLIST</div>
-      <div style="font-size:20px;font-weight:800;color:#042a36;">Envolve Phamaceutical Limited</div>
+      <div style="font-size:20px;font-weight:800;color:#042a36;">${SITE.legalName}</div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:20px;font-weight:800;color:#0d9488;letter-spacing:-0.03em;">PICK LIST</div>
@@ -504,7 +502,7 @@ function buildWaybillHTML(order: OrderDetail): string {
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #0d9488;">
     <div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#64748b;margin-bottom:4px;">DELIVERY NOTE / WAYBILL</div>
-      <div style="font-size:20px;font-weight:800;color:#042a36;">Envolve Phamaceutical Limited</div>
+      <div style="font-size:20px;font-weight:800;color:#042a36;">${SITE.legalName}</div>
       <div style="font-size:11px;color:#64748b;">EnvolveCare Express · Licensed Pharma Distributor</div>
     </div>
     <div style="text-align:right;">

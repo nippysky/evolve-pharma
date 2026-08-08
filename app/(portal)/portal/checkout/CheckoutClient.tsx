@@ -3,13 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Field, Input, Textarea, Select } from '@/components/ui/Field';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import {ButtonLink} from '@/components/ui/Button';
 import { PageHead } from '@/components/shared/PageHead';
-import {
-  CreditCard, Building, Truck, AlertTriangle,
-  Lock, MapPin, Phone, ArrowLeft, Check, X,
-  Spinner, Box,
-} from '@/components/icons';
+import {CreditCard, Building, Truck, AlertTriangle, Lock, MapPin, Phone, ArrowLeft, Check, X, Spinner, Box} from '@/components/icons';
 // Box is used in EmptyBasket and order summary list items
 import { useBasket } from '@/lib/hooks/useBasket';
 import { useToast } from '@/contexts/ToastContext';

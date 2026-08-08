@@ -7,6 +7,7 @@ import {
 }                                    from '@/lib/cart-db';
 import { writeAuditLog }                from '@/lib/audit';
 import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { notifyCustomerAndOwner } from '@/lib/notifications';
 
 export async function POST(req: NextRequest) {
   // Read raw body (needed for HMAC verification)
@@ -60,18 +61,54 @@ async function handleWebhookEvent(
       );
 
       if (tx) {
-        const updatedOrder = await db.order.update({
+        // Paystack retries webhooks on timeout or a non-2xx reply, and can
+        // deliver the same event more than once — sometimes concurrently.
+        //
+        // A read-then-write guard would still race: two retries could both
+        // read UNPAID and both fire notifications. This conditional UPDATE is
+        // atomic — the database decides the winner, and only the invocation
+        // that actually performed the transition sees affected > 0. Duplicates
+        // cost a single query and stop here.
+        const affected = await db.$executeRaw`
+          UPDATE orders
+          SET payment_status    = 'PAID',
+              status            = 'CONFIRMED',
+              payment_reference = ${reference}
+          WHERE id = ${tx.order_id}
+            AND payment_status <> 'PAID'
+        `;
+
+        if (affected === 0) {
+          console.log(`[webhook] charge.success → order #${tx.order_id} already PAID, duplicate event ignored`);
+          return;
+        }
+
+        const updatedOrder = await db.order.findUnique({
           where:  { id: tx.order_id },
-          data:   {
-            payment_status:    'PAID',
-            payment_reference: reference,
-            status:            'CONFIRMED',
-          },
           select: { customer_id: true },
         });
+        if (!updatedOrder) return;
+
         console.log(`[webhook] charge.success → order #${tx.order_id} marked PAID`);
         // Trigger referral reward check (non-blocking)
         void checkAndAwardReferralReward(updatedOrder.customer_id);
+
+        void notifyCustomerAndOwner(
+          updatedOrder.customer_id,
+          {
+            type:  'payment',
+            title: 'Payment received',
+            body:  `We've confirmed your payment of ₦${((data.amount ?? 0) / 100).toLocaleString('en-NG')}. ` +
+                   `Your order is now being processed.`,
+            link:  `/portal/orders/${tx.order_id}`,
+          },
+          {
+            type:  'payment',
+            title: 'Payment confirmed',
+            body:  `Order #${tx.order_id} has been paid — ₦${((data.amount ?? 0) / 100).toLocaleString('en-NG')}.`,
+            link:  `/admin/orders`,
+          },
+        );
       } else {
         // No transaction record — try matching by order.payment_reference
         const updated = await db.order.findFirst({
@@ -111,11 +148,47 @@ async function handleWebhookEvent(
       // Auto-update the linked order's payment_status to FAILED.
       // Order status stays PENDING so the customer can retry payment.
       if (tx) {
-        await db.order.update({
-          where: { id: tx.order_id },
-          data:  { payment_status: 'FAILED' },
+        // Same atomic guard as charge.success, with one extra safeguard: the
+        // WHERE clause refuses to touch an order that is already PAID or
+        // REFUNDED, so a late or out-of-order failed event can never downgrade
+        // a settled payment. affected === 0 means "nothing to do" — either a
+        // duplicate, or an order that has since been paid.
+        const affected = await db.$executeRaw`
+          UPDATE orders
+          SET payment_status = 'FAILED'
+          WHERE id = ${tx.order_id}
+            AND payment_status NOT IN ('PAID', 'REFUNDED', 'FAILED')
+        `;
+
+        if (affected === 0) {
+          console.log(`[webhook] charge.failed → order #${tx.order_id} not eligible, ignoring`);
+          return;
+        }
+
+        const failedOrder = await db.order.findUnique({
+          where:  { id: tx.order_id },
+          select: { customer_id: true, order_number: true },
         });
+        if (!failedOrder) return;
         console.log(`[webhook] charge.failed → order #${tx.order_id} payment marked FAILED`);
+
+        void notifyCustomerAndOwner(
+          failedOrder.customer_id,
+          {
+            type:  'payment',
+            title: 'Payment failed',
+            body:  `We couldn't process your payment for order ${failedOrder.order_number}. ` +
+                   `${data.gateway_response ?? 'Please try again or contact us.'}`,
+            link:  `/portal/orders/${tx.order_id}`,
+          },
+          {
+            type:  'payment',
+            title: 'Payment failed',
+            body:  `Payment failed on order ${failedOrder.order_number}. ` +
+                   `Reason: ${data.gateway_response ?? 'unknown'}.`,
+            link:  `/admin/orders`,
+          },
+        );
       } else {
         // Fallback: match by payment_reference
         await db.order.updateMany({

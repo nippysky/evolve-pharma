@@ -20,6 +20,7 @@ import { revalidateOrders }            from '@/lib/revalidate';
 import { writeAuditLog }               from '@/lib/audit';
 import { sendPaymentStatusEmail }      from '@/lib/mail';
 import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { notifyUser }                  from '@/lib/notifications';
 import {
   apiSuccess,
   apiError,
@@ -50,20 +51,33 @@ export async function PATCH(
     const orderId = parseInt(id, 10);
     if (isNaN(orderId)) return apiNotFound('Order');
 
-    const order = await db.order.findUnique({
-      where:  { id: orderId },
-      select: {
-        id: true, order_number: true, payment_status: true,
-        total: true, customer_id: true,
-      },
-    });
+    // One query for the order, the on-behalf marker, and the customer's user id.
+    // Fetching these separately meant three round trips for one row — costly on
+    // serverless, where the connection pool is 1.
+    const rows = await db.$queryRaw<Array<{
+      id:                number;
+      order_number:      string;
+      payment_status:    string;
+      total:             string | number;
+      customer_id:       number;
+      placed_by_user_id: number | null;
+      user_id:           number;
+      email:             string;
+      first_name:        string;
+    }>>`
+      SELECT o.id, o.order_number, o.payment_status, o.total, o.customer_id,
+             o.placed_by_user_id, c.user_id, u.email, u.first_name
+      FROM orders o
+      JOIN customers c ON c.id = o.customer_id
+      JOIN users     u ON u.id = c.user_id
+      WHERE o.id = ${orderId}
+      LIMIT 1
+    `;
+    const order = rows[0];
     if (!order) return apiNotFound('Order');
 
     // Guard: on-behalf orders only.
-    const rows = await db.$queryRaw<Array<{ placed_by_user_id: number | null }>>`
-      SELECT placed_by_user_id FROM orders WHERE id = ${orderId}
-    `;
-    if (!rows[0]?.placed_by_user_id) {
+    if (!order.placed_by_user_id) {
       return apiForbidden(
         'This order was placed by the customer themselves, so its payment is ' +
         'confirmed automatically by Paystack and cannot be set manually.',
@@ -99,18 +113,14 @@ export async function PATCH(
       },
     });
 
-    // Cache bust + notify the customer
-    const cust = await db.customer.findUnique({
-      where:  { id: order.customer_id },
-      select: { user_id: true, user: { select: { email: true, first_name: true } } },
-    });
-    revalidateOrders({ orderId, userId: cust?.user_id });
+    // Cache bust + notify the customer — all from the single lookup above.
+    revalidateOrders({ orderId, userId: order.user_id });
 
-    if (cust?.user) {
+    {
       try {
         await sendPaymentStatusEmail({
-          to:            cust.user.email,
-          name:          cust.user.first_name,
+          to:            order.email,
+          name:          order.first_name,
           orderNumber:   order.order_number,
           orderId:       order.id,
           paymentStatus: 'PAID',
@@ -135,6 +145,14 @@ export async function PATCH(
                    `Method: ${received_via}. Reference: ${payment_reference}.` +
                    `${note ? ` Note: ${note}` : ''}`,
       req,
+    });
+
+    void notifyUser(order.user_id, {
+      type:  'payment',
+      title: 'Payment confirmed',
+      body:  `${actorName} confirmed receipt of your payment for order ${order.order_number} ` +
+             `(₦${Number(order.total).toLocaleString('en-NG')}, via ${received_via.replace(/_/g, ' ')}).`,
+      link:  `/portal/orders/${orderId}`,
     });
 
     void checkAndAwardReferralReward(order.customer_id);

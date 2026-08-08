@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db }                         from '@/lib/db';
-import {
-  verifyRefreshToken,
-  signAccessToken,
-  signRefreshToken,
-}                                     from '@/lib/jwt';
-import {
-  REFRESH_COOKIE,
-  setAuthCookies,
-  clearAuthCookies,
-}                                     from '@/lib/auth';
-import {
-  apiSuccess,
-  apiUnauthorized,
-  apiInternalError,
-}                                     from '@/lib/api/response';
+import {verifyRefreshToken, signAccessToken, signRefreshToken}                                     from '@/lib/jwt';
+import {REFRESH_COOKIE, setAuthCookies, clearAuthCookies}                                     from '@/lib/auth';
+import {apiUnauthorized, apiInternalError}                                     from '@/lib/api/response';
 import type { UserRole }              from '@/lib/api/types';
 
 export async function POST(req: NextRequest) {

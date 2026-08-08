@@ -4,10 +4,7 @@ import { Container, Section } from '@/components/ui/Layout';
 import { ButtonLink } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Primitives';
 import { ProductCard } from '@/components/shared/ProductCard';
-import {
-  ArrowRight, Shield, Truck, CreditCard, CheckCircle,
-  Pill, Sparkle, Lock, Basket, ShoppingCart, User,
-} from '@/components/icons';
+import {ArrowRight, Shield, Truck, CreditCard, CheckCircle, Pill, Sparkle, Lock, Basket, ShoppingCart} from '@/components/icons';
 import { PRODUCT_CATEGORIES }                from '@/lib/constants';
 import { getSession }                        from '@/lib/auth';
 import { formatNaira }                       from '@/lib/utils';

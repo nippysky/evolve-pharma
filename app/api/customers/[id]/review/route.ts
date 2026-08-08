@@ -13,6 +13,7 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog }       from '@/lib/audit';
 import { revalidateCustomers } from '@/lib/revalidate';
+import { notifyCustomer }      from '@/lib/notifications';
 import { sendCustomerApprovalEmail, sendCustomerRejectionEmail } from '@/lib/mail';
 
 const schema = z.object({
@@ -121,6 +122,16 @@ export async function PATCH(
     });
 
     revalidateCustomers();
+    void notifyCustomer(customerId, {
+      type:  'account',
+      title: decision === 'approve' ? 'Account approved' : 'Account application declined',
+      body:  decision === 'approve'
+        ? 'Your pharmacy account has been verified. You can now browse the catalogue and place orders.'
+        : `Your application was not approved.${review_note?.trim() ? ` Reason: ${review_note.trim()}` : ''} ` +
+          'Please contact us if you believe this is a mistake.',
+      link:  decision === 'approve' ? '/portal/catalog' : null,
+    });
+
     return apiSuccess(
       { customer_id: customerId, status: newStatus },
       200,

@@ -79,10 +79,10 @@ export default function RegistrationPendingPage() {
       <p className="mt-6 text-sm text-ink-3">
         Questions?{' '}
         <a
-          href="mailto:support@ece.envolvepharm.com.ng"
+          href="mailto:info@envolvepharm.com.ng"
           className="font-medium text-brand-600 hover:underline hover:underline-offset-2"
         >
-          support@ece.envolvepharm.com.ng
+          info@envolvepharm.com.ng
         </a>
       </p>
 

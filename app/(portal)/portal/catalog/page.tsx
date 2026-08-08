@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { getActiveProducts } from '@/lib/data/products.server';
 import { PortalCatalogClient } from '@/components/portal/PortalCatalogClient';
-import { Pill } from '@/components/icons';
 
 function CatalogSkeleton() {
   return (

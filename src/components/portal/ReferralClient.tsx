@@ -2,7 +2,7 @@
 
 import { useState }       from 'react';
 import type { ReferralData } from '@/lib/data/referral.server';
-import { Star, Users, Copy, Check, ArrowRight } from '@/components/icons';
+import {Star, Users, Copy, Check} from '@/components/icons';
 import { cn }             from '@/lib/utils';
 import { REFERRAL_POINTS_PER_SIGNUP } from '@/lib/constants';
 

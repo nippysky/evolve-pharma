@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { getSession }       from '@/lib/auth';
 import { getOrderDetail }   from '@/lib/data/orders.server';
 import { formatNaira, formatDate } from '@/lib/utils';
+import { SITE } from '@/lib/constants';
 import { PageHead }          from '@/components/shared/PageHead';
 import { PrintOrderButton }  from '@/components/portal/PrintOrderButton';
-import { ArrowLeft, Box, MapPin, Phone, Building, Pill, Calendar, Tag, AlertTriangle } from '@/components/icons';
+import {ArrowLeft, MapPin, Phone, Building, Pill, Calendar, Tag, AlertTriangle} from '@/components/icons';
 
 const ORDER_STYLE: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   pending:    { bg: 'bg-amber-50 border border-amber-200',   text: 'text-amber-800',  dot: 'bg-amber-400',  label: 'Pending'    },
@@ -77,7 +78,7 @@ export default async function CustomerOrderDetailPage({ params }: Props) {
             </p>
             <p className="mt-0.5 text-xs text-violet-700">
               This order was created for you by <strong>{order.placed_by_name}</strong> of
-              Envolve Phamaceutical Limited. If you did not request it, please contact us.
+              {SITE.legalName}. If you did not request it, please contact us.
             </p>
           </div>
         </div>

@@ -1,11 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  TrendingUp, TrendingDown, Refresh,
-  CreditCard, Box, Truck, Users,
-  Building, AlertTriangle, ChevronDown, User,
-} from '@/components/icons';
+import {TrendingUp, TrendingDown, Refresh, CreditCard, Box, Truck, Users, Building, AlertTriangle, ChevronDown, User} from '@/components/icons';
 import { formatNaira, cn } from '@/lib/utils';
 
 interface KPIs {
@@ -177,7 +173,7 @@ function AreaChart({ data, color = '#16a34a' }: { data: DayRevenue[]; color?: st
   );
 }
 
-function DonutChart({ segments, labelMap, colorMap, size = 140 }: {
+function DonutChart({ segments, colorMap, size = 140 }: {
   segments: { status: string; count: number }[];
   labelMap: Record<string, string>;
   colorMap: Record<string, string>;

@@ -13,10 +13,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter }                    from 'next/navigation';
 import Link                             from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Search, Plus, Minus, Trash, User, Building, MapPin, CreditCard,
-  AlertTriangle, CheckCircle, RotateCw, ArrowLeft, Box, Pill, Send,
-} from '@/components/icons';
+import {Search, Plus, Minus, Trash, User, Building, MapPin, CreditCard, AlertTriangle, CheckCircle, ArrowLeft, Box, Pill, Send} from '@/components/icons';
 import { Button }            from '@/components/ui/Button';
 import { useToast }          from '@/contexts/ToastContext';
 import { cn, formatNaira }   from '@/lib/utils';

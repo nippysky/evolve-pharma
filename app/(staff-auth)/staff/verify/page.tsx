@@ -116,10 +116,10 @@ export default function StaffVerifyPage() {
             Contact your administrator to resend the invitation email.
           </p>
           <a
-            href="mailto:support@envolvepharm.com.ng"
+            href="mailto:info@envolvepharm.com.ng"
             className="mt-4 inline-block text-sm font-medium text-brand-600 hover:underline"
           >
-            support@envolvepharm.com.ng
+            info@envolvepharm.com.ng
           </a>
         </div>
       )}

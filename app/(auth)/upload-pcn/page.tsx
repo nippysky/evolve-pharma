@@ -157,8 +157,8 @@ export default function UploadPcnPage() {
 
         <p className="text-center text-xs text-ink-3">
           You can also email it to{' '}
-          <a href="mailto:compliance@ece.envolvepharm.com.ng" className="font-medium text-brand-600 hover:underline">
-            compliance@ece.envolvepharm.com.ng
+          <a href="mailto:info@envolvepharm.com.ng" className="font-medium text-brand-600 hover:underline">
+            info@envolvepharm.com.ng
           </a>{' '}
           and we&apos;ll add it to your account.
         </p>

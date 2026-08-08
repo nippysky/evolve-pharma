@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { z }           from 'zod';
+
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
 import { sendCustomerInvitationEmail } from '@/lib/mail';
@@ -7,16 +7,7 @@ import { generateOtp }                 from '@/lib/api/issue-tokens';
 import { customerOnboardSchema }       from '@/lib/schemas';
 import { revalidateCustomers }         from '@/lib/revalidate';
 import { writeAuditLog }               from '@/lib/audit';
-import {
-  apiSuccess,
-  apiPaginated,
-  apiError,
-  apiUnauthorized,
-  apiForbidden,
-  apiInternalError,
-  handlePrismaError,
-  parsePagination,
-} from '@/lib/api/response';
+import {apiSuccess, apiPaginated, apiError, apiUnauthorized, apiForbidden, apiInternalError, handlePrismaError, parsePagination} from '@/lib/api/response';
 
 export async function GET(req: NextRequest) {
   try {

@@ -6,9 +6,9 @@ import { useProductCategories } from '@/hooks/admin/useAdminProducts';
 import { PageHead }          from '@/components/shared/PageHead';
 import { Button }            from '@/components/ui/Button';
 import { Field, Input }      from '@/components/ui/Field';
-import { Search, AlertTriangle, RotateCw, Tag, Plus, Trash, X, Edit } from '@/components/icons';
+import {Search, AlertTriangle, RotateCw, Tag, Plus, Trash, X} from '@/components/icons';
 import { useToast }          from '@/contexts/ToastContext';
-import { cn }                from '@/lib/utils';
+
 import type { CategoryDTO }  from '@/lib/api/types';
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -183,7 +183,6 @@ function DeleteModal({ category, onClose, onDeleted }: DeleteModalProps) {
 }
 
 export default function CategoriesPage() {
-  const toast       = useToast();
   const queryClient = useQueryClient();
 
   const [query,     setQuery]     = useState('');

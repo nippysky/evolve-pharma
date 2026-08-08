@@ -13,14 +13,7 @@ import { NextRequest } from 'next/server';
 import { z }           from 'zod';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
-import {
-  apiSuccess,
-  apiError,
-  apiUnauthorized,
-  apiForbidden,
-  apiNotFound,
-  apiInternalError,
-} from '@/lib/api/response';
+import {apiSuccess, apiError, apiUnauthorized, apiForbidden, apiNotFound, apiInternalError} from '@/lib/api/response';
 import { writeAuditLog }       from '@/lib/audit';
 import { revalidateCustomers } from '@/lib/revalidate';
 
@@ -71,7 +64,7 @@ export async function PATCH(
     `;
 
     // Fetch updated customer for response
-    const updated = await db.$queryRaw<Array<{
+    await db.$queryRaw<Array<{
       assigned_staff_id: number | null;
     }>>`
       SELECT assigned_staff_id FROM customers WHERE id = ${customerId}

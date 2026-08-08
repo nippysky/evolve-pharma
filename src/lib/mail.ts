@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { SITE } from '@/lib/constants';
 
 // Logo is served from the Next.js public folder — accessible at /images/Evolve_Pharm.png
 // in production (Vercel). We derive the URL from FRONTEND_URL so it always points
@@ -46,7 +47,7 @@ export async function sendMail(opts: MailOptions): Promise<void> {
 
   await transport.sendMail({
     from:     `"${fromName}" <${fromAddress}>`,
-    replyTo:  opts.replyTo ?? `"Envolve Support" <support@envolvepharm.com.ng>`,
+    replyTo:  opts.replyTo ?? `"Envolve Support" <info@envolvepharm.com.ng>`,
     to:       opts.to,
     subject:  opts.subject,
     // multipart/alternative: email clients pick the richest version they support
@@ -130,16 +131,16 @@ function shell(preheader: string, bodyRows: string): string {
               <tr>
                 <td align="center">
                   <p style="margin:0 0 6px;font-size:13px;color:#94a3b8;">
-                    Envolve Pharmaceutical Ltd.
+                    ${SITE.legalName}
                   </p>
                   <p style="margin:0 0 10px;font-size:12px;color:#64748b;">
-                    Lagos, Nigeria &bull;
+                    ${SITE.address} &bull;
                     <a href="${siteUrl()}" style="color:#38bdf8;text-decoration:none;">
                       www.envolvepharm.com.ng
                     </a>
                   </p>
                   <p style="margin:0;font-size:11px;color:#475569;">
-                    &copy; ${year()} Envolve Pharmaceutical Ltd. All rights reserved.
+                    &copy; ${year()} ${SITE.legalName}. All rights reserved.
                   </p>
                   <p style="margin:10px 0 0;font-size:11px;color:#475569;">
                     This is a transactional email sent to you because you have
@@ -172,15 +173,7 @@ function contentRow(inner: string): string {
   </tr>`;
 }
 
-/** Divider row */
-function divider(): string {
-  return `
-  <tr>
-    <td style="padding:0 32px;">
-      <div style="border-top:1px solid #e2e8f0;"></div>
-    </td>
-  </tr>`;
-}
+
 
 /** CTA button block */
 function ctaButton(label: string, url: string, color = '#4f46e5'): string {
@@ -672,7 +665,7 @@ export async function sendOrderReceiptEmail(params: {
       ${body(`Thank you, ${params.name}!`, [
         params.placedByName
           ? `Your order <strong>${params.orderNumber}</strong> was placed on your behalf by ` +
-            `<strong>${params.placedByName}</strong> of Envolve Phamaceutical Limited. Here is your receipt:`
+            `<strong>${params.placedByName}</strong> of ${SITE.legalName}. Here is your receipt:`
           : `Your order <strong>${params.orderNumber}</strong> has been successfully placed. Here is your receipt:`,
       ])}
 

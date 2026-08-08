@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   if (session.role !== 'ADMIN') redirect('/admin/overview');
 
   // Ensure table exists + load persisted settings
-  let saved: Record<string, string> = {};
+  const saved: Record<string, string> = {};
   try {
     await db.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS app_settings (
@@ -32,7 +32,7 @@ export default async function SettingsPage() {
   }
 
   const defaults = {
-    company_name:        saved.company_name        ?? SITE.name,
+    company_name:        saved.company_name        ?? SITE.legalName,
     company_email:       saved.company_email       ?? SITE.email,
     company_phone:       saved.company_phone       ?? SITE.phone,
     hq_address:          saved.hq_address          ?? SITE.address,

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { ArrowRight, AlertTriangle, Shield } from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
 import { useLoginStaff } from '@/hooks/staff/useStaff';
-import { setStaffSessionAction } from '@/lib/actions';
 import { getMe } from '@/lib/api/services/auth.service';
 import { classifyLoginError } from '@/lib/errors';
 
@@ -51,18 +50,11 @@ export default function StaffSignInPage() {
 
           // Prefetch auth/me while the JWT cookie is freshly set so the
           // sidebar shows the real name immediately — even before UserContext resolves.
-          let fullName = '';
           try {
-            const me = await getMe();
-            fullName = [me.first_name, me.last_name].filter(Boolean).join(' ');
+            await getMe();
           } catch {
             // auth/me will resolve later through UserContext — not fatal
           }
-
-          await setStaffSessionAction(data.role, {
-            email: data.email,
-            ...(fullName ? { full_name: fullName } : {}),
-          });
 
           toast.success('Welcome back', 'Opening the console…');
 
@@ -114,7 +106,7 @@ export default function StaffSignInPage() {
             id="email"
             name="email"
             type="email"
-            placeholder="you@ece.envolvepharm.com.ng"
+            placeholder="you@envolvepharm.com.ng"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

@@ -7,7 +7,6 @@ import { Button }                from '@/components/ui/Button';
 import { Field, Input }          from '@/components/ui/Field';
 import { Search, AlertTriangle, RotateCw, Building, Plus, Trash, Edit, X } from '@/components/icons';
 import { useToast }              from '@/contexts/ToastContext';
-import { cn }                    from '@/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -290,7 +289,6 @@ function DeleteModal({ manufacturer, onClose, onDeleted }: DeleteModalProps) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ManufacturersPage() {
-  const toast       = useToast();
   const queryClient = useQueryClient();
 
   const [query,    setQuery]    = useState('');

@@ -67,7 +67,7 @@ function createPrismaClient(): PrismaClient {
 // In production the module is evaluated once, so globalThis is irrelevant —
 // we just create a fresh client and export it.
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __prisma: PrismaClient | undefined;
 }
 

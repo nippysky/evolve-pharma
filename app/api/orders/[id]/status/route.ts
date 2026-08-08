@@ -12,6 +12,7 @@ import {
   apiInternalError,
 } from '@/lib/api/response';
 import { writeAuditLog }        from '@/lib/audit';
+import { notifyUser }           from '@/lib/notifications';
 import { sendOrderStatusEmail } from '@/lib/mail';
 import { v4 as uuidv4 }         from 'uuid';
 
@@ -127,7 +128,7 @@ export async function PATCH(
     const trackingCode = newTrackingCode ?? order.delivery?.tracking_code ?? null;
     const customer = await db.customer.findUnique({
       where:  { id: order.customer_id },
-      select: { user: { select: { email: true, first_name: true, last_name: true } } },
+      select: { user_id: true, user: { select: { email: true, first_name: true, last_name: true } } },
     });
 
     // 8. Fire-and-forget: audit log + customer email
@@ -142,6 +143,28 @@ export async function PATCH(
       description: `Order ${order.order_number} status: ${order.status} → ${newStatus}`,
       req,
     });
+
+    // In-app notification mirroring the status email
+    if (newStatus !== 'PENDING') {
+      const STATUS_COPY: Record<string, { title: string; body: string }> = {
+        CONFIRMED:  { title: 'Order confirmed',  body: 'has been confirmed and is queued for picking.' },
+        PROCESSING: { title: 'Order processing', body: 'is being picked and packed in our warehouse.' },
+        DISPATCHED: { title: 'Order dispatched', body: 'has left our warehouse and is on its way.' },
+        DELIVERED:  { title: 'Order delivered',  body: 'has been delivered. Thank you for your business.' },
+        CANCELLED:  { title: 'Order cancelled',  body: 'has been cancelled. Contact us if this is unexpected.' },
+      };
+      const copy = STATUS_COPY[newStatus];
+      if (copy) {
+        // Reuses the customer lookup above instead of resolving again.
+        if (customer?.user_id) void notifyUser(customer.user_id, {
+          type:  'order',
+          title: copy.title,
+          body:  `Order ${order.order_number} ${copy.body}` +
+                 (newStatus === 'DISPATCHED' && trackingCode ? ` Tracking code: ${trackingCode}.` : ''),
+          link:  `/portal/orders/${order.id}`,
+        });
+      }
+    }
 
     if (customer?.user && newStatus !== 'PENDING') {
       try {

@@ -577,10 +577,16 @@ model Notification {
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   title      String   @db.VarChar(255)
   body       String   @db.Text
-  // "order_update" | "low_stock" | "customer_review" | "system"
+  // "order" | "payment" | "delivery" | "account" | "referral" | "system"
   type       String   @db.VarChar(50)
+  // In-app destination, e.g. "/portal/orders/12" — clicking the notification
+  // opens the thing it is about. Null for purely informational entries.
+  link       String?  @db.VarChar(500)
   is_read    Boolean  @default(false)
   created_at DateTime @default(now())
 
+  // Unread badge reads by user; the list orders by recency.
+  @@index([user_id, is_read])
+  @@index([user_id, created_at])
   @@map("notifications")
 }

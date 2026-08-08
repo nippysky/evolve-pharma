@@ -14,6 +14,7 @@ import { writeAuditLog }          from '@/lib/audit';
 import { sendOrderStatusEmail }   from '@/lib/mail';
 import { revalidateDeliveries }   from '@/lib/revalidate';
 import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { notifyUser, notifyRoles } from '@/lib/notifications';
 
 const ADMIN_TRANSITIONS: Record<string, string[]> = {
   AWAITING_DISPATCH: ['ASSIGNED'],
@@ -145,9 +146,14 @@ export async function PATCH(
       // Cash-on-delivery settlement. Only when the driver explicitly confirms
       // collection — never inferred from the delivery status alone.
       if (cash_collected) {
+        // Pull the customer's user_id in the same query so the notification
+        // below doesn't need its own lookup (pool of 1 on serverless).
         const ord = await db.order.findUnique({
           where:  { id: delivery.order_id },
-          select: { order_number: true, payment_status: true, total: true, customer_id: true },
+          select: {
+            order_number: true, payment_status: true, total: true, customer_id: true,
+            customer: { select: { user_id: true } },
+          },
         });
 
         if (ord && ord.payment_status !== 'PAID' && ord.payment_status !== 'REFUNDED') {
@@ -170,6 +176,21 @@ export async function PATCH(
                          `Amount: ₦${Number(ord.total).toLocaleString('en-NG')}. ` +
                          `${ord.payment_status} → PAID.`,
             req,
+          });
+
+          void notifyUser(ord.customer.user_id, {
+            type:  'payment',
+            title: 'Payment received on delivery',
+            body:  `Cash payment of ₦${Number(ord.total).toLocaleString('en-NG')} was collected ` +
+                   `for order ${ord.order_number} at handover.`,
+            link:  `/portal/orders/${delivery.order_id}`,
+          });
+          void notifyRoles(['ADMIN'], {
+            type:  'payment',
+            title: 'Cash collected on delivery',
+            body:  `${session.first_name} ${session.last_name} collected ` +
+                   `₦${Number(ord.total).toLocaleString('en-NG')} for order ${ord.order_number}.`,
+            link:  `/admin/orders`,
           });
 
           void checkAndAwardReferralReward(ord.customer_id);

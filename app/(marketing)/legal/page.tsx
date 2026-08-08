@@ -4,7 +4,7 @@ import { Container, Section } from '@/components/ui/Layout';
 export const metadata: Metadata = {
   title: 'Legal',
   description:
-    'Terms of service, privacy policy, and cookies policy for Envolve Phamaceutical Limited.',
+    'Terms of service, privacy policy, and cookies policy for Envolve Pharmaceuticals Limited.',
 };
 
 export default function LegalPage() {
@@ -65,7 +65,7 @@ export default function LegalPage() {
           <h2>Contact</h2>
           <p>
             For questions about these policies, email{' '}
-            <a href="mailto:legal@ece.envolvepharm.com.ng">legal@ece.envolvepharm.com.ng</a>.
+            <a href="mailto:info@envolvepharm.com.ng">info@envolvepharm.com.ng</a>.
           </p>
         </article>
       </Container>

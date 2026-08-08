@@ -1,10 +1,6 @@
 'use client';
 import React, { useState, useCallback, useTransition } from 'react';
-import {
-  Shield, ClipboardList, CheckCircle, XCircle, AlertTriangle,
-  RotateCw, ChevronLeft, ChevronRight, MapPin, User, Users, Mail,
-  Logout, Search, Filter,
-} from '@/components/icons';
+import {Shield, CheckCircle, XCircle, AlertTriangle, RotateCw, ChevronLeft, ChevronRight, MapPin, User, Users, Mail, Logout, Search, Filter} from '@/components/icons';
 import { useLoginHistory } from '@/hooks/admin/useAdminLogs';
 import type { LoginHistoryFilters } from '@/lib/api/services/admin.service';
 import { useToast } from '@/contexts/ToastContext';

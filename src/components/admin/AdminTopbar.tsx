@@ -2,16 +2,16 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Bell, Menu, X, Logout } from '@/components/icons';
+import { Menu, X, Logout } from '@/components/icons';
 import { Logo } from '@/components/shared/Logo';
 import { GlobalSearch } from '@/components/admin/GlobalSearch';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Icon, type IconName } from '@/components/icons';
 import { CONSOLE_NAV, DRIVER_NAV } from '@/lib/constants';
 import { staffSignOutAction } from '@/lib/actions/role';
 import type { Role } from '@/types';
 
 interface AdminTopbarProps {
-  notificationCount?: number;
   role: Role;
 }
 
@@ -22,7 +22,7 @@ const ROLE_LABEL: Record<Role, string> = {
   CUSTOMER: 'Customer',
 };
 
-export function AdminTopbar({ notificationCount = 0, role }: AdminTopbarProps) {
+export function AdminTopbar({ role }: AdminTopbarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const navGroups = role === 'DRIVER' ? DRIVER_NAV : CONSOLE_NAV;
@@ -68,18 +68,7 @@ export function AdminTopbar({ notificationCount = 0, role }: AdminTopbarProps) {
         )}
 
         <div className="flex items-center gap-1">
-          {!isDriver && (
-            <Link
-              href="/admin/notifications"
-              aria-label="Notifications"
-              className="relative grid h-9 w-9 place-items-center rounded-md text-ink-2 hover:bg-bg-muted hover:text-ink"
-            >
-              <Bell size={18} />
-              {notificationCount > 0 && (
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-leaf-500 ring-2 ring-white" />
-              )}
-            </Link>
-          )}
+          {!isDriver && <NotificationBell href="/admin/notifications" />}
         </div>
       </div>
 

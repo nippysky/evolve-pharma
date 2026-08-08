@@ -8,10 +8,7 @@ import { Field, Input, Select } from '@/components/ui/Field';
 import { ComboboxField } from '@/components/ui/ComboboxField';
 import { Button }      from '@/components/ui/Button';
 import { PageHead }    from '@/components/shared/PageHead';
-import {
-  AlertTriangle, CheckCircle, ArrowLeft,
-  Upload, X, Box, RotateCw,
-} from '@/components/icons';
+import {AlertTriangle, CheckCircle, ArrowLeft, Upload, X, Box} from '@/components/icons';
 import { useToast }              from '@/contexts/ToastContext';
 import { useUser }               from '@/contexts/UserContext';
 import { useProductCategories, useProductManufacturers } from '@/hooks/admin/useAdminProducts';

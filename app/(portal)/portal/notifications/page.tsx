@@ -1,20 +1,18 @@
-import { Bell } from '@/components/icons';
-import { EmptyState } from '@/components/ui/Primitives';
-import { PageHead } from '@/components/shared/PageHead';
+export const dynamic = 'force-dynamic';
+
+import { PageHead }          from '@/components/shared/PageHead';
+import { NotificationsList } from '@/components/shared/NotificationsList';
+
+export const metadata = { title: 'Notifications' };
 
 export default function NotificationsPage() {
-  // TODO: wire to real notifications API when backend ships
   return (
     <>
       <PageHead
         title="Notifications"
-        subtitle="Real-time updates on orders, payments, and shipments."
+        subtitle="Updates on your orders, payments and account."
       />
-      <EmptyState
-        icon={<Bell size={24} />}
-        title="No notifications yet"
-        description="When something happens with your account, you'll see it here."
-      />
+      <NotificationsList />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Search, ShoppingCart, Menu, X } from '@/components/icons';
 import { Logo } from '@/components/shared/Logo';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Icon, type IconName } from '@/components/icons';
 import { useBasket } from '@/lib/hooks/useBasket';
 import { PORTAL_NAV } from '@/lib/constants';
@@ -104,6 +105,9 @@ export function PortalTopbar() {
 
         {/* Spacer */}
         <div className="hidden flex-1 lg:block" />
+
+        {/* Notifications */}
+        <NotificationBell href="/portal/notifications" />
 
         {/* Cart — far right */}
         <Link

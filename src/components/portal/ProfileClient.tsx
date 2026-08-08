@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { Field, Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import {
-  CheckCircle, Shield, User, Building,
-  MapPin,
-} from '@/components/icons';
+import {CheckCircle, Shield, Building, MapPin} from '@/components/icons';
 import { useToast }      from '@/contexts/ToastContext';
 import { signOutAction } from '@/lib/actions/role';
 import { initials, formatNaira, formatDate } from '@/lib/utils';

@@ -6,21 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Field, Input, Select, Checkbox } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { OtpInput } from '@/components/ui/OtpInput';
-import {
-  ArrowRight,
-  ArrowLeft,
-  Upload,
-  AlertTriangle,
-  FileText,
-  CheckCircle,
-  Mail,
-} from '@/components/icons';
+import {ArrowRight, ArrowLeft, Upload, AlertTriangle, FileText, CheckCircle, Mail} from '@/components/icons';
 import { useToast } from '@/contexts/ToastContext';
-import {
-  useRegisterCustomer,
-  useVerifyOtp,
-  useResendOtp,
-} from '@/hooks/auth/useCustomerAuth';
+import {useRegisterCustomer, useVerifyOtp, useResendOtp} from '@/hooks/auth/useCustomerAuth';
 import { customerDetailsSchema, passwordSchema } from '@/lib/schemas';
 import { NIGERIAN_STATES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -272,11 +260,6 @@ export default function SignUpPage() {
     : step === 2 ? 'Upload your PCN certificate so our compliance team can verify you.'
     : step === 3 ? `Enter the 6-digit code we sent to ${details.email}.`
     : 'Set a password to finish your registration.';
-
-  const isLoading =
-    registerMutation.isPending ||
-    verifyOtpMutation.isPending ||
-    resendOtpMutation.isPending;
 
   return (
     <form noValidate onSubmit={(e) => e.preventDefault()} className="w-full max-w-136">

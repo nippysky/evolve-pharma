@@ -8,6 +8,7 @@ import {
   getOrCreateCart,
 }                                     from '@/lib/cart-db';
 import { getVatSettings }             from '@/lib/data/settings.server';
+import { notifyUser, notifyRoles }    from '@/lib/notifications';
 
 const FREE_SHIP_THRESHOLD = 50_000;    // ₦50,000
 const SHIP_FEE            = 2_500;     // ₦2,500
@@ -285,20 +286,46 @@ export async function createOrder(
       }
     }
 
-    // 2. Audit log — attributed to whoever actually placed the order.
-    //    Look up the customer's identity so the trail names both parties.
+    // 2. Resolve the customer ONCE.
+    //    The audit label, both notifications and the receipt email all need
+    //    the same record. Serverless runs a connection pool of 1, so four
+    //    separate lookups of the same row would queue behind each other on the
+    //    single connection. One raw join covers all of them — and picks up
+    //    assigned_staff_id in the same pass, which the Prisma types may not
+    //    expose until the client is regenerated.
     let customerLabel = `customer_id:${customerId}`;
+    let custUserId:   number | null = null;
+    let custEmail:    string | null = null;
+    let custFirst:    string | null = null;
+    let assignedStaffId: number | null = null;
+
     try {
-      const c = await db.customer.findUnique({
-        where:  { id: customerId },
-        select: { company_name: true, user: { select: { first_name: true, last_name: true, email: true } } },
-      });
-      if (c?.user) {
-        customerLabel = `${c.user.first_name} ${c.user.last_name}` +
-                        (c.company_name ? ` (${c.company_name})` : '') +
-                        ` <${c.user.email}>`;
+      const rows = await db.$queryRaw<Array<{
+        user_id:           number;
+        company_name:      string | null;
+        assigned_staff_id: number | null;
+        first_name:        string;
+        last_name:         string;
+        email:             string;
+      }>>`
+        SELECT c.user_id, c.company_name, c.assigned_staff_id,
+               u.first_name, u.last_name, u.email
+        FROM customers c
+        JOIN users u ON u.id = c.user_id
+        WHERE c.id = ${customerId}
+        LIMIT 1
+      `;
+      const c = rows[0];
+      if (c) {
+        customerLabel   = `${c.first_name} ${c.last_name}` +
+                          (c.company_name ? ` (${c.company_name})` : '') +
+                          ` <${c.email}>`;
+        custUserId      = c.user_id;
+        custEmail       = c.email;
+        custFirst       = c.first_name;
+        assignedStaffId = c.assigned_staff_id;
       }
-    } catch { /* fall back to the id label */ }
+    } catch { /* fall back to the id label; notifications degrade quietly */ }
 
     void writeAuditLog({
       userId:      placedBy?.userId ?? userId,
@@ -316,6 +343,37 @@ export async function createOrder(
           `Items: ${items.length}. Payment: ${paymentMethod}.`,
     });
 
+    // 2b. In-app notifications — customer confirmation plus an operational
+    //     alert for whoever handles this account. Both reuse the lookup above
+    //     rather than resolving the customer again, so this costs one INSERT
+    //     each instead of a lookup-plus-insert pair.
+    const staffAlert = {
+      type:  'order' as const,
+      title: `New order ${orderNumber}`,
+      body:  `${customerLabel} — ₦${total.toLocaleString('en-NG')}, ${items.length} line item(s).` +
+             (isOnBehalf ? ` Placed by ${placedBy!.name}.` : ''),
+      link:  `/admin/orders`,
+    };
+
+    if (custUserId) {
+      void notifyUser(custUserId, {
+        type:  'order',
+        title: `Order ${orderNumber} placed`,
+        body:  isOnBehalf
+          ? `${placedBy!.name} placed this order on your behalf. ` +
+            `Total ₦${total.toLocaleString('en-NG')}.`
+          : `We've received your order. Total ₦${total.toLocaleString('en-NG')}.`,
+        link:  `/portal/orders/${order.id}`,
+      });
+    }
+
+    if (assignedStaffId) {
+      void notifyUser(assignedStaffId, staffAlert);
+    } else {
+      // No rep on the account — fall back to the admin team.
+      void notifyRoles(['ADMIN'], staffAlert);
+    }
+
     // 3. Receipt email to customer.
     //    Skipped when the caller defers it — the on-behalf flow needs to mint a
     //    Paystack link first (which requires the total this function computes)
@@ -323,16 +381,13 @@ export async function createOrder(
     //    button, rather than emailing the customer twice.
     if (deferReceiptEmail) return;
 
-    try {
-      const custRecord = await db.customer.findUnique({
-        where:  { id: customerId },
-        select: { user: { select: { email: true, first_name: true } } },
-      });
-      if (custRecord?.user) {
-        try {
+    // Reuses the single customer lookup above — no second round trip.
+    if (custEmail && custFirst) {
+      try {
+        {
           await sendOrderReceiptEmail({
-            to:            custRecord.user.email,
-            name:          custRecord.user.first_name,
+            to:            custEmail,
+            name:          custFirst,
             orderNumber,
             orderId:       order.id,
             items:         lineItems.map(li => {
@@ -354,12 +409,10 @@ export async function createOrder(
             placedByName: placedBy ? placedBy.name : null,
             paymentUrl:   params.paymentUrl ?? null,
           });
-        } catch (mailErr) {
-          console.error('[createOrder] receipt email failed:', mailErr);
         }
+      } catch (mailErr) {
+        console.error('[createOrder] receipt email failed:', mailErr);
       }
-    } catch (e) {
-      console.error('[createOrder] receipt email lookup failed (non-fatal)', e);
     }
   })();
 

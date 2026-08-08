@@ -183,7 +183,7 @@ export default function StaffForgotPasswordPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@ece.envolvepharm.com.ng"
+                placeholder="you@envolvepharm.com.ng"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setServerError(''); }}
                 required

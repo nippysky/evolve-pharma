@@ -4,7 +4,7 @@ import { apiSuccess, apiInternalError } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const categories = await db.category.findMany({
       orderBy: { name: 'asc' },

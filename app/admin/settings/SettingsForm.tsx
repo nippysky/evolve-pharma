@@ -439,7 +439,7 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
             ops team will set you up directly.
           </p>
           <a
-            href="mailto:ops@ece.envolvepharm.com.ng"
+            href="mailto:info@envolvepharm.com.ng"
             className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-md border border-line bg-white px-3 text-sm text-ink hover:border-line-strong"
           >
             Email ops <ArrowRight size={12} />

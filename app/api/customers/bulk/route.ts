@@ -6,14 +6,7 @@ import { sendCustomerInvitationEmail } from '@/lib/mail';
 import { generateOtp }                 from '@/lib/api/issue-tokens';
 import { customerImportRowSchema }     from '@/lib/schemas';
 import { writeAuditLog }               from '@/lib/audit';
-import {
-  apiSuccess,
-  apiError,
-  apiUnauthorized,
-  apiForbidden,
-  apiInternalError,
-  handlePrismaError,
-} from '@/lib/api/response';
+import {apiSuccess, apiError, apiUnauthorized, apiForbidden, apiInternalError, handlePrismaError} from '@/lib/api/response';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_CONCURRENCY     = 5;                // parallel DB+email ops
@@ -51,7 +44,7 @@ function generateReferralCode(): string {
 }
 
 /** Parse file buffer into an array of raw row objects (header row → keys). */
-function parseWorkbook(buffer: Buffer, fileName: string): Record<string, unknown>[] {
+function parseWorkbook(buffer: Buffer): Record<string, unknown>[] {
   const wb    = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]!];
   if (!sheet) throw new Error('The file appears to be empty or has no sheets.');
@@ -239,7 +232,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     let rawRows: Record<string, unknown>[];
     try {
-      rawRows = parseWorkbook(buffer, fileName);
+      rawRows = parseWorkbook(buffer);
     } catch (parseErr) {
       return apiError((parseErr as Error).message ?? 'Could not read file.', 422);
     }

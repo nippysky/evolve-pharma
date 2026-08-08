@@ -27,7 +27,6 @@ export default async function MarketingProductsPage({ searchParams }: Props) {
   const role          = session?.role ?? null;
   const isCustomer    = role === 'CUSTOMER';
   const isAdminStaff  = role === 'ADMIN' || role === 'STAFF';
-  const isLoggedIn    = !!session;
   const portalHref    = '/portal/catalog';
 
   return (

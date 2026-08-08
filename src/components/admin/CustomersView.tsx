@@ -3,42 +3,14 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
-import {
-  Search,
-  Plus,
-  Upload,
-  Building,
-  Shield,
-  CheckCircle,
-  Clock,
-  XCircle,
-  AlertTriangle,
-  Users,
-  User,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  RotateCw,
-  ArrowUpRight,
-  FileText,
-  Phone,
-  Mail,
-  MapPin,
-} from '@/components/icons';
+import {Search, Plus, Upload, Building, Shield, CheckCircle, Clock, XCircle, AlertTriangle, Users, User, ChevronLeft, ChevronRight, Eye, RotateCw, ArrowUpRight, FileText, Phone, Mail, MapPin} from '@/components/icons';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Field';
-import { Avatar, EmptyState } from '@/components/ui/Primitives';
+import {Avatar} from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { PageHead } from '@/components/shared/PageHead';
 import { useToast } from '@/contexts/ToastContext';
-import {
-  useAllCustomers,
-  useReviewCustomer,
-  useCreateCustomer,
-  useBulkUploadCustomers,
-  type CustomerStage,
-  type TaggedCustomerRecord,
-} from '@/hooks/staff/useStaff';
+import {useAllCustomers, useReviewCustomer, useCreateCustomer, useBulkUploadCustomers, type CustomerStage, type TaggedCustomerRecord} from '@/hooks/staff/useStaff';
 import { customerOnboardSchema } from '@/lib/schemas';
 import { NIGERIAN_STATES } from '@/lib/constants';
 import { formatDate, cn } from '@/lib/utils';

@@ -1,28 +1,42 @@
-import type { OrderStatus, PaymentStatus, DeliveryStatus, Role } from '@/types';
+import type { OrderStatus, Role } from '@/types';
 
+/**
+ * Company details.
+ *
+ * Sourced from the corporate site (envolvepharm.com.ng) rather than invented.
+ * Anything customer-facing — invoices, receipts, contact links — must read from
+ * here so there is a single place to correct it.
+ */
 export const SITE = {
   name: 'EnvolveCare Express',
+  /** Registered entity, used on invoices and other formal documents. */
+  legalName: 'Envolve Pharmaceuticals Limited',
   shortName: 'ECE',
   tagline: 'Order pharmaceuticals and industrial chemicals online.',
   description:
-    'The online ordering platform of EnvolveCare Express — a Nigerian distributor of pharmaceuticals, industrial chemicals, and related products. Browse the catalog and order from your verified account.',
+    'The online ordering platform of Envolve Pharmaceuticals Limited — a Nigerian distributor of ' +
+    'pharmaceuticals, industrial chemicals, and related products. Browse the catalogue and order ' +
+    'from your verified account.',
   url: 'https://ece.envolvepharm.com.ng',
-  email: 'orders@ece.envolvepharm.com.ng',
-  phone: '+234 800 000 0000',
-  address: 'Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos, Nigeria',
-  socials: {
-    twitter: 'https://twitter.com/evolvecareexpress',
-    linkedin: 'https://linkedin.com/company/evolvecareexpress',
-    instagram: 'https://instagram.com/evolvecareexpress',
-  },
+  /** Verified on the corporate site's contact page. */
+  email: 'info@envolvepharm.com.ng',
+  phone: '+234 805 513 6726',
+  /** Tel: href form — no spaces. */
+  phoneHref: '+2348055136726',
+  address: '7, Celestial Way by Oworonshoki – Ogudu, Ogudu, Lagos, Nigeria',
+  // The corporate site lists social icons but none of them point anywhere yet,
+  // so there are no real handles to link to. Left empty deliberately rather
+  // than guessed — a dead social link is worse than none.
+  socials: {},
 } as const;
 
 export const PORTAL_NAV = [
-  { label: 'Catalog',     href: '/portal/catalog',   icon: 'Pill'  as const },
-  { label: 'My Orders',   href: '/portal/orders',    icon: 'Box'   as const },
-  { label: 'Track Order', href: '/portal/track',     icon: 'Truck' as const },
-  { label: 'Referrals',   href: '/portal/referral',  icon: 'Star'  as const },
-  { label: 'Profile',     href: '/portal/profile',   icon: 'User'  as const },
+  { label: 'Catalog',       href: '/portal/catalog',       icon: 'Pill'  as const },
+  { label: 'My Orders',     href: '/portal/orders',        icon: 'Box'   as const },
+  { label: 'Track Order',   href: '/portal/track',         icon: 'Truck' as const },
+  { label: 'Notifications', href: '/portal/notifications', icon: 'Bell'  as const },
+  { label: 'Referrals',     href: '/portal/referral',      icon: 'Star'  as const },
+  { label: 'Profile',       href: '/portal/profile',       icon: 'User'  as const },
 ] as const;
 //
 // `roles` gates which top-level roles see the item.
@@ -180,42 +194,6 @@ export const ORDER_STATUS_TONE: Record<OrderStatus, 'neutral' | 'info' | 'succes
   cancelled:  'danger',
 };
 
-export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
-  unpaid:   'Unpaid',
-  partial:  'Partially paid',
-  paid:     'Paid',
-  refunded: 'Refunded',
-  failed:   'Failed',
-};
-
-export const PAYMENT_STATUS_TONE: Record<PaymentStatus, 'neutral' | 'info' | 'success' | 'warning' | 'danger'> = {
-  unpaid:   'warning',
-  partial:  'warning',
-  paid:     'success',
-  refunded: 'neutral',
-  failed:   'danger',
-};
-
-export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, string> = {
-  awaiting_dispatch: 'Awaiting dispatch',
-  assigned:          'Assigned',
-  in_transit:        'In transit',
-  out_for_delivery:  'Out for delivery',
-  delivered:         'Delivered',
-  failed:            'Failed',
-  returned:          'Returned',
-};
-
-export const DELIVERY_STATUS_TONE: Record<DeliveryStatus, 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand'> = {
-  awaiting_dispatch: 'neutral',
-  assigned:          'brand',
-  in_transit:        'info',
-  out_for_delivery:  'info',
-  delivered:         'success',
-  failed:            'danger',
-  returned:          'warning',
-};
-
 export const NIGERIAN_STATES = [
   'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa',
   'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti',
@@ -242,22 +220,6 @@ export const PRODUCT_CATEGORIES = [
   'Ophthalmics',
   'Industrial Chemicals',
 ] as const;
-
-export const PRODUCT_FORMS = [
-  'Tablet',
-  'Capsule',
-  'Syrup',
-  'Suspension',
-  'Injection',
-  'Cream',
-  'Ointment',
-  'Drops',
-  'Inhaler',
-  'Patch',
-] as const;
-
-export const LOW_STOCK_THRESHOLD = 50;
-export const EXPIRY_WARNING_DAYS = 90;
 
 /** Fallback `referred_by` value stored when no referral code is entered at signup.
  *  No points are awarded for this code — it's just a sentinel for analytics. */

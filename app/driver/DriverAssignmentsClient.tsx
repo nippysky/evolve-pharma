@@ -290,7 +290,6 @@ function KpiStrip({ records }: { records: DriverDelivery[] }) {
 const ACTIVE_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'];
 
 export default function DriverAssignmentsClient() {
-  const qc = useQueryClient();
 
   const { data, isLoading, isError } = useQuery<ApiListResponse>({
     queryKey: ['driver-deliveries'],

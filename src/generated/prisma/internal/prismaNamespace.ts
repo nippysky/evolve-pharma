@@ -2271,6 +2271,7 @@ export const NotificationScalarFieldEnum = {
   title: 'title',
   body: 'body',
   type: 'type',
+  link: 'link',
   is_read: 'is_read',
   created_at: 'created_at'
 } as const
@@ -2490,7 +2491,8 @@ export type AppSettingsOrderByRelevanceFieldEnum = (typeof AppSettingsOrderByRel
 export const NotificationOrderByRelevanceFieldEnum = {
   title: 'title',
   body: 'body',
-  type: 'type'
+  type: 'type',
+  link: 'link'
 } as const
 
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum]

@@ -5,18 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Logo } from '@/components/shared/Logo';
 import { ButtonLink } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Layout';
-import {
-  ArrowRight,
-  Basket,
-  Lock,
-  Menu,
-  Search,
-  Shield,
-  Truck,
-  X,
-  ShoppingCart,
-  User,
-} from '@/components/icons';
+import {ArrowRight, Basket, Lock, Menu, Search, Shield, Truck, X, ShoppingCart} from '@/components/icons';
 import { cn } from '@/lib/utils';
 import type { SessionUser } from '@/types';
 

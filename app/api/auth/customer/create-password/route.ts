@@ -5,6 +5,7 @@ import { db }                from '@/lib/db';
 import { verifySetupToken }  from '@/lib/jwt';
 import { sendPcnUnderReviewEmail } from '@/lib/mail';
 import { writeAuditLog }          from '@/lib/audit';
+import { notifyRoles }            from '@/lib/notifications';
 import {
   apiSuccess,
   apiError,
@@ -97,6 +98,15 @@ export async function POST(req: NextRequest) {
     } catch (mailErr) {
       console.error('[create-password] PCN review email failed:', mailErr);
     }
+
+    // Alert the compliance team — this account is now blocking on their review.
+    void notifyRoles(['ADMIN', 'STAFF'], {
+      type:  'account',
+      title: 'New customer awaiting review',
+      body:  `${user.first_name} ${user.last_name} (${payload.email}) completed registration ` +
+             `and is pending PCN verification.`,
+      link:  existing ? `/admin/customers/${existing.id}` : '/admin/customers',
+    });
 
     void writeAuditLog({
       userId:      user.id,

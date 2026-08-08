@@ -14,8 +14,8 @@
 import { db }                   from '@/lib/db';
 import { getReferralSettings }  from '@/lib/data/settings.server';
 import { writeAuditLog }        from '@/lib/audit';
+import { notifyCustomer }       from '@/lib/notifications';
 
-type RawRow = { referral_threshold_awarded: number };
 type SumRow = { total_spend: string | null };
 
 /**
@@ -85,6 +85,14 @@ export async function checkAndAwardReferralReward(customerId: number): Promise<v
       `[referral-reward] Referee #${customerId} crossed ₦${settings.threshold.toLocaleString()} threshold. ` +
       `Referrer #${referrerId} awarded ₦${rewardPoints}.`,
     );
+
+    void notifyCustomer(referrerId, {
+      type:  'referral',
+      title: 'Referral reward earned',
+      body:  `Someone you referred reached ₦${settings.threshold.toLocaleString('en-NG')} in purchases. ` +
+             `₦${rewardPoints.toLocaleString('en-NG')} has been credited to your referral balance.`,
+      link:  '/portal/referral',
+    });
 
     // Audit — this credits real value to an account with no human involved,
     // so it needs a permanent trail, not just a server log.

@@ -2,20 +2,10 @@ import { NextRequest }                 from 'next/server';
 import { db }                          from '@/lib/db';
 import { getSession }                  from '@/lib/auth';
 import { verifyPaystackPayment }       from '@/lib/paystack';
-import {
-  getPaymentTransactionByRef,
-  updatePaymentTransactionStatus,
-}                                      from '@/lib/cart-db';
+import {getPaymentTransactionByRef, updatePaymentTransactionStatus}                                      from '@/lib/cart-db';
 import { checkAndAwardReferralReward } from '@/lib/referral-reward';
 import { writeAuditLog }               from '@/lib/audit';
-import {
-  apiSuccess,
-  apiError,
-  apiUnauthorized,
-  apiForbidden,
-  apiNotFound,
-  apiInternalError,
-} from '@/lib/api/response';
+import {apiSuccess, apiUnauthorized, apiForbidden, apiNotFound, apiInternalError} from '@/lib/api/response';
 
 type Ctx = { params: Promise<{ reference: string }> };
 

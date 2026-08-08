@@ -1,6 +1,7 @@
 'use client';
 import { Printer } from '@/components/icons';
 import { formatNaira, formatDate } from '@/lib/utils';
+import { SITE } from '@/lib/constants';
 
 export interface OrderDetailForPrint {
   order_number:      string;
@@ -40,7 +41,7 @@ export interface OrderDetailForPrint {
   }[];
 }
 
-function buildInvoiceHTML(order: OrderDetailForPrint, isAdmin = false): string {
+function buildInvoiceHTML(order: OrderDetailForPrint): string {
   const isPaid   = order.payment_status === 'paid' || order.payment_status === 'PAID';
   const fmtExpiry = (d: string | Date | null | undefined): string => {
     if (!d) return '—';
@@ -114,11 +115,11 @@ function buildInvoiceHTML(order: OrderDetailForPrint, isAdmin = false): string {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2.5px solid #0d9488;">
       <div>
         <div style="font-size:22px;font-weight:800;color:#042a36;letter-spacing:-0.03em;">
-          Envolve Phamaceutical Limited
+          ${SITE.legalName}
         </div>
         <div style="font-size:11px;color:#64748b;margin-top:4px;">EnvolveCare Express · Licensed Pharma Distributor</div>
-        <div style="font-size:11px;color:#64748b;">Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos</div>
-        <div style="font-size:11px;color:#64748b;">orders@ece.envolvepharm.com.ng</div>
+        <div style="font-size:11px;color:#64748b;">${SITE.address}</div>
+        <div style="font-size:11px;color:#64748b;">${SITE.email} · ${SITE.phone}</div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:28px;font-weight:800;color:#0d9488;letter-spacing:-0.04em;">INVOICE</div>
@@ -215,11 +216,11 @@ function buildInvoiceHTML(order: OrderDetailForPrint, isAdmin = false): string {
     <div style="border-top:1px solid #e2e8f0;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
       <div style="font-size:10px;color:#94a3b8;line-height:1.7;">
         <div>This is a computer-generated invoice and does not require a physical signature.</div>
-        <div>For queries: orders@ece.envolvepharm.com.ng · +234 800 000 0000</div>
+        <div>For queries: ${SITE.email} · ${SITE.phone}</div>
       </div>
       <div style="font-size:10px;color:#94a3b8;text-align:right;">
-        <div>EnvolveCare Express</div>
-        <div>RC: XXXXXXX · NAFDAC Licensed Distributor</div>
+        <div>${SITE.legalName}</div>
+        <div>NAFDAC Licensed Distributor</div>
       </div>
     </div>
 
@@ -235,13 +236,12 @@ function escHtml(s: string | null | undefined): string {
 
 interface Props {
   order: OrderDetailForPrint;
-  isAdmin?: boolean;
   label?: string;
 }
 
-export function PrintOrderButton({ order, isAdmin = false, label = 'Print / Save PDF' }: Props) {
+export function PrintOrderButton({ order, label = 'Print / Save PDF' }: Props) {
   const handlePrint = () => {
-    const html = buildInvoiceHTML(order, isAdmin);
+    const html = buildInvoiceHTML(order);
     const win  = window.open('', '_blank', 'width=900,height=720,scrollbars=yes');
     if (!win) {
       alert('Please allow pop-ups for this site to print the invoice.');

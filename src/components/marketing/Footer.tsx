@@ -4,7 +4,9 @@ import { Container } from '@/components/ui/Layout';
 import { Mail, Phone, MapPin, ArrowUpRight } from '@/components/icons';
 import { SITE } from '@/lib/constants';
 
-const MAIN_SITE = 'https://ece.envolvepharm.com.ng';
+// The corporate site, not this B2B platform. Pages verified to exist:
+// /about, /our-services, /contact. There is no /faq — don't link one.
+const MAIN_SITE = 'https://envolvepharm.com.ng';
 
 const SHOP_LINKS: { label: string; href: string }[] = [
   { label: 'Catalog', href: '/products' },
@@ -13,10 +15,10 @@ const SHOP_LINKS: { label: string; href: string }[] = [
 ];
 
 const COMPANY_LINKS: { label: string; href: string }[] = [
-  { label: 'About ECE', href: `${MAIN_SITE}/about` },
-  { label: 'FAQ', href: `${MAIN_SITE}/faq` },
-  { label: 'Contact', href: `${MAIN_SITE}/contact` },
-  { label: 'Main site', href: MAIN_SITE },
+  { label: 'About us',     href: `${MAIN_SITE}/about` },
+  { label: 'Our services', href: `${MAIN_SITE}/our-services` },
+  { label: 'Contact',      href: `${MAIN_SITE}/contact` },
+  { label: 'Main site',    href: MAIN_SITE },
 ];
 
 const LEGAL_LINKS: { label: string; href: string }[] = [
@@ -52,7 +54,7 @@ export function Footer() {
               <li className="flex items-center gap-2">
                 <Phone size={14} className="shrink-0 text-ink-3" />
                 <a
-                  href={`tel:${SITE.phone.replace(/\s/g, '')}`}
+                  href={`tel:${SITE.phoneHref}`}
                   className="transition-colors hover:text-ink"
                 >
                   {SITE.phone}

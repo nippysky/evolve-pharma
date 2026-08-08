@@ -1,5 +1,5 @@
 import { db }                  from '@/lib/db';
-import { DEFAULT_REFERRAL_CODE } from '@/lib/constants';
+
 import { unstable_cache }      from 'next/cache';
 
 export interface ReferralData {
