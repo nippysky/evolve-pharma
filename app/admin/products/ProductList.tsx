@@ -505,7 +505,7 @@ function PaginationBar({ page, hasMore, total, onPage }: { page: number; hasMore
   );
 }
 
-export function ProductsList() {
+export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
   // ── Filter / pagination state ────────────────────────────────────────────
   const [query,    setQuery]    = useState('');
   const [category, setCategory] = useState<string>(ALL);
@@ -744,18 +744,20 @@ export function ProductsList() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line-subtle bg-bg-subtle text-left">
-                  {/* Select-all checkbox */}
-                  <th className="w-10 px-4 py-3">
-                    <input
-                      ref={headerCheckRef}
-                      type="checkbox"
-                      checked={allPageSelected}
-                      onChange={toggleSelectAll}
-                      aria-label="Select all visible products"
-                      className="h-4 w-4 cursor-pointer rounded border-line accent-brand-600"
-                    />
-                  </th>
-                  {['', 'Product', 'SKU', 'Category', 'Price', 'Stock', 'Status', ''].map((h, i) => (
+                  {/* Select-all checkbox — admin only */}
+                  {isAdmin && (
+                    <th className="w-10 px-4 py-3">
+                      <input
+                        ref={headerCheckRef}
+                        type="checkbox"
+                        checked={allPageSelected}
+                        onChange={toggleSelectAll}
+                        aria-label="Select all visible products"
+                        className="h-4 w-4 cursor-pointer rounded border-line accent-brand-600"
+                      />
+                    </th>
+                  )}
+                  {['', 'Product', 'SKU', 'Category', 'Price', 'Stock', 'Status', ...(isAdmin ? [''] : [])].map((h, i) => (
                     <th key={i} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">{h}</th>
                   ))}
                 </tr>
@@ -773,17 +775,19 @@ export function ProductsList() {
                         isSel && 'bg-brand-50/40',
                       )}
                     >
-                      {/* Row checkbox */}
-                      <td className="w-10 px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={isSel}
-                          onChange={() => toggleSelect(p.sku)}
-                          aria-label={`Select ${p.brand_name}`}
-                          onClick={e => e.stopPropagation()}
-                          className="h-4 w-4 cursor-pointer rounded border-line accent-brand-600"
-                        />
-                      </td>
+                      {/* Row checkbox — admin only */}
+                      {isAdmin && (
+                        <td className="w-10 px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={isSel}
+                            onChange={() => toggleSelect(p.sku)}
+                            aria-label={`Select ${p.brand_name}`}
+                            onClick={e => e.stopPropagation()}
+                            className="h-4 w-4 cursor-pointer rounded border-line accent-brand-600"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <ImageStack images={p.images ?? []} alt={p.brand_name} />
                       </td>
@@ -806,14 +810,17 @@ export function ProductsList() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5"><Badge tone={b.tone}>{b.label}</Badge></td>
-                      <td className="px-3 py-3.5">
-                        <ActionMenu
-                          sku={p.sku}
-                          status={p.status ?? ''}
-                          onDelete={() => setDeleting({ sku: p.sku, brandName: p.brand_name, totalStock: p.total_stock ?? 0 })}
-                          onPublish={() => void handleSinglePublish(p.sku, p.brand_name)}
-                        />
-                      </td>
+                      {/* Actions — admin only */}
+                      {isAdmin && (
+                        <td className="px-3 py-3.5">
+                          <ActionMenu
+                            sku={p.sku}
+                            status={p.status ?? ''}
+                            onDelete={() => setDeleting({ sku: p.sku, brandName: p.brand_name, totalStock: p.total_stock ?? 0 })}
+                            onPublish={() => void handleSinglePublish(p.sku, p.brand_name)}
+                          />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -843,8 +850,8 @@ export function ProductsList() {
         />
       )}
 
-      {/* Floating bulk action bar — rendered only when something is selected */}
-      {selected.size > 0 && (
+      {/* Floating bulk action bar — admin only */}
+      {isAdmin && selected.size > 0 && (
         <BulkActionBar
           count={selected.size}
           draftCount={draftSelectedSkus.length}

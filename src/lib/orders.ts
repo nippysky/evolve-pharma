@@ -17,6 +17,17 @@ export interface OrderLineItem {
   quantity:   number;
 }
 
+/**
+ * Who physically created the order, when it wasn't the customer themselves.
+ * Absent for normal customer self-service checkout.
+ */
+export interface PlacedBy {
+  userId: number;
+  role:   string;   // 'ADMIN' | 'STAFF'
+  name:   string;
+  email:  string;
+}
+
 export interface CreateOrderParams {
   customerId:       number;
   userId:           number;
@@ -29,10 +40,57 @@ export interface CreateOrderParams {
   poNumber?:        string;
   paymentMethod:    'paystack' | 'bank_transfer' | 'cash_on_delivery';
   paystackReference?: string;
+  /**
+   * Set when a staff member or admin places this order on the customer's
+   * behalf. Drives attribution on the order row, the audit entry, and the
+   * wording of the receipt email.
+   */
+  placedBy?:        PlacedBy;
+  /**
+   * Paystack checkout URL to embed in the receipt email as a "Pay now" button.
+   * Used when an order is created awaiting payment (payment-link flow).
+   */
+  paymentUrl?:      string | null;
+  /**
+   * Skip the receipt email so the caller can send it later — used by the
+   * on-behalf flow, which must generate the Paystack link (needs the computed
+   * total) before emailing, so the customer gets one email with a Pay now button.
+   * The caller receives everything it needs in `receipt` on the result.
+   */
+  deferReceiptEmail?: boolean;
+}
+
+/** Everything needed to send the receipt email, returned when it was deferred. */
+export interface DeferredReceipt {
+  to:            string;
+  name:          string;
+  orderNumber:   string;
+  orderId:       number;
+  items:         Array<{
+    brand_name:   string;
+    generic_name: string | null;
+    quantity:     number;
+    unit_price:   number;
+    subtotal:     number;
+  }>;
+  subtotal:      number;
+  deliveryFee:   number;
+  vat:           number;
+  total:         number;
+  paymentMethod: string;
+  isPaid:        boolean;
+  placedByName:  string | null;
 }
 
 export type CreateOrderResult =
-  | { ok: true;  orderNumber: string; orderId: number; total: number }
+  | {
+      ok: true;
+      orderNumber: string;
+      orderId: number;
+      total: number;
+      /** Present only when deferReceiptEmail was set. */
+      receipt?: DeferredReceipt;
+    }
   | { ok: false; message: string };
 
 export async function createOrder(
@@ -43,7 +101,10 @@ export async function createOrder(
     deliveryState, deliveryCity, deliveryAddress,
     contactPhone, deliveryNotes, poNumber,
     paymentMethod, paystackReference,
+    placedBy, deferReceiptEmail,
   } = params;
+
+  const isOnBehalf = !!placedBy;
 
   if (!items.length) {
     return { ok: false, message: 'Order must contain at least one item.' };
@@ -191,6 +252,14 @@ export async function createOrder(
     data:  { order_number: orderNumber },
   });
 
+  // Persist on-behalf attribution. Raw SQL because placed_by_user_id is added
+  // via manual migration and isn't in the generated Prisma types.
+  if (isOnBehalf) {
+    await db.$executeRaw`
+      UPDATE orders SET placed_by_user_id = ${placedBy.userId} WHERE id = ${order.id}
+    `;
+  }
+
   // Payment transaction record
   if (paystackReference) {
     await createPaymentTransaction({
@@ -204,28 +273,56 @@ export async function createOrder(
 
   // Fire-and-forget: clear cart, audit log, receipt email
   void (async () => {
-    // 1. Clear cart
-    try {
-      const cart = await getOrCreateCart(customerId);
-      await clearCartItems(cart.id);
-    } catch (e) {
-      console.warn('[createOrder] cart clear failed (non-fatal)', e);
+    // 1. Clear cart — ONLY for customer self-checkout.
+    //    An on-behalf order must never wipe a cart the customer is still
+    //    building on their own device.
+    if (!isOnBehalf) {
+      try {
+        const cart = await getOrCreateCart(customerId);
+        await clearCartItems(cart.id);
+      } catch (e) {
+        console.warn('[createOrder] cart clear failed (non-fatal)', e);
+      }
     }
 
-    // 2. Audit log
+    // 2. Audit log — attributed to whoever actually placed the order.
+    //    Look up the customer's identity so the trail names both parties.
+    let customerLabel = `customer_id:${customerId}`;
+    try {
+      const c = await db.customer.findUnique({
+        where:  { id: customerId },
+        select: { company_name: true, user: { select: { first_name: true, last_name: true, email: true } } },
+      });
+      if (c?.user) {
+        customerLabel = `${c.user.first_name} ${c.user.last_name}` +
+                        (c.company_name ? ` (${c.company_name})` : '') +
+                        ` <${c.user.email}>`;
+      }
+    } catch { /* fall back to the id label */ }
+
     void writeAuditLog({
-      userId:      userId,
-      userType:    'CUSTOMER',
-      userName:    `customer_id:${customerId}`,
-      email:       '',
-      action:      'CREATE_ORDER',
+      userId:      placedBy?.userId ?? userId,
+      userType:    placedBy?.role   ?? 'CUSTOMER',
+      userName:    placedBy?.name   ?? customerLabel,
+      email:       placedBy?.email  ?? '',
+      action:      isOnBehalf ? 'CREATE_ORDER_ON_BEHALF' : 'CREATE_ORDER',
       entityType:  'Order',
       entityId:    String(order.id),
-      description: `Order ${orderNumber} created. Total: ₦${total.toLocaleString('en-NG')}. ` +
-                   `Items: ${items.length}. Payment: ${paymentMethod}.`,
+      description: isOnBehalf
+        ? `Order ${orderNumber} placed on behalf of ${customerLabel} by ` +
+          `${placedBy!.name} (${placedBy!.role}). Total: ₦${total.toLocaleString('en-NG')}. ` +
+          `Items: ${items.length}. Payment: ${paymentMethod}.`
+        : `Order ${orderNumber} created. Total: ₦${total.toLocaleString('en-NG')}. ` +
+          `Items: ${items.length}. Payment: ${paymentMethod}.`,
     });
 
-    // 3. Receipt email to customer
+    // 3. Receipt email to customer.
+    //    Skipped when the caller defers it — the on-behalf flow needs to mint a
+    //    Paystack link first (which requires the total this function computes)
+    //    and then send a single receipt that already contains the Pay now
+    //    button, rather than emailing the customer twice.
+    if (deferReceiptEmail) return;
+
     try {
       const custRecord = await db.customer.findUnique({
         where:  { id: customerId },
@@ -254,6 +351,8 @@ export async function createOrder(
             total,
             paymentMethod,
             isPaid,
+            placedByName: placedBy ? placedBy.name : null,
+            paymentUrl:   params.paymentUrl ?? null,
           });
         } catch (mailErr) {
           console.error('[createOrder] receipt email failed:', mailErr);
@@ -273,5 +372,40 @@ export async function createOrder(
     // revalidateTag is a no-op outside a request context — safe to ignore
   }
 
-  return { ok: true, orderNumber, orderId: order.id, total };
+  // When the receipt was deferred, hand the caller everything it needs to send
+  // it once the payment link exists.
+  let receipt: DeferredReceipt | undefined;
+  if (deferReceiptEmail) {
+    const custRecord = await db.customer.findUnique({
+      where:  { id: customerId },
+      select: { user: { select: { email: true, first_name: true } } },
+    });
+    if (custRecord?.user) {
+      receipt = {
+        to:          custRecord.user.email,
+        name:        custRecord.user.first_name,
+        orderNumber,
+        orderId:     order.id,
+        items: lineItems.map(li => {
+          const p = productMap.get(li.product_id)!;
+          return {
+            brand_name:   p.brand_name,
+            generic_name: null,
+            quantity:     li.quantity,
+            unit_price:   li.unit_price,
+            subtotal:     li.subtotal,
+          };
+        }),
+        subtotal,
+        deliveryFee,
+        vat,
+        total,
+        paymentMethod,
+        isPaid,
+        placedByName: placedBy?.name ?? null,
+      };
+    }
+  }
+
+  return { ok: true, orderNumber, orderId: order.id, total, receipt };
 }

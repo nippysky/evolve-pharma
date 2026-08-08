@@ -1964,9 +1964,11 @@ export const CustomerScalarFieldEnum = {
   referral_code: 'referral_code',
   referred_by: 'referred_by',
   referral_points: 'referral_points',
+  referral_threshold_awarded: 'referral_threshold_awarded',
   review_note: 'review_note',
   reviewed_by_id: 'reviewed_by_id',
   reviewed_at: 'reviewed_at',
+  assigned_staff_id: 'assigned_staff_id',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -2112,6 +2114,7 @@ export const OrderScalarFieldEnum = {
   delivery_fee: 'delivery_fee',
   total: 'total',
   notes: 'notes',
+  placed_by_user_id: 'placed_by_user_id',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const

@@ -5,6 +5,7 @@ import { getSession }                  from '@/lib/auth';
 import { sendCustomerInvitationEmail } from '@/lib/mail';
 import { generateOtp }                 from '@/lib/api/issue-tokens';
 import { customerImportRowSchema }     from '@/lib/schemas';
+import { writeAuditLog }               from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -279,6 +280,18 @@ export async function POST(req: NextRequest) {
       `${result.successful}/${result.total_records} ok, ${result.failed} failed ` +
       `(by ${session.email})`,
     );
+
+    void writeAuditLog({
+      userId:      session.userId,
+      userType:    session.role,
+      userName:    `${session.first_name} ${session.last_name}`,
+      email:       session.email,
+      action:      'BULK_IMPORT_CUSTOMERS',
+      entityType:  'Customer',
+      description: `Bulk customer import: ${result.successful} of ${result.total_records} ` +
+                   `created, ${result.failed} failed.`,
+      req,
+    });
 
     return apiSuccess(result, 200, 'Bulk import complete.');
   } catch (err) {

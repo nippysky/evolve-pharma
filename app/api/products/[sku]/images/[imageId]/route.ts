@@ -3,6 +3,7 @@ import { db }                      from '@/lib/db';
 import { getSession }              from '@/lib/auth';
 import { deleteFromCloudinary }    from '@/lib/cloudinary';
 import { revalidateProducts }      from '@/lib/revalidate';
+import { writeAuditLog }           from '@/lib/audit';
 import {
   apiSuccess,
   apiUnauthorized,
@@ -48,6 +49,18 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     });
 
     revalidateProducts(sku);
+    void writeAuditLog({
+      userId:      session.userId,
+      userType:    session.role,
+      userName:    `${session.first_name} ${session.last_name}`,
+      email:       session.email,
+      action:      'SET_PRIMARY_PRODUCT_IMAGE',
+      entityType:  'Product',
+      entityId:    sku,
+      description: `Set image #${imageId} as the primary image for product ${sku}.`,
+      req,
+    });
+
     return apiSuccess({ images: allImages }, 200, 'Primary image updated');
   } catch (err) {
     console.error('[PATCH /api/products/[sku]/images/[imageId]]', err);
@@ -99,6 +112,18 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     });
 
     revalidateProducts(sku);
+    void writeAuditLog({
+      userId:      session.userId,
+      userType:    session.role,
+      userName:    `${session.first_name} ${session.last_name}`,
+      email:       session.email,
+      action:      'DELETE_PRODUCT_IMAGE',
+      entityType:  'Product',
+      entityId:    sku,
+      description: `Deleted image #${imageId} from product ${sku}.`,
+      req,
+    });
+
     return apiSuccess({ images: allImages, deleted: true }, 200, 'Image deleted');
   } catch (err) {
     console.error('[DELETE /api/products/[sku]/images/[imageId]]', err);

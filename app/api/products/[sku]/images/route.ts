@@ -3,6 +3,7 @@ import { db }                   from '@/lib/db';
 import { getSession }           from '@/lib/auth';
 import { uploadToCloudinary }   from '@/lib/cloudinary';
 import { revalidateProducts }   from '@/lib/revalidate';
+import { writeAuditLog }        from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -149,6 +150,18 @@ export async function POST(
     });
 
     revalidateProducts(sku);
+    void writeAuditLog({
+      userId:      session.userId,
+      userType:    session.role,
+      userName:    `${session.first_name} ${session.last_name}`,
+      email:       session.email,
+      action:      'UPLOAD_PRODUCT_IMAGES',
+      entityType:  'Product',
+      entityId:    sku,
+      description: `Uploaded ${created.length} image(s) to product ${sku}.`,
+      req,
+    });
+
     return apiSuccess({ images: allImages, uploaded: created.length }, 201, 'Images uploaded successfully');
   } catch (err) {
     console.error('[POST /api/products/[sku]/images]', err);

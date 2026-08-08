@@ -644,6 +644,10 @@ export async function sendOrderReceiptEmail(params: {
   total:        number;
   paymentMethod: string;
   isPaid:        boolean;
+  /** Name of the staff member who placed this order on the customer's behalf. */
+  placedByName?: string | null;
+  /** Paystack checkout link, when the order was created awaiting payment. */
+  paymentUrl?:   string | null;
 }): Promise<void> {
   const portalUrl = `${siteUrl()}/portal/orders/${params.orderId}`;
   const subject   = `Order confirmed — ${params.orderNumber}`;
@@ -666,8 +670,18 @@ export async function sendOrderReceiptEmail(params: {
     preheader,
     contentRow(`
       ${body(`Thank you, ${params.name}!`, [
-        `Your order <strong>${params.orderNumber}</strong> has been successfully placed. Here is your receipt:`,
+        params.placedByName
+          ? `Your order <strong>${params.orderNumber}</strong> was placed on your behalf by ` +
+            `<strong>${params.placedByName}</strong> of Envolve Phamaceutical Limited. Here is your receipt:`
+          : `Your order <strong>${params.orderNumber}</strong> has been successfully placed. Here is your receipt:`,
       ])}
+
+      ${params.placedByName ? infoBox(
+        `<strong>Placed on your behalf</strong><br />` +
+        `${params.placedByName} created this order for you. If you did not request it, ` +
+        `please contact us immediately.`,
+        'warn',
+      ) : ''}
 
       <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
         style="border-collapse:collapse;margin:20px 0;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
@@ -712,7 +726,10 @@ export async function sendOrderReceiptEmail(params: {
         params.isPaid ? 'success' : 'warn',
       )}
 
-      ${ctaButton('View your order', portalUrl, '#0d9488')}
+      ${params.paymentUrl && !params.isPaid
+        ? ctaButton('Pay now', params.paymentUrl, '#0d9488') +
+          ctaButton('View your order', portalUrl, '#475569')
+        : ctaButton('View your order', portalUrl, '#0d9488')}
       ${signOff()}
     `),
   );

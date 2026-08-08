@@ -6,6 +6,7 @@ import { sendCustomerInvitationEmail } from '@/lib/mail';
 import { generateOtp }                 from '@/lib/api/issue-tokens';
 import { customerOnboardSchema }       from '@/lib/schemas';
 import { revalidateCustomers }         from '@/lib/revalidate';
+import { writeAuditLog }               from '@/lib/audit';
 import {
   apiSuccess,
   apiPaginated,
@@ -213,6 +214,19 @@ export async function POST(req: NextRequest) {
     } catch (mailErr) {
       console.error('[POST /api/customers] Invitation email failed:', mailErr);
     }
+
+    void writeAuditLog({
+      userId:      session.userId,
+      userType:    session.role,
+      userName:    `${session.first_name} ${session.last_name}`,
+      email:       session.email,
+      action:      'CREATE_CUSTOMER',
+      entityType:  'Customer',
+      entityId:    String(customer.id),
+      description: `Invited customer ${first_name} ${last_name} (${email.toLowerCase()})` +
+                   `${company_name ? ` of ${company_name}` : ''} — invitation email sent.`,
+      req,
+    });
 
     revalidateCustomers();
     return apiSuccess(

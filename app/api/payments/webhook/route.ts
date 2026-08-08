@@ -5,7 +5,8 @@ import {
   getPaymentTransactionByRef,
   updatePaymentTransactionStatus,
 }                                    from '@/lib/cart-db';
-import { writeAuditLog }             from '@/lib/audit';
+import { writeAuditLog }                from '@/lib/audit';
+import { checkAndAwardReferralReward } from '@/lib/referral-reward';
 
 export async function POST(req: NextRequest) {
   // Read raw body (needed for HMAC verification)
@@ -59,21 +60,36 @@ async function handleWebhookEvent(
       );
 
       if (tx) {
-        await db.order.update({
-          where: { id: tx.order_id },
-          data:  {
+        const updatedOrder = await db.order.update({
+          where:  { id: tx.order_id },
+          data:   {
             payment_status:    'PAID',
             payment_reference: reference,
             status:            'CONFIRMED',
           },
+          select: { customer_id: true },
         });
         console.log(`[webhook] charge.success → order #${tx.order_id} marked PAID`);
+        // Trigger referral reward check (non-blocking)
+        void checkAndAwardReferralReward(updatedOrder.customer_id);
       } else {
         // No transaction record — try matching by order.payment_reference
-        await db.order.updateMany({
-          where: { payment_reference: reference, payment_status: 'UNPAID' },
-          data:  { payment_status: 'PAID', status: 'CONFIRMED' },
+        const updated = await db.order.findFirst({
+          where:  { payment_reference: reference, payment_status: 'UNPAID' },
+          select: { id: true, customer_id: true },
         });
+        if (updated) {
+          await db.order.update({
+            where: { id: updated.id },
+            data:  { payment_status: 'PAID', status: 'CONFIRMED' },
+          });
+          void checkAndAwardReferralReward(updated.customer_id);
+        } else {
+          await db.order.updateMany({
+            where: { payment_reference: reference, payment_status: 'UNPAID' },
+            data:  { payment_status: 'PAID', status: 'CONFIRMED' },
+          });
+        }
       }
 
       void writeAuditLog({
@@ -91,6 +107,33 @@ async function handleWebhookEvent(
     } else if (event === 'charge.failed') {
       await updatePaymentTransactionStatus(reference, 'failed', JSON.stringify(data));
       console.log(`[webhook] charge.failed → ref ${reference} marked failed`);
+
+      // Auto-update the linked order's payment_status to FAILED.
+      // Order status stays PENDING so the customer can retry payment.
+      if (tx) {
+        await db.order.update({
+          where: { id: tx.order_id },
+          data:  { payment_status: 'FAILED' },
+        });
+        console.log(`[webhook] charge.failed → order #${tx.order_id} payment marked FAILED`);
+      } else {
+        // Fallback: match by payment_reference
+        await db.order.updateMany({
+          where: { payment_reference: reference, payment_status: { notIn: ['PAID', 'REFUNDED'] } },
+          data:  { payment_status: 'FAILED' },
+        });
+      }
+
+      void writeAuditLog({
+        userId:      undefined,
+        userType:    'SYSTEM',
+        userName:    'Paystack Webhook',
+        email:       data.customer?.email ?? '',
+        action:      'PAYMENT_FAILED',
+        entityType:  'Order',
+        entityId:    tx ? String(tx.order_id) : reference,
+        description: `Paystack charge.failed for ref ${reference}. Reason: ${data.gateway_response ?? 'unknown'}.`,
+      });
     }
   } catch (err) {
     // Never throw — we've already returned 200. Log and move on.

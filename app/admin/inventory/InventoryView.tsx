@@ -127,7 +127,7 @@ function ReceiveModal({ onClose }: { onClose: () => void }) {
   const { data: products = [] } = useQuery({
     queryKey: ['products-simple'],
     queryFn:  fetchProducts,
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
   });
 
   const [search,     setSearch]     = useState('');

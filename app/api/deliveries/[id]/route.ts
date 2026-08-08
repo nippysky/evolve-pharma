@@ -13,6 +13,7 @@ import {
 import { writeAuditLog }          from '@/lib/audit';
 import { sendOrderStatusEmail }   from '@/lib/mail';
 import { revalidateDeliveries }   from '@/lib/revalidate';
+import { checkAndAwardReferralReward } from '@/lib/referral-reward';
 
 const ADMIN_TRANSITIONS: Record<string, string[]> = {
   AWAITING_DISPATCH: ['ASSIGNED'],
@@ -34,6 +35,13 @@ const schema = z.object({
   status:    z.enum(['AWAITING_DISPATCH', 'ASSIGNED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'FAILED', 'RETURNED']).optional(),
   driver_id: z.number().int().positive().nullable().optional(),
   notes:     z.string().optional(),
+  /**
+   * Set alongside status DELIVERED when the driver collected cash at handover.
+   * Deliberately a separate explicit flag rather than inferring payment from
+   * the delivery status — a driver who hands over without collecting must not
+   * silently leave the books showing paid.
+   */
+  cash_collected: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -82,7 +90,7 @@ export async function PATCH(
       return apiError('Please review the fields below.', 422, errors);
     }
 
-    const { status: newStatus, driver_id, notes } = parsed.data;
+    const { status: newStatus, driver_id, notes, cash_collected } = parsed.data;
 
     // Validate status transition
     if (newStatus) {
@@ -133,6 +141,40 @@ export async function PATCH(
         where: { id: delivery.order_id },
         data:  { status: 'DELIVERED' },
       });
+
+      // Cash-on-delivery settlement. Only when the driver explicitly confirms
+      // collection — never inferred from the delivery status alone.
+      if (cash_collected) {
+        const ord = await db.order.findUnique({
+          where:  { id: delivery.order_id },
+          select: { order_number: true, payment_status: true, total: true, customer_id: true },
+        });
+
+        if (ord && ord.payment_status !== 'PAID' && ord.payment_status !== 'REFUNDED') {
+          await db.order.update({
+            where: { id: delivery.order_id },
+            data:  { payment_status: 'PAID' },
+          });
+
+          void writeAuditLog({
+            userId:      session.userId,
+            userType:    session.role,
+            userName:    `${session.first_name} ${session.last_name}`,
+            email:       session.email,
+            action:      'CASH_COLLECTED_ON_DELIVERY',
+            entityType:  'Order',
+            entityId:    String(delivery.order_id),
+            description: `${session.first_name} ${session.last_name} (${session.role}) confirmed ` +
+                         `cash collected on delivery of order ${ord.order_number} ` +
+                         `(${delivery.tracking_code}). ` +
+                         `Amount: ₦${Number(ord.total).toLocaleString('en-NG')}. ` +
+                         `${ord.payment_status} → PAID.`,
+            req,
+          });
+
+          void checkAndAwardReferralReward(ord.customer_id);
+        }
+      }
 
       // Fetch order + customer for delivery confirmation email
       const orderData = await db.order.findUnique({

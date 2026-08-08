@@ -16,13 +16,34 @@ async function getSessionWithPermCheck(): Promise<SessionUser> {
 
 export const metadata = { title: 'Reports' };
 
-export default async function ReportsPage() {
-  await getSessionWithPermCheck();
+interface Props {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function ReportsPage({ searchParams }: Props) {
+  const session = await getSessionWithPermCheck();
+  const sp = await searchParams;
+
+  const isStaff = session.role === 'STAFF';
+  const title    = isStaff ? 'My Reports' : 'Reports';
+  const subtitle = isStaff
+    ? 'Revenue and activity for your assigned customers.'
+    : 'Operational and commercial metrics across the business.';
+
+  // Allow admin to pre-select a staff member via ?staff_id=X (e.g. from staff list page)
+  const rawStaffId = sp['staff_id'];
+  const initialStaffId = !isStaff && rawStaffId
+    ? parseInt(String(Array.isArray(rawStaffId) ? rawStaffId[0] : rawStaffId), 10) || null
+    : null;
 
   return (
     <>
-      <PageHead title="Reports" subtitle="Operational and commercial metrics across the business." />
-      <ReportsClient />
+      <PageHead title={title} subtitle={subtitle} />
+      <ReportsClient
+        role={session.role as 'ADMIN' | 'STAFF'}
+        userId={session.userId}
+        initialStaffId={initialStaffId}
+      />
     </>
   );
 }

@@ -77,6 +77,5 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[POST /api/auth/customer/forgot-password]', err);
     return handlePrismaError(err) ?? apiInternalError();
-    return apiInternalError();
   }
 }

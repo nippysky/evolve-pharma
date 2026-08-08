@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/ui/Layout';
@@ -10,6 +9,7 @@ import {
 import { getSession } from '@/lib/auth';
 import { getProductBySkuFromDB } from '@/lib/data/products.server';
 import { formatNaira } from '@/lib/utils';
+import { ProductImageGallery } from '@/components/shared/ProductImageGallery';
 
 interface Props {
   params: Promise<{ sku: string }>;
@@ -30,7 +30,6 @@ export default async function MarketingProductDetail({ params }: Props) {
 
   const portalHref = `/portal/catalog/${product.sku}`;
 
-  const imageUrl     = product.images[0]?.url ?? '';
   const categoryName = product.category?.name ?? '—';
   const mfgName      = product.manufacturer?.name ?? '—';
   const strength     = product.product_strength ?? '—';
@@ -58,24 +57,11 @@ export default async function MarketingProductDetail({ params }: Props) {
         <div className="grid gap-10 lg:grid-cols-[1fr_420px]">
           {/* ── Image panel ── */}
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-3xl border border-line-subtle bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
-              <div className="relative aspect-square sm:aspect-[4/3]">
-                {imageUrl ? (
-                  <Image
-                    src={imageUrl}
-                    alt={product.brand_name}
-                    fill
-                    className="object-contain p-10"
-                    sizes="(max-width: 1024px) 100vw, 640px"
-                    priority
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-ink-4">
-                    <Pill size={60} />
-                  </div>
-                )}
-              </div>
-            </div>
+            <ProductImageGallery
+              images={product.images}
+              productName={product.brand_name}
+              aspectClass="aspect-square sm:aspect-[4/3]"
+            />
 
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-3">
@@ -114,7 +100,7 @@ export default async function MarketingProductDetail({ params }: Props) {
               <p className="num mt-1 font-display text-4xl font-semibold leading-none tracking-tight text-ink">
                 {formatNaira(parseFloat(product.selling_price))}
               </p>
-              <p className="mt-1.5 text-xs text-ink-3">Pack size: {product.pack_size ?? '—'} · VAT inclusive</p>
+              <p className="mt-1.5 text-xs text-ink-3">Pack size: {product.pack_size ?? '—'}</p>
             </div>
 
             {/* ── Session-aware CTA ── */}

@@ -83,7 +83,7 @@ export function useVerifiedStaff() {
   return useQuery({
     queryKey: STAFF_KEYS.verified,
     queryFn: listVerifiedStaff,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 20 * 1000,
   });
 }
 
@@ -91,7 +91,7 @@ export function useUnverifiedStaff() {
   return useQuery({
     queryKey: STAFF_KEYS.unverified,
     queryFn: listUnverifiedStaff,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 20 * 1000,
   });
 }
 
@@ -205,7 +205,7 @@ export function useDrivers() {
   const query = useQuery({
     queryKey: DRIVER_KEYS.all,
     queryFn:  listDrivers,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 20 * 1000,
   });
   const refetch = () => void query.refetch();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: DRIVER_KEYS.all });

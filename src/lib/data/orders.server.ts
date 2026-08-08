@@ -189,9 +189,27 @@ export async function getOrderDetail(orderId: number, userId?: number) {
     let parsedNotes: { contact_phone?: string; po_number?: string; delivery_notes?: string; vat?: number } = {};
     try { parsedNotes = o.notes ? JSON.parse(o.notes as string) : {}; } catch { /* noop */ }
 
+    // Who placed this order, if it wasn't the customer. Shown to the customer
+    // so an order they didn't create themselves doesn't look like fraud.
+    let placedByName: string | null = null;
+    try {
+      const pbRows = await db.$queryRaw<Array<{ placed_by_user_id: number | null }>>`
+        SELECT placed_by_user_id FROM orders WHERE id = ${o.id}
+      `;
+      const pbId = pbRows[0]?.placed_by_user_id;
+      if (pbId) {
+        const u = await db.user.findUnique({
+          where:  { id: pbId },
+          select: { first_name: true, last_name: true },
+        });
+        if (u) placedByName = `${u.first_name} ${u.last_name}`;
+      }
+    } catch { /* column may not exist yet — degrade quietly */ }
+
     return {
       id:                o.id,
       order_number:      o.order_number,
+      placed_by_name:    placedByName,
       status:            o.status.toLowerCase() as Order['status'],
       payment_status:    o.payment_status.toLowerCase() as Order['payment_status'],
       payment_reference: (o.payment_reference as string | null) ?? null,

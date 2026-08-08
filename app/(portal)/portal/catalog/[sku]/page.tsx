@@ -1,10 +1,10 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProductBySkuFromDB } from '@/lib/data/products.server';
 import { AddToBasket } from './AddToBasket';
 import { formatNaira } from '@/lib/utils';
 import { ArrowLeft, Shield, Pill, Building, Box } from '@/components/icons';
+import { ProductImageGallery } from '@/components/shared/ProductImageGallery';
 
 interface Props {
   params: Promise<{ sku: string }>;
@@ -15,7 +15,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = await getProductBySkuFromDB(sku);
   if (!product) notFound();
 
-  const imageUrl      = product.images[0]?.url ?? '';
   const categoryName  = product.category?.name ?? '—';
   const mfgName       = product.manufacturer?.name ?? '—';
   const strength      = product.product_strength ?? '—';
@@ -42,24 +41,11 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="grid gap-8 lg:grid-cols-[1fr_440px]">
         {/* Image panel */}
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-line-subtle bg-white">
-            <div className="relative aspect-square sm:aspect-[4/3]">
-              {imageUrl ? (
-                <Image
-                  src={imageUrl}
-                  alt={product.brand_name}
-                  fill
-                  className="object-contain p-8"
-                  sizes="(max-width: 1024px) 100vw, 600px"
-                  priority
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-ink-4">
-                  <Pill size={60} />
-                </div>
-              )}
-            </div>
-          </div>
+          <ProductImageGallery
+            images={product.images}
+            productName={product.brand_name}
+            aspectClass="aspect-square sm:aspect-[4/3]"
+          />
 
           {/* Trust badges */}
           <div className="grid grid-cols-3 gap-3">
@@ -102,7 +88,7 @@ export default async function ProductDetailPage({ params }: Props) {
               {formatNaira(parseFloat(product.selling_price))}
             </p>
             <p className="mt-1.5 text-xs text-ink-3">
-              Pack size: {product.pack_size ?? '—'} · VAT inclusive
+              Pack size: {product.pack_size ?? '—'}
             </p>
           </div>
 

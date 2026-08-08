@@ -1,5 +1,6 @@
 'use client';
 import React, { useMemo, useState, useRef } from 'react';
+import Link from 'next/link';
 import {
   Users,
   Mail,
@@ -170,6 +171,15 @@ function RowActions({
   return (
     <>
       <div className="flex items-center gap-2">
+        <Link
+          href={`/admin/reports?staff_id=${record.id}`}
+          title="View scoped report"
+          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 ring-1 ring-brand-200 transition-colors"
+        >
+          <FileText size={11} />
+          View Report
+        </Link>
+
         <button
           type="button"
           onClick={handleToggle}

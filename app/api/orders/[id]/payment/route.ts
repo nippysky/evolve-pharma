@@ -11,8 +11,9 @@ import {
   apiNotFound,
   apiInternalError,
 } from '@/lib/api/response';
-import { writeAuditLog }          from '@/lib/audit';
-import { sendPaymentStatusEmail } from '@/lib/mail';
+import { writeAuditLog }                  from '@/lib/audit';
+import { sendPaymentStatusEmail }         from '@/lib/mail';
+import { checkAndAwardReferralReward }    from '@/lib/referral-reward';
 
 const schema = z.object({
   payment_status: z.enum(['PAID', 'UNPAID', 'PARTIAL', 'REFUNDED', 'FAILED']),
@@ -26,7 +27,10 @@ export async function PATCH(
   try {
     const session = await getSession(req);
     if (!session) return apiUnauthorized();
-    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
+    // Payment status is automated via Paystack webhook.
+    // This endpoint is restricted to ADMIN only for exceptional manual corrections
+    // (e.g. REFUNDED). The UI no longer exposes Mark Paid / Mark Unpaid buttons.
+    if (session.role !== 'ADMIN') return apiForbidden('Payment status is managed automatically.');
 
     const { id } = await params;
     const orderId = parseInt(id, 10);
@@ -82,7 +86,12 @@ export async function PATCH(
       }
     }
 
-    // 5. Audit log
+    // 5. Trigger referral reward check if payment just became PAID
+    if (newStatus === 'PAID' && prev !== 'PAID') {
+      void checkAndAwardReferralReward(order.customer_id);
+    }
+
+    // 6. Audit log
     void writeAuditLog({
       userId:      session.userId,
       userType:    session.role,

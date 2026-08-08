@@ -1,11 +1,12 @@
 'use client';
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, Box, Eye, Printer, X, ChevronLeft, ChevronRight,
   Pill, MapPin, Phone, Building, Check, AlertTriangle, Refresh,
-  Download, FileText, Truck,
+  Download, FileText, Truck, User, Plus, CheckCircle, RotateCw,
 } from '@/components/icons';
 import { formatNaira, formatDate, cn } from '@/lib/utils';
 import { useToast } from '@/contexts/ToastContext';
@@ -57,8 +58,12 @@ interface DetailItem {
   };
 }
 
+interface PlacedBy { id: number; name: string; role: string }
+
 interface OrderDetail extends AdminOrder {
   items: DetailItem[];
+  /** Set when a staff member or admin placed this order for the customer. */
+  placed_by?: PlacedBy | null;
 }
 
 function parseNotes(raw: string | null): {
@@ -93,6 +98,146 @@ function OrderStatusBadge({ status }: { status: string }) {
       <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
       {s.label}
     </span>
+  );
+}
+
+/**
+ * Confirm an offline payment on an on-behalf order.
+ *
+ * Only rendered for orders a rep placed for a customer. Cash, POS and direct
+ * bank transfers have no Paystack callback, so the person who took the money
+ * records it — and it is written to the audit trail against their name.
+ */
+function ConfirmPaymentButton({
+  orderId,
+  orderNumber,
+  onDone,
+}: {
+  orderId:     number;
+  orderNumber: string;
+  onDone:      () => void;
+}) {
+  const toast = useToast();
+  const [open, setOpen]   = useState(false);
+  const [via,  setVia]    = useState<'cash' | 'bank_transfer' | 'pos' | 'other'>('cash');
+  const [ref,  setRef]    = useState('');
+  const [note, setNote]   = useState('');
+  const [busy, setBusy]   = useState(false);
+
+  async function submit() {
+    if (ref.trim().length < 2) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/confirm-payment`, {
+        method:      'PATCH',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          received_via:      via,
+          payment_reference: ref.trim(),
+          note:              note.trim() || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message ?? 'Could not confirm payment.');
+      toast.show({
+        tone: 'success',
+        title: 'Payment confirmed',
+        description: `${orderNumber} is now marked paid.`,
+      });
+      setOpen(false);
+      setRef(''); setNote('');
+      onDone();
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Failed', description: (err as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-100"
+      >
+        <CheckCircle size={11} />
+        Confirm payment
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-xl">
+            <h2 className="text-base font-semibold text-ink">
+              Confirm payment for {orderNumber}
+            </h2>
+            <p className="mt-1.5 text-xs text-ink-3">
+              Only do this if the money has actually been received. This marks the
+              order paid and is logged against your name.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-ink-2">Received via</span>
+                <select
+                  value={via}
+                  onChange={e => setVia(e.target.value as typeof via)}
+                  className="h-10 w-full rounded-xl border border-line bg-white px-3 text-sm focus:border-teal-400 focus:outline-none"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank transfer</option>
+                  <option value="pos">POS / card</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-ink-2">Reference</span>
+                <input
+                  autoFocus
+                  value={ref}
+                  onChange={e => setRef(e.target.value)}
+                  placeholder="Teller no., POS slip, transfer ref"
+                  className="h-10 w-full rounded-xl border border-line bg-white px-3 text-sm focus:border-teal-400 focus:outline-none"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-ink-2">
+                  Note <span className="font-normal text-ink-4">(optional)</span>
+                </span>
+                <input
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-line bg-white px-3 text-sm focus:border-teal-400 focus:outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                disabled={busy}
+                className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={busy || ref.trim().length < 2}
+                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {busy && <RotateCw size={13} className="animate-spin" />}
+                Confirm payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -189,7 +334,7 @@ function buildInvoiceHTML(order: OrderDetail): string {
 <div style="max-width:800px;margin:0 auto;">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2.5px solid #0d9488;">
     <div>
-      <div style="font-size:22px;font-weight:800;color:#042a36;letter-spacing:-0.03em;">Envolve Pharmaceuticals</div>
+      <div style="font-size:22px;font-weight:800;color:#042a36;letter-spacing:-0.03em;">Envolve Phamaceutical Limited</div>
       <div style="font-size:11px;color:#64748b;margin-top:4px;">EnvolveCare Express · Licensed Pharma Distributor</div>
       <div style="font-size:11px;color:#64748b;">Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos</div>
     </div>
@@ -280,7 +425,7 @@ function buildPicklistHTML(order: OrderDetail): string {
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #042a36;">
     <div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#64748b;margin-bottom:4px;">WAREHOUSE PICKLIST</div>
-      <div style="font-size:20px;font-weight:800;color:#042a36;">Envolve Pharmaceuticals</div>
+      <div style="font-size:20px;font-weight:800;color:#042a36;">Envolve Phamaceutical Limited</div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:20px;font-weight:800;color:#0d9488;letter-spacing:-0.03em;">PICK LIST</div>
@@ -359,7 +504,7 @@ function buildWaybillHTML(order: OrderDetail): string {
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #0d9488;">
     <div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#64748b;margin-bottom:4px;">DELIVERY NOTE / WAYBILL</div>
-      <div style="font-size:20px;font-weight:800;color:#042a36;">Envolve Pharmaceuticals</div>
+      <div style="font-size:20px;font-weight:800;color:#042a36;">Envolve Phamaceutical Limited</div>
       <div style="font-size:11px;color:#64748b;">EnvolveCare Express · Licensed Pharma Distributor</div>
     </div>
     <div style="text-align:right;">
@@ -454,15 +599,19 @@ export function AdminOrdersView() {
   const ordersQ = useQuery<{ data: { records: AdminOrder[]; pagination: { current_page: number; per_page: number; total: number; total_pages: number } } }>({
     queryKey:        ['admin-orders', params.toString()],
     queryFn:         () => fetch(`/api/orders?${params}`).then(r => r.json()),
-    staleTime:       30_000,
-    refetchInterval: 60_000,
+    staleTime:       15_000,
+    refetchInterval: 30_000,
   });
 
+  // Payment status changes via the Paystack webhook with no user action at all,
+  // so the open detail panel polls. Without this an admin watching an order
+  // wait for payment would sit on "Unpaid" until they manually refreshed.
   const detailQ = useQuery<{ data: { order: OrderDetail } }>({
-    queryKey:  ['admin-order', panelId],
-    queryFn:   () => fetch(`/api/orders/${panelId}`).then(r => r.json()),
-    enabled:   panelId != null,
-    staleTime: 120_000,
+    queryKey:        ['admin-order', panelId],
+    queryFn:         () => fetch(`/api/orders/${panelId}`).then(r => r.json()),
+    enabled:         panelId != null,
+    staleTime:       10_000,
+    refetchInterval: panelId != null ? 20_000 : false,
   });
 
   const prefetchOrder = (id: number) => {
@@ -496,24 +645,7 @@ export function AdminOrdersView() {
     onError: () => toast.show({ tone: 'error', title: 'Network error — please try again' }),
   });
 
-  const paymentMut = useMutation({
-    mutationFn: ({ id, payment_status }: { id: number; payment_status: string }) =>
-      fetch(`/api/orders/${id}/payment`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ payment_status }),
-      }).then(r => r.json()),
-    onSuccess: (data, vars) => {
-      const ok = data.status === 'success';
-      toast.show({
-        tone:  ok ? 'success' : 'error',
-        title: ok ? `Payment marked as ${vars.payment_status}` : (data.message ?? 'Update failed'),
-      });
-      qc.invalidateQueries({ queryKey: ['admin-orders'] });
-      qc.invalidateQueries({ queryKey: ['admin-order', vars.id] });
-    },
-    onError: () => toast.show({ tone: 'error', title: 'Network error — please try again' }),
-  });
+  // Payment status is fully automated via Paystack webhook — no manual mutation.
 
   const orders     = ordersQ.data?.data?.records ?? [];
   const pagInfo    = ordersQ.data?.data?.pagination;
@@ -777,23 +909,35 @@ export function AdminOrdersView() {
                         </div>
                       )}
 
-                      {/* Payment action */}
-                      <div className="mt-3 flex items-center gap-2">
+                      {/* Payment status.
+                          Customer-placed orders are webhook-only. Orders a rep
+                          placed on a customer's behalf can be confirmed here,
+                          because offline collection has no gateway callback. */}
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
                         <span className="text-xs text-ink-3">Payment:</span>
-                        {detail.payment_status !== 'PAID' ? (
-                          <button disabled={paymentMut.isPending}
-                            onClick={() => paymentMut.mutate({ id: detail.id, payment_status: 'PAID' })}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:opacity-80 disabled:opacity-40">
-                            <Check size={10} /> Mark as Paid
-                          </button>
-                        ) : (
-                          <button disabled={paymentMut.isPending}
-                            onClick={() => paymentMut.mutate({ id: detail.id, payment_status: 'UNPAID' })}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 hover:opacity-80 disabled:opacity-40">
-                            <AlertTriangle size={10} /> Mark Unpaid
-                          </button>
+                        <PaymentBadge status={detail.payment_status} />
+                        {detail.placed_by && detail.payment_status !== 'PAID'
+                          && detail.payment_status !== 'REFUNDED' && (
+                          <ConfirmPaymentButton
+                            orderId={detail.id}
+                            orderNumber={detail.order_number}
+                            onDone={() => {
+                              void qc.invalidateQueries({ queryKey: ['admin-order', detail.id] });
+                              void qc.invalidateQueries({ queryKey: ['admin-orders'] });
+                            }}
+                          />
                         )}
                       </div>
+
+                      {detail.placed_by && (
+                        <div className="mt-3 flex items-start gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2">
+                          <User size={12} className="mt-0.5 shrink-0 text-violet-500" />
+                          <p className="text-[11px] text-violet-800">
+                            Placed on the customer&apos;s behalf by{' '}
+                            <strong>{detail.placed_by.name}</strong> ({detail.placed_by.role})
+                          </p>
+                        </div>
+                      )}
                     </section>
 
                     {/* ── Order items with pharma fields ─────────────────────── */}

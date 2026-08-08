@@ -13,6 +13,7 @@ import {
   Upload, X, Box, RotateCw,
 } from '@/components/icons';
 import { useToast }              from '@/contexts/ToastContext';
+import { useUser }               from '@/contexts/UserContext';
 import { useProductCategories, useProductManufacturers } from '@/hooks/admin/useAdminProducts';
 import { cn }                    from '@/lib/utils';
 
@@ -155,6 +156,13 @@ export default function NewProductPage() {
   const router      = useRouter();
   const toast       = useToast();
   const queryClient = useQueryClient();
+  const { user }    = useUser();
+
+  // Guard: only ADMIN can create products
+  if (user && user.role !== 'ADMIN') {
+    router.replace('/admin/products');
+    return null;
+  }
 
   // Category + Manufacturer data
   const { data: categoryData,     isLoading: catsLoading } = useProductCategories();

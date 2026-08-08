@@ -8,7 +8,7 @@ import { getOrderDetail }   from '@/lib/data/orders.server';
 import { formatNaira, formatDate } from '@/lib/utils';
 import { PageHead }          from '@/components/shared/PageHead';
 import { PrintOrderButton }  from '@/components/portal/PrintOrderButton';
-import { ArrowLeft, Box, MapPin, Phone, Building, Pill, Calendar, Tag } from '@/components/icons';
+import { ArrowLeft, Box, MapPin, Phone, Building, Pill, Calendar, Tag, AlertTriangle } from '@/components/icons';
 
 const ORDER_STYLE: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   pending:    { bg: 'bg-amber-50 border border-amber-200',   text: 'text-amber-800',  dot: 'bg-amber-400',  label: 'Pending'    },
@@ -65,6 +65,36 @@ export default async function CustomerOrderDetailPage({ params }: Props) {
           </Link>
         }
       />
+
+      {/* Placed-on-your-behalf notice — shown so an order the customer didn't
+          create themselves isn't mistaken for fraudulent activity. */}
+      {order.placed_by_name && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50 px-5 py-4">
+          <Building size={18} className="mt-0.5 shrink-0 text-violet-500" />
+          <div>
+            <p className="text-sm font-semibold text-violet-800">
+              Placed on your behalf
+            </p>
+            <p className="mt-0.5 text-xs text-violet-700">
+              This order was created for you by <strong>{order.placed_by_name}</strong> of
+              Envolve Phamaceutical Limited. If you did not request it, please contact us.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Payment failed banner */}
+      {order.payment_status === 'failed' && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-500" />
+          <div>
+            <p className="text-sm font-semibold text-red-800">Payment failed</p>
+            <p className="mt-0.5 text-xs text-red-600">
+              Your payment could not be processed. Please contact us or place a new order to try again.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
 
@@ -139,10 +169,12 @@ export default async function CustomerOrderDetailPage({ params }: Props) {
                 <span>Delivery</span>
                 <span className="num">{order.delivery_fee === 0 ? 'Free' : formatNaira(order.delivery_fee)}</span>
               </div>
-              <div className="flex justify-between text-sm text-ink-2">
-                <span>VAT (7.5%)</span>
-                <span className="num">{formatNaira(order.vat)}</span>
-              </div>
+              {order.vat > 0 && (
+                <div className="flex justify-between text-sm text-ink-2">
+                  <span>VAT</span>
+                  <span className="num">{formatNaira(order.vat)}</span>
+                </div>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-line-subtle pt-4">
               <span className="text-sm font-semibold text-ink">Total</span>

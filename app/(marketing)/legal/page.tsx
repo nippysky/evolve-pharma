@@ -4,7 +4,7 @@ import { Container, Section } from '@/components/ui/Layout';
 export const metadata: Metadata = {
   title: 'Legal',
   description:
-    'Terms of service, privacy policy, and cookies policy for Envolve Pharmaceuticals.',
+    'Terms of service, privacy policy, and cookies policy for Envolve Phamaceutical Limited.',
 };
 
 export default function LegalPage() {

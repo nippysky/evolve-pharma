@@ -1,33 +1,94 @@
 'use client';
 
-import { useState, FormEvent }    from 'react';
-import { PageHead }               from '@/components/shared/PageHead';
-import { Truck, Search, Package, CheckCircle, Clock, MapPin } from '@/components/icons';
-import { cn }                     from '@/lib/utils';
+import { useState, FormEvent } from 'react';
+import { PageHead }            from '@/components/shared/PageHead';
+import {
+  Truck, Search, Package, CheckCircle, Clock, MapPin,
+  ClipboardList, RotateCw, AlertTriangle,
+} from '@/components/icons';
+import { cn } from '@/lib/utils';
 
-// ── Status display helpers ────────────────────────────────────────────────────
-
-const DELIVERY_STATUS_META: Record<string, { label: string; color: string; step: number }> = {
-  AWAITING_DISPATCH: { label: 'Awaiting dispatch',  color: 'text-amber-600',  step: 1 },
-  ASSIGNED:          { label: 'Driver assigned',    color: 'text-blue-600',   step: 2 },
-  IN_TRANSIT:        { label: 'In transit',          color: 'text-teal-600',   step: 3 },
-  OUT_FOR_DELIVERY:  { label: 'Out for delivery',   color: 'text-teal-600',   step: 4 },
-  DELIVERED:         { label: 'Delivered',           color: 'text-green-600',  step: 5 },
-  FAILED:            { label: 'Delivery failed',    color: 'text-red-600',    step: 0 },
-  RETURNED:          { label: 'Returned',            color: 'text-red-600',    step: 0 },
-};
+// ── Order-status → step mapping ──────────────────────────────────────────────
+//   Steps 1-5 cover the full order lifecycle from placement to delivery.
+//   delivery_status provides finer granularity once dispatched.
 
 const STEPS = [
-  { step: 1, label: 'Order placed' },
-  { step: 2, label: 'Dispatched' },
-  { step: 3, label: 'In transit' },
-  { step: 4, label: 'Out for delivery' },
-  { step: 5, label: 'Delivered' },
-];
+  {
+    step:   1,
+    label:  'Order Placed',
+    sub:    'We received your order',
+    Icon:   ClipboardList,
+    color:  'teal',
+  },
+  {
+    step:   2,
+    label:  'Processing',
+    sub:    'Confirmed & picking in warehouse',
+    Icon:   Package,
+    color:  'teal',
+  },
+  {
+    step:   3,
+    label:  'Dispatched',
+    sub:    'Left our warehouse with a driver',
+    Icon:   Truck,
+    color:  'teal',
+  },
+  {
+    step:   4,
+    label:  'In Transit',
+    sub:    'On the way to your location',
+    Icon:   MapPin,
+    color:  'teal',
+  },
+  {
+    step:   5,
+    label:  'Delivered',
+    sub:    'Package received',
+    Icon:   CheckCircle,
+    color:  'green',
+  },
+] as const;
+
+/**
+ * Derive the current completed step from order/delivery status.
+ * Returns 0 if cancelled / failed (error state).
+ */
+function getCurrentStep(orderStatus: string | null, deliveryStatus: string | null): number {
+  const os = orderStatus?.toUpperCase();
+  const ds = deliveryStatus?.toUpperCase();
+
+  if (os === 'CANCELLED' || ds === 'FAILED' || ds === 'RETURNED') return -1; // error
+
+  if (ds === 'DELIVERED' || os === 'DELIVERED') return 5;
+  if (ds === 'OUT_FOR_DELIVERY')                 return 4;
+  if (ds === 'IN_TRANSIT' || ds === 'ASSIGNED')  return 3;
+  if (os === 'DISPATCHED')                        return 3;
+  if (os === 'PROCESSING')                        return 2;
+  if (os === 'CONFIRMED')                         return 2;
+  if (os === 'PENDING')                           return 1;
+  return 1; // default: placed
+}
+
+function getStatusLabel(orderStatus: string | null, deliveryStatus: string | null): { label: string; sub: string } {
+  const os = orderStatus?.toUpperCase();
+  const ds = deliveryStatus?.toUpperCase();
+  if (ds === 'DELIVERED' || os === 'DELIVERED')  return { label: 'Delivered',         sub: 'Your order has been received.' };
+  if (ds === 'OUT_FOR_DELIVERY')                  return { label: 'Out for delivery',   sub: 'Driver is at your location area.' };
+  if (ds === 'IN_TRANSIT')                        return { label: 'In transit',          sub: 'Order is on the road.' };
+  if (ds === 'ASSIGNED')                          return { label: 'Driver assigned',    sub: 'A driver is picking up your order.' };
+  if (ds === 'AWAITING_DISPATCH' || os === 'DISPATCHED') return { label: 'Dispatched',  sub: 'Left our warehouse.' };
+  if (os === 'PROCESSING')                        return { label: 'Processing',          sub: 'Warehouse is picking & packing.' };
+  if (os === 'CONFIRMED')                         return { label: 'Order confirmed',    sub: 'Warehouse has been notified.' };
+  if (os === 'CANCELLED')                         return { label: 'Order cancelled',    sub: 'This order has been cancelled.' };
+  if (ds === 'FAILED')                            return { label: 'Delivery failed',    sub: 'Please contact support.' };
+  if (ds === 'RETURNED')                          return { label: 'Returned',           sub: 'Order returned to warehouse.' };
+  return { label: 'Order placed', sub: 'Your order has been received.' };
+}
 
 interface TrackResult {
   tracking_code:   string;
-  delivery_status: string;
+  delivery_status: string | null;
   order_number:    string | null;
   order_status:    string | null;
   delivery_city:   string | null;
@@ -43,6 +104,67 @@ function fmt(iso: string | null) {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+}
+
+// ── Stepper component ─────────────────────────────────────────────────────────
+
+function OrderStepper({ curStep, isError }: { curStep: number; isError: boolean }) {
+  return (
+    <div className="relative mt-6">
+      {/* Connector line */}
+      <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-line" />
+      <div
+        className="absolute left-5 top-5 w-0.5 bg-teal-500 transition-all duration-700"
+        style={{ height: isError ? 0 : `${Math.max(0, ((curStep - 1) / 4) * 100)}%` }}
+      />
+
+      <div className="flex flex-col gap-0">
+        {STEPS.map((s) => {
+          const done    = !isError && curStep >= s.step;
+          const current = !isError && curStep === s.step;
+          const future  = isError || curStep < s.step;
+
+          return (
+            <div key={s.step} className="relative flex items-start gap-4 pb-6 last:pb-0">
+              {/* Circle */}
+              <div
+                className={cn(
+                  'relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300',
+                  done && !current
+                    ? 'border-teal-500 bg-teal-500 text-white shadow-[0_0_0_4px_rgba(20,184,166,0.12)]'
+                    : current
+                    ? 'border-teal-500 bg-white text-teal-600 shadow-[0_0_0_4px_rgba(20,184,166,0.15)]'
+                    : 'border-line bg-white text-ink-4',
+                )}
+              >
+                {done && !current ? (
+                  <CheckCircle size={18} />
+                ) : (
+                  <s.Icon size={18} />
+                )}
+              </div>
+
+              {/* Label */}
+              <div className={cn('pt-1.5 transition-opacity', future && 'opacity-40')}>
+                <p className={cn(
+                  'text-sm font-semibold leading-tight',
+                  current ? 'text-teal-700' : done ? 'text-ink' : 'text-ink-3',
+                )}>
+                  {s.label}
+                  {current && (
+                    <span className="ml-2 inline-flex h-5 items-center rounded-full bg-teal-100 px-2 text-[10px] font-bold text-teal-700">
+                      Current
+                    </span>
+                  )}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-3">{s.sub}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function TrackOrderPage() {
@@ -64,7 +186,7 @@ export default function TrackOrderPage() {
       const res  = await fetch(`/api/track/${encodeURIComponent(trimmed)}`);
       const body = await res.json();
       if (!res.ok || body.status !== 'success') {
-        setError(body.message ?? 'Tracking code not found.');
+        setError(body.message ?? 'Code not found. Please check and try again.');
       } else {
         setResult(body.data);
       }
@@ -75,18 +197,23 @@ export default function TrackOrderPage() {
     }
   }
 
-  const meta    = result ? DELIVERY_STATUS_META[result.delivery_status] ?? null : null;
-  const curStep = meta?.step ?? 0;
+  const curStep = result
+    ? getCurrentStep(result.order_status, result.delivery_status)
+    : 0;
+  const isError = curStep === -1;
+  const { label: statusLabel, sub: statusSub } = result
+    ? getStatusLabel(result.order_status, result.delivery_status)
+    : { label: '', sub: '' };
 
   return (
     <>
       <PageHead
         title="Track your order"
-        subtitle="Enter the tracking code from your dispatch email or order detail page."
+        subtitle="Enter your order number (e.g. ENV-2026-000001) or your delivery tracking code."
       />
 
-      {/* Search card */}
       <div className="mx-auto max-w-xl">
+        {/* ── Search form ── */}
         <form
           onSubmit={handleSubmit}
           className="flex gap-2 rounded-2xl border border-line bg-white p-4 shadow-sm"
@@ -95,8 +222,8 @@ export default function TrackOrderPage() {
             type="text"
             value={code}
             onChange={e => setCode(e.target.value)}
-            placeholder="e.g. EP-1234567890-ABCD"
-            className="flex-1 rounded-lg border border-line bg-bg-muted px-3 py-2 font-mono text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            placeholder="Order number or tracking code…"
+            className="flex-1 rounded-xl border border-line bg-bg-muted px-3.5 py-2.5 font-mono text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             spellCheck={false}
             autoComplete="off"
           />
@@ -104,129 +231,134 @@ export default function TrackOrderPage() {
             type="submit"
             disabled={loading || !code.trim()}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors',
-              'bg-teal-600 hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50',
+              'flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all',
+              'bg-teal-600 hover:bg-teal-700 active:scale-95',
+              'disabled:cursor-not-allowed disabled:opacity-50',
             )}
           >
-            <Search size={14} />
-            {loading ? 'Searching…' : 'Track'}
+            {loading
+              ? <><RotateCw size={14} className="animate-spin" /> Searching…</>
+              : <><Search size={14} /> Track</>}
           </button>
         </form>
 
-        {/* Error */}
+        {/* ── Error ── */}
         {error && (
-          <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertTriangle size={16} className="shrink-0 text-red-500" />
             {error}
           </div>
         )}
 
-        {/* Result */}
-        {result && meta && (
+        {/* ── Result ── */}
+        {result && (
           <div className="mt-6 space-y-4">
-            {/* Status hero */}
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-              <div className="flex items-start gap-3">
-                <span className={cn('mt-0.5 rounded-full bg-teal-50 p-2', meta.color)}>
-                  <Truck size={20} />
-                </span>
-                <div>
-                  <p className={cn('text-base font-semibold', meta.color)}>{meta.label}</p>
-                  {result.order_number && (
-                    <p className="mt-0.5 text-xs text-ink-3">Order #{result.order_number}</p>
-                  )}
-                  <p className="mt-0.5 font-mono text-xs text-ink-3">{result.tracking_code}</p>
-                </div>
-              </div>
 
-              {/* Progress steps */}
-              {curStep > 0 && (
-                <div className="mt-5">
-                  <div className="relative flex items-center justify-between">
-                    {/* connector line */}
-                    <div className="absolute left-0 right-0 top-3 h-0.5 bg-line" />
-                    <div
-                      className="absolute left-0 top-3 h-0.5 bg-teal-500 transition-all"
-                      style={{ width: `${Math.max(0, ((curStep - 1) / 4) * 100)}%` }}
-                    />
-                    {STEPS.map(s => (
-                      <div key={s.step} className="relative z-10 flex flex-col items-center gap-1">
-                        <span
-                          className={cn(
-                            'flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-colors',
-                            s.step < curStep
-                              ? 'border-teal-500 bg-teal-500 text-white'
-                              : s.step === curStep
-                              ? 'border-teal-500 bg-white text-teal-600'
-                              : 'border-line bg-white text-ink-3',
-                          )}
-                        >
-                          {s.step < curStep ? '✓' : s.step}
-                        </span>
-                        <span className="hidden text-center text-[9px] text-ink-3 sm:block">{s.label}</span>
-                      </div>
-                    ))}
+            {/* Status hero card */}
+            <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+              {/* Coloured top strip */}
+              <div className={cn('h-1.5', isError ? 'bg-red-400' : 'bg-teal-500')} />
+
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-start gap-3">
+                  <span className={cn(
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+                    isError ? 'bg-red-50 text-red-500' : 'bg-teal-50 text-teal-600',
+                  )}>
+                    {isError ? <AlertTriangle size={22} /> : <Truck size={22} />}
+                  </span>
+                  <div>
+                    <p className={cn(
+                      'text-lg font-bold leading-tight',
+                      isError ? 'text-red-700' : 'text-ink',
+                    )}>
+                      {statusLabel}
+                    </p>
+                    <p className="mt-0.5 text-sm text-ink-3">{statusSub}</p>
+                    {result.order_number && (
+                      <p className="mt-1 font-mono text-xs text-ink-4">
+                        Order {result.order_number}
+                        {result.tracking_code && result.tracking_code !== result.order_number
+                          ? ` · ${result.tracking_code}`
+                          : ''}
+                      </p>
+                    )}
                   </div>
                 </div>
-              )}
+
+                {/* Stepper */}
+                {!isError && <OrderStepper curStep={curStep} isError={false} />}
+              </div>
             </div>
 
-            {/* Info cards */}
+            {/* Info cards grid */}
             <div className="grid gap-3 sm:grid-cols-2">
               {result.delivery_city && (
-                <div className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
-                  <MapPin size={16} className="text-ink-3 shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-ink-3">Destination</p>
-                    <p className="text-sm font-medium">{result.delivery_city}, {result.delivery_state}</p>
-                  </div>
-                </div>
+                <InfoCard icon={<MapPin size={16} />} label="Destination">
+                  {result.delivery_city}, {result.delivery_state}
+                </InfoCard>
               )}
               {result.order_placed_at && (
-                <div className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
-                  <Package size={16} className="text-ink-3 shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-ink-3">Order placed</p>
-                    <p className="text-sm font-medium">{fmt(result.order_placed_at)}</p>
-                  </div>
-                </div>
+                <InfoCard icon={<Clock size={16} />} label="Order placed">
+                  {fmt(result.order_placed_at)}
+                </InfoCard>
               )}
               {result.dispatched_at && (
-                <div className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
-                  <Truck size={16} className="text-ink-3 shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-ink-3">Dispatched</p>
-                    <p className="text-sm font-medium">{fmt(result.dispatched_at)}</p>
-                  </div>
-                </div>
+                <InfoCard icon={<Truck size={16} />} label="Dispatched">
+                  {fmt(result.dispatched_at)}
+                </InfoCard>
               )}
               {result.delivered_at && (
-                <div className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
-                  <CheckCircle size={16} className="text-green-600 shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-ink-3">Delivered</p>
-                    <p className="text-sm font-medium text-green-700">{fmt(result.delivered_at)}</p>
-                  </div>
-                </div>
+                <InfoCard icon={<CheckCircle size={16} className="text-green-600" />} label="Delivered">
+                  <span className="text-green-700">{fmt(result.delivered_at)}</span>
+                </InfoCard>
               )}
             </div>
 
-            <p className="text-center text-xs text-ink-3">
-              Tracking code: <span className="font-mono">{result.tracking_code}</span>
+            <p className="text-center text-xs text-ink-4">
+              Tracking reference:{' '}
+              <span className="font-mono">{result.tracking_code ?? result.order_number}</span>
             </p>
           </div>
         )}
 
-        {/* Empty state (no search yet) */}
+        {/* ── Empty state ── */}
         {!result && !error && !loading && (
-          <div className="mt-10 flex flex-col items-center gap-3 text-center text-ink-3">
-            <Clock size={36} className="opacity-30" />
-            <p className="text-sm">Enter your tracking code above to see real-time delivery status.</p>
-            <p className="text-xs opacity-60">
-              You can find your tracking code in the dispatch email or on your order detail page.
-            </p>
+          <div className="mt-12 flex flex-col items-center gap-3 text-center text-ink-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-line bg-bg-subtle">
+              <Clock size={28} className="opacity-40" />
+            </div>
+            <div>
+              <p className="font-medium text-ink-2">Track your order</p>
+              <p className="mt-1 text-sm">
+                Enter your <strong className="text-ink">order number</strong> from the confirmation email,
+                or the <strong className="text-ink">tracking code</strong> from your dispatch email.
+              </p>
+            </div>
           </div>
         )}
       </div>
     </>
+  );
+}
+
+function InfoCard({
+  icon,
+  label,
+  children,
+}: {
+  icon:     React.ReactNode;
+  label:    string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-line bg-white px-4 py-3.5">
+      <span className="mt-0.5 shrink-0 text-ink-3">{icon}</span>
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-4">{label}</p>
+        <p className="mt-0.5 text-sm font-medium text-ink">{children}</p>
+      </div>
+    </div>
   );
 }

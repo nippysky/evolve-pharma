@@ -190,6 +190,10 @@ function InvitedPageInner() {
   ];
 
   const handleSetPassword = async () => {
+    // Guard against a second invocation slipping through before React has
+    // re-rendered the disabled button (double-click, Enter key held, etc).
+    if (settling) return;
+
     const e: Record<string, string> = {};
     const pw = passwordSchema.safeParse(password);
     if (!pw.success) e.password = pw.error.issues[0]?.message ?? 'Invalid password';
@@ -213,10 +217,16 @@ function InvitedPageInner() {
         title:       'Account activated!',
         description: 'Your account is pending review by our compliance team.',
       });
+
+      // Deliberately do NOT clear `settling` here. Releasing it would re-enable
+      // the button for the ~400ms before the redirect lands, which let customers
+      // submit a second time and receive a duplicate "under review" email.
+      // It stays disabled until this component unmounts on navigation.
       setTimeout(() => router.push('/sign-up/pending'), 400);
+      return;
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Could not set password. Please try again.');
-    } finally {
+      // Only re-enable on failure, so the customer can correct and retry.
       setSettling(false);
     }
   };
@@ -422,12 +432,13 @@ function InvitedPageInner() {
               <Button
                 type="button"
                 loading={settling}
+                disabled={settling}
                 fullWidth
                 size="lg"
                 trailingIcon={<ArrowRight size={16} />}
                 onClick={() => { void handleSetPassword(); }}
               >
-                Complete activation
+                {settling ? 'Activating your account…' : 'Complete activation'}
               </Button>
             </div>
           </>

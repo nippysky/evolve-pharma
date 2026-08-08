@@ -114,7 +114,7 @@ function buildInvoiceHTML(order: OrderDetailForPrint, isAdmin = false): string {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2.5px solid #0d9488;">
       <div>
         <div style="font-size:22px;font-weight:800;color:#042a36;letter-spacing:-0.03em;">
-          Envolve Pharmaceuticals
+          Envolve Phamaceutical Limited
         </div>
         <div style="font-size:11px;color:#64748b;margin-top:4px;">EnvolveCare Express · Licensed Pharma Distributor</div>
         <div style="font-size:11px;color:#64748b;">Off Oworonshoki–Ogudu Expressway, Ogudu, Lagos</div>

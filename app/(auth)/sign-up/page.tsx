@@ -61,6 +61,10 @@ export default function SignUpPage() {
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState('');
+  // Final step runs outside React Query, so it needs its own in-flight flag.
+  // Without it the "Complete registration" button stayed enabled during the
+  // request and customers double-clicked, creating duplicate review emails.
+  const [completing, setCompleting] = useState(false);
   /** Token returned by verify-OTP — required for the create-password call. */
   const [otpToken, setOtpToken] = useState('');
 
@@ -221,6 +225,9 @@ export default function SignUpPage() {
   ];
 
   const completeRegistration = () => {
+    // Guard against a second call landing before the disabled state renders.
+    if (completing) return;
+
     const e: Record<string, string> = {};
     const pw = passwordSchema.safeParse(password);
     if (!pw.success) e.password = pw.error.issues[0]?.message ?? 'Invalid password';
@@ -229,8 +236,11 @@ export default function SignUpPage() {
     setErrors(e);
     if (Object.keys(e).length) return;
 
+    // Set before the dynamic import so the button locks on the very first click.
+    setCompleting(true);
+    setServerError('');
+
     import('@/lib/api/services/auth.service').then(({ createPassword }) => {
-      setServerError('');
       // token captured from the verify-OTP response is required here
       createPassword({ password, token: otpToken })
         .then(() => {
@@ -239,11 +249,17 @@ export default function SignUpPage() {
             title: 'Account created!',
             description: 'Your account is pending review by our team.',
           });
+          // Stay disabled through the redirect — clearing it here would reopen
+          // the double-submit window that produced duplicate emails.
           setTimeout(() => router.push('/sign-up/pending'), 400);
         })
         .catch((err: Error) => {
           setServerError(err.message ?? 'Could not set password. Please try again.');
+          setCompleting(false);   // re-enable only so the customer can retry
         });
+    }).catch(() => {
+      setServerError('Could not load the registration module. Please try again.');
+      setCompleting(false);
     });
   };
 
@@ -486,8 +502,16 @@ export default function SignUpPage() {
               <Button type="button" variant="ghost" leadingIcon={<ArrowLeft size={16} />} onClick={() => { setErrors({}); setStep(3); }}>
                 Back
               </Button>
-              <Button type="button" loading={isLoading} fullWidth size="lg" trailingIcon={<ArrowRight size={16} />} onClick={completeRegistration}>
-                Complete registration
+              <Button
+                type="button"
+                loading={completing}
+                disabled={completing}
+                fullWidth
+                size="lg"
+                trailingIcon={<ArrowRight size={16} />}
+                onClick={completeRegistration}
+              >
+                {completing ? 'Creating your account…' : 'Complete registration'}
               </Button>
             </div>
           </>

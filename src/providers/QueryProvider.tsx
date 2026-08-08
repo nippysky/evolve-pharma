@@ -11,10 +11,18 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Don't re-fetch on window focus in dev — avoids noisy DB hits while editing
-            refetchOnWindowFocus: false,
-            // 1 min stale time — server data doesn't change every second
-            staleTime: 60 * 1000,
+            // Re-fetch when the user returns to the tab. Without this, coming
+            // back to a page after switching away serves stale cache and the
+            // only way to see current data is a hard refresh.
+            refetchOnWindowFocus: true,
+            // Re-fetch after the network drops and comes back.
+            refetchOnReconnect: true,
+            // Re-fetch on mount when data is stale (i.e. on route navigation).
+            refetchOnMount: true,
+            // Short stale window. Operational data (orders, payments, stock)
+            // changes constantly — webhooks flip payment status with no user
+            // action at all, so long stale times show wrong information.
+            staleTime: 15 * 1000,
             // Retry once on network errors; don't spam on 4xx
             retry: (failureCount, error) => {
               const status = (error as { status?: number })?.status;

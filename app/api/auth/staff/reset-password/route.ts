@@ -2,6 +2,7 @@ import { NextRequest }       from 'next/server';
 import { z }                 from 'zod';
 import bcrypt                from 'bcryptjs';
 import { db }                from '@/lib/db';
+import { writeAuditLog }     from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -104,6 +105,18 @@ export async function POST(req: NextRequest) {
         data:  { used_at: new Date() },
       }),
     ]);
+
+    // Security-relevant: an internal account's credential changed.
+    void writeAuditLog({
+      userId:      user.id,
+      userType:    user.role,
+      email,
+      action:      'PASSWORD_RESET',
+      entityType:  'User',
+      entityId:    String(user.id),
+      description: `${user.role} password reset completed via emailed OTP.`,
+      req,
+    });
 
     return apiSuccess(
       { email },

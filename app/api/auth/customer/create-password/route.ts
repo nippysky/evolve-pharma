@@ -4,6 +4,7 @@ import bcrypt                from 'bcryptjs';
 import { db }                from '@/lib/db';
 import { verifySetupToken }  from '@/lib/jwt';
 import { sendPcnUnderReviewEmail } from '@/lib/mail';
+import { writeAuditLog }          from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -48,6 +49,32 @@ export async function POST(req: NextRequest) {
       return apiError('Account not found.', 404);
     }
 
+    // ── Idempotency guard ───────────────────────────────────────────────────
+    // The setup token stays valid for its full lifetime, so a duplicate request
+    // (double-click, retried network call, refresh) would otherwise re-hash the
+    // password and send a second "under review" email. If the account has
+    // already moved past registration, report success and send nothing.
+    const existing = await db.customer.findFirst({
+      where:  { user_id: user.id },
+      select: { id: true, status: true },
+    });
+
+    const alreadyCompleted =
+      !!existing &&
+      ['PENDING_REVIEW', 'APPROVED', 'REJECTED'].includes(existing.status);
+
+    if (alreadyCompleted) {
+      console.log(
+        `[create-password] Duplicate submission ignored for user #${user.id} ` +
+        `(status already ${existing.status}) — no second email sent.`,
+      );
+      return apiSuccess(
+        { email: payload.email, already_completed: true },
+        200,
+        'Your account is already set up and pending review by our team.',
+      );
+    }
+
     // Hash + set password
     const password_hash = await bcrypt.hash(password, 12);
 
@@ -71,6 +98,18 @@ export async function POST(req: NextRequest) {
       console.error('[create-password] PCN review email failed:', mailErr);
     }
 
+    void writeAuditLog({
+      userId:      user.id,
+      userType:    'CUSTOMER',
+      userName:    `${user.first_name} ${user.last_name}`,
+      email:       payload.email,
+      action:      'CUSTOMER_REGISTRATION_COMPLETED',
+      entityType:  'User',
+      entityId:    String(user.id),
+      description: `Customer set their password and moved to PENDING_REVIEW.`,
+      req,
+    });
+
     return apiSuccess(
       { email: payload.email },
       200,
@@ -79,6 +118,5 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[POST /api/auth/customer/create-password]', err);
     return handlePrismaError(err) ?? apiInternalError();
-    return apiInternalError();
   }
 }

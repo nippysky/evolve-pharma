@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
     const orders = await db.order.findMany({
       where:  { id: { in: orderIds } },
       select: {
-        id: true, order_number: true, status: true,
+        id: true, order_number: true, status: true, payment_status: true,
         delivery_address: true, delivery_city: true, delivery_state: true,
         total: true, customer_id: true,
       },
@@ -159,6 +159,7 @@ export async function GET(req: NextRequest) {
           id:               order.id,
           order_number:     order.order_number,
           order_status:     order.status,
+          payment_status:   order.payment_status,
           delivery_address: order.delivery_address,
           delivery_city:    order.delivery_city,
           delivery_state:   order.delivery_state,

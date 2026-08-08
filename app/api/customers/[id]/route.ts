@@ -51,6 +51,20 @@ export async function GET(
 
     if (!c) return apiError('Customer not found.', 404);
 
+    // Fetch assigned_staff_id via raw SQL (new column not in Prisma types yet)
+    const rawRows = await db.$queryRaw<Array<{ assigned_staff_id: number | null }>>`
+      SELECT assigned_staff_id FROM customers WHERE id = ${id}
+    `;
+    const assignedStaffId = rawRows[0]?.assigned_staff_id ?? null;
+    let assignedStaff: { id: number; first_name: string; last_name: string; email: string } | null = null;
+    if (assignedStaffId) {
+      const u = await db.user.findUnique({
+        where:  { id: assignedStaffId },
+        select: { id: true, first_name: true, last_name: true, email: true },
+      });
+      if (u) assignedStaff = u;
+    }
+
     return apiSuccess({
       // Customer record
       id:                  c.id,
@@ -68,6 +82,8 @@ export async function GET(
       reviewed_at:         c.reviewed_at,
       created_at:          c.created_at,
       updated_at:          c.updated_at,
+      // Assigned staff
+      assigned_staff:      assignedStaff,
       // Flattened user
       user: {
         id:                c.user.id,

@@ -15,21 +15,25 @@ export default async function ConsoleProductsPage() {
   if (!session) redirect('/staff/sign-in');
   if (!['ADMIN', 'STAFF'].includes(session.role)) redirect('/admin/overview');
 
+  const isAdmin = session.role === 'ADMIN';
+
   return (
     <>
       <PageHead
         title="Products"
         subtitle="The catalog — pricing, photos, prescription flags, and lifecycle status."
         actions={
-          <>
-            <ProductsImport />
-            <ButtonLink href="/admin/products/new" leadingIcon={<Plus size={14} />}>
-              New product
-            </ButtonLink>
-          </>
+          isAdmin ? (
+            <>
+              <ProductsImport />
+              <ButtonLink href="/admin/products/new" leadingIcon={<Plus size={14} />}>
+                New product
+              </ButtonLink>
+            </>
+          ) : undefined
         }
       />
-      <ProductsList />
+      <ProductsList isAdmin={isAdmin} />
     </>
   );
 }

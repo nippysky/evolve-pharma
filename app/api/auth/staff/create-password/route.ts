@@ -4,6 +4,7 @@ import bcrypt                   from 'bcryptjs';
 import { db }                   from '@/lib/db';
 import { verifySetupToken }     from '@/lib/jwt';
 import { sendStaffActivationEmail } from '@/lib/mail';
+import { writeAuditLog }            from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -42,10 +43,24 @@ export async function POST(req: NextRequest) {
     // Find user
     const user = await db.user.findUnique({
       where:  { id: payload.userId },
-      select: { id: true, role: true, first_name: true },
+      select: { id: true, role: true, first_name: true, last_name: true, status: true },
     });
     if (!user || !['STAFF', 'DRIVER', 'ADMIN'].includes(user.role)) {
       return apiError('Account not found.', 404);
+    }
+
+    // Idempotency guard — the setup token remains valid for its full lifetime,
+    // so a duplicate submission would otherwise send a second activation email.
+    if (user.status === 'ACTIVE') {
+      console.log(
+        `[staff/create-password] Duplicate submission ignored for user #${user.id} ` +
+        `(already ACTIVE) — no second email sent.`,
+      );
+      return apiSuccess(
+        { email: payload.email, already_completed: true },
+        200,
+        'Your account is already active. You can sign in.',
+      );
     }
 
     // Hash + set password, activate account
@@ -76,6 +91,18 @@ export async function POST(req: NextRequest) {
     } catch (mailErr) {
       console.error('[staff/create-password] activation email failed:', mailErr);
     }
+
+    void writeAuditLog({
+      userId:      user.id,
+      userType:    user.role,
+      userName:    `${user.first_name} ${user.last_name}`,
+      email:       payload.email,
+      action:      'ACCOUNT_ACTIVATED',
+      entityType:  'User',
+      entityId:    String(user.id),
+      description: `${user.role} completed account setup and activated their account.`,
+      req,
+    });
 
     return apiSuccess(
       { email: payload.email },

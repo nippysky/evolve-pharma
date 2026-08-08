@@ -11,8 +11,15 @@ import { formatDate, formatDateTime } from '@/lib/utils';
 import {
   ArrowLeft, Building, Mail, Phone, MapPin, Shield, CheckCircle,
   Clock, XCircle, FileText, RotateCw, AlertTriangle, User, Calendar,
-  Tag, ArrowUpRight, Eye,
+  Tag, ArrowUpRight, Eye, Users, ChevronDown, Basket,
 } from '@/components/icons';
+
+interface StaffUser {
+  id:         number;
+  first_name: string;
+  last_name:  string;
+  email:      string;
+}
 
 interface CustomerDetail {
   id:                   number;
@@ -30,6 +37,7 @@ interface CustomerDetail {
   reviewed_at?:         string | null;
   created_at:           string;
   updated_at:           string;
+  assigned_staff?:      StaffUser | null;
   user: {
     id:                 number;
     uuid?:              string | null;
@@ -380,6 +388,133 @@ function ReviewPanel({
   );
 }
 
+// ── Staff Assignment Panel ────────────────────────────────────────────────────
+
+function StaffAssignPanel({
+  customerId,
+  current,
+  onDone,
+}: {
+  customerId: number;
+  current:    StaffUser | null | undefined;
+  onDone:     () => void;
+}) {
+  const toast                       = useToast();
+  const [staffList, setStaffList]   = useState<StaffUser[]>([]);
+  const [selected,  setSelected]    = useState<string>(current?.id.toString() ?? '');
+  const [saving,    setSaving]      = useState(false);
+  const [loadingList, setLoadingList] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/staff?role=STAFF&limit=200', { credentials: 'include' })
+      .then(r => r.json())
+      .then((j: { data?: { items?: StaffUser[] } }) => {
+        setStaffList(j.data?.items ?? []);
+      })
+      .catch(() => {/* silent */})
+      .finally(() => setLoadingList(false));
+  }, []);
+
+  // Keep dropdown in sync if current assignment changes after reload
+  useEffect(() => {
+    setSelected(current?.id.toString() ?? '');
+  }, [current]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const staff_user_id = selected ? parseInt(selected, 10) : null;
+      const res  = await fetch(`/api/customers/${customerId}/assign-staff`, {
+        method:      'PATCH',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ staff_user_id }),
+      });
+      const json = await res.json() as { message?: string };
+      if (!res.ok) throw new Error(json.message ?? 'Assignment failed');
+      toast.success(
+        staff_user_id ? 'Staff assigned' : 'Assignment removed',
+        staff_user_id ? 'Customer is now assigned to this staff member.' : 'Customer has been unassigned.',
+      );
+      onDone();
+    } catch (e) {
+      toast.error('Assignment failed', e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isDirty = selected !== (current?.id.toString() ?? '');
+
+  return (
+    <div className="rounded-2xl border border-line bg-white">
+      <div className="flex items-center gap-2 border-b border-line px-5 py-4">
+        <Users size={15} className="text-ink-3" />
+        <h2 className="text-sm font-semibold text-ink">Assigned staff</h2>
+        <span className="ml-auto rounded-full bg-bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-3">
+          Admin only
+        </span>
+      </div>
+
+      <div className="space-y-4 p-5">
+        {/* Current assignment chip */}
+        <div className={cn(
+          'flex items-center gap-2.5 rounded-xl px-3.5 py-2.5',
+          current ? 'bg-teal-50 border border-teal-100' : 'bg-bg-muted border border-line',
+        )}>
+          <div className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+            current ? 'bg-teal-500 text-white' : 'bg-line text-ink-4',
+          )}>
+            {current ? `${current.first_name[0]}${current.last_name[0]}` : '–'}
+          </div>
+          <div className="min-w-0">
+            <p className={cn('text-sm font-semibold leading-tight truncate', current ? 'text-teal-800' : 'text-ink-3')}>
+              {current ? `${current.first_name} ${current.last_name}` : 'Not assigned'}
+            </p>
+            {current && (
+              <p className="mt-0.5 truncate text-[11px] text-teal-600">{current.email}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Staff selector */}
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-ink-2">
+            Assign to staff member
+          </label>
+          <div className="relative">
+            <select
+              value={selected}
+              onChange={e => setSelected(e.target.value)}
+              disabled={loadingList || saving}
+              className="w-full appearance-none rounded-xl border border-line bg-bg-subtle py-2.5 pl-3.5 pr-9 text-sm text-ink focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:opacity-50"
+            >
+              <option value="">— Unassigned —</option>
+              {staffList.map(s => (
+                <option key={s.id} value={s.id.toString()}>
+                  {s.first_name} {s.last_name} · {s.email}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3 text-ink-3" />
+          </div>
+        </div>
+
+        <Button
+          fullWidth
+          loading={saving}
+          disabled={!isDirty || saving}
+          onClick={handleSave}
+          variant="primary"
+        >
+          {saving ? 'Saving…' : selected ? 'Assign staff' : 'Remove assignment'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 const LIFECYCLE_STEPS = [
   { key: 'REGISTERED',        label: 'Registered'    },
   { key: 'OTP_CONFIRMED',     label: 'Email verified' },
@@ -516,11 +651,22 @@ export default function CustomerDetailPage({
         title={fullName}
         subtitle={customer.company_name ?? 'Customer profile'}
         actions={
-          <Link href="/admin/customers">
-            <Button variant="secondary" leadingIcon={<ArrowLeft size={14} />}>
-              All customers
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* Only approved customers can have an order placed for them —
+                the API rejects anything else, so don't offer it here. */}
+            {customer.status === 'APPROVED' && (
+              <Link href={`/admin/orders/new?customer_id=${customer.id}`}>
+                <Button leadingIcon={<Basket size={14} />}>
+                  Place order
+                </Button>
+              </Link>
+            )}
+            <Link href="/admin/customers">
+              <Button variant="secondary" leadingIcon={<ArrowLeft size={14} />}>
+                All customers
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -635,6 +781,15 @@ export default function CustomerDetailPage({
               verified={customer.pcn_verified}
             />
           </div>
+
+          {/* Staff assignment — admin only */}
+          {isAdmin && (
+            <StaffAssignPanel
+              customerId={customer.id}
+              current={customer.assigned_staff}
+              onDone={() => void fetchCustomer()}
+            />
+          )}
 
           {/* Account metadata */}
           <div className="rounded-2xl border border-line bg-white p-5">

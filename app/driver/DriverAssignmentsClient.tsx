@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Truck, MapPin, Phone, Package, AlertTriangle, Check } from '@/components/icons';
 import { formatNaira, formatDate, cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ interface DriverDelivery {
     delivery_city:    string;
     delivery_state:   string;
     total:            number;
+    payment_status?:  string;
     customer: {
       company_name: string | null;
       first_name:   string;
@@ -73,22 +75,38 @@ function DeliveryCard({ delivery }: { delivery: DriverDelivery }) {
 
   const nextActions = DRIVER_NEXT[delivery.status] ?? [];
 
+  // Cash-on-delivery prompt: shown when completing a delivery whose order is
+  // still unpaid. The driver has to say explicitly whether money changed hands
+  // — completing a delivery never marks the order paid on its own.
+  const [cashPrompt, setCashPrompt] = useState(false);
+  const isUnpaid =
+    !!delivery.order?.payment_status &&
+    delivery.order.payment_status !== 'PAID' &&
+    delivery.order.payment_status !== 'REFUNDED';
+
   const statusMut = useMutation({
-    mutationFn: async (newStatus: string) => {
+    mutationFn: async (
+      arg: string | { status: string; cash_collected: boolean },
+    ) => {
+      const payload = typeof arg === 'string' ? { status: arg } : arg;
       const res = await fetch(`/api/deliveries/${delivery.id}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ status: newStatus }),
+        body:    JSON.stringify(payload),
       });
       return res.json();
     },
-    onSuccess: (data, newStatus) => {
-      const ok = data.status === 'success';
-      const label = STATUS_STYLE[newStatus]?.label ?? newStatus;
+    onSuccess: (data, arg) => {
+      const ok            = data.status === 'success';
+      const newStatus     = typeof arg === 'string' ? arg : arg.status;
+      const cashCollected = typeof arg === 'string' ? false : arg.cash_collected;
+      const label         = STATUS_STYLE[newStatus]?.label ?? newStatus;
       toast.show({
         tone:  ok ? 'success' : 'error',
         title: ok ? `Status updated to ${label}` : (data.message ?? 'Update failed'),
+        description: ok && cashCollected ? 'Cash collection recorded.' : undefined,
       });
+      setCashPrompt(false);
       // Always invalidate — outside of ok check
       qc.invalidateQueries({ queryKey: ['driver-deliveries'] });
       qc.invalidateQueries({ queryKey: ['driver-history'] });
@@ -159,15 +177,69 @@ function DeliveryCard({ delivery }: { delivery: DriverDelivery }) {
         </p>
       )}
 
-      {/* Action buttons */}
-      {nextActions.length > 0 && (
+      {/* Unpaid warning so the driver knows to collect before handing over */}
+      {isUnpaid && delivery.status !== 'DELIVERED' && (
+        <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-500" />
+          <p className="text-xs text-amber-800">
+            This order is <strong>unpaid</strong>. Collect{' '}
+            {delivery.order ? formatNaira(delivery.order.total) : 'payment'} before handing over.
+          </p>
+        </div>
+      )}
+
+      {/* Cash-collection prompt — replaces the action list while open */}
+      {cashPrompt ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">
+            Did you collect payment?
+          </p>
+          <p className="mt-1 text-xs text-amber-800">
+            This order is unpaid. Confirm only if the customer has actually paid you
+            {delivery.order ? ` ${formatNaira(delivery.order.total)}` : ''}.
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            <button
+              type="button"
+              disabled={statusMut.isPending}
+              onClick={() => statusMut.mutate({ status: 'DELIVERED', cash_collected: true })}
+              className="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-60"
+            >
+              {statusMut.isPending ? 'Saving…' : '✓ Yes — payment collected'}
+            </button>
+            <button
+              type="button"
+              disabled={statusMut.isPending}
+              onClick={() => statusMut.mutate({ status: 'DELIVERED', cash_collected: false })}
+              className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:bg-bg-muted disabled:opacity-60"
+            >
+              No — delivered, still unpaid
+            </button>
+            <button
+              type="button"
+              disabled={statusMut.isPending}
+              onClick={() => setCashPrompt(false)}
+              className="px-4 py-1 text-xs font-medium text-ink-3 hover:underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : nextActions.length > 0 && (
         <div className="flex flex-col gap-2">
           {nextActions.map(action => (
             <button
               key={action.status}
               type="button"
               disabled={statusMut.isPending}
-              onClick={() => statusMut.mutate(action.status)}
+              onClick={() => {
+                // Completing an unpaid delivery must ask about cash first.
+                if (action.status === 'DELIVERED' && isUnpaid) {
+                  setCashPrompt(true);
+                  return;
+                }
+                statusMut.mutate(action.status);
+              }}
               className={cn(
                 'rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60',
                 action.primary

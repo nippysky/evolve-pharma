@@ -13,6 +13,7 @@ import {
   Upload, X, Box, RotateCw,
 } from '@/components/icons';
 import { useToast }             from '@/contexts/ToastContext';
+import { useUser }              from '@/contexts/UserContext';
 import { useProductCategories, useProductManufacturers } from '@/hooks/admin/useAdminProducts';
 import { cn }                   from '@/lib/utils';
 import type { ProductDTO, ProductImageDTO } from '@/lib/api/types';
@@ -272,6 +273,13 @@ export default function ProductEditPage({
   const router      = useRouter();
   const toast       = useToast();
   const queryClient = useQueryClient();
+  const { user }    = useUser();
+
+  // Guard: only ADMIN can edit products
+  if (user && user.role !== 'ADMIN') {
+    router.replace('/admin/products');
+    return null;
+  }
 
   // Remote product state
   const [product,        setProduct]        = useState<ProductDTO | null>(null);

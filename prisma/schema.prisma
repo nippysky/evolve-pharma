@@ -142,6 +142,10 @@ model User {
 
   // Customer review
   reviewedCustomers Customer[] @relation("CustomerReviewedBy")
+  // Customers this staff member owns as their sales rep
+  assignedCustomers Customer[] @relation("CustomerAssignedStaff")
+  // Orders this staff member placed on a customer's behalf
+  placedOrders      Order[]    @relation("OrderPlacedBy")
 
   @@map("users")
 }
@@ -165,16 +169,24 @@ model Customer {
   referral_code        String?        @unique @db.VarChar(50)
   referred_by          String?        @db.VarChar(50) // referral_code of referrer
   referral_points      Int            @default(0)     // points earned from referrals
+  // One-time guard: set once this customer's spend has triggered a reward for
+  // their referrer, so additional purchases can't award it again.
+  referral_threshold_awarded Boolean   @default(false)
   review_note          String?        @db.Text
   reviewed_by_id       Int?
   reviewed_by          User?          @relation("CustomerReviewedBy", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
   reviewed_at          DateTime?
+  // Sales rep who owns this account. Drives staff-scoped reports and, when
+  // staff_order_scope is ASSIGNED, who may order on their behalf.
+  assigned_staff_id    Int?
+  assigned_staff       User?          @relation("CustomerAssignedStaff", fields: [assigned_staff_id], references: [id], onDelete: SetNull)
   created_at           DateTime       @default(now())
   updated_at           DateTime       @updatedAt
 
   orders               Order[]
   cart                 Cart?
 
+  @@index([assigned_staff_id])
   @@map("customers")
 }
 
@@ -361,6 +373,10 @@ model Order {
   // JSON blob: { vat, contact_phone, po_number, delivery_notes, payment_method }
   // Stored as text to avoid schema churn for order-time metadata fields.
   notes             String?       @db.Text
+  // NULL when the customer checked out themselves through the portal.
+  // Set to the staff/admin user who placed the order on their behalf.
+  placed_by_user_id Int?
+  placed_by         User?         @relation("OrderPlacedBy", fields: [placed_by_user_id], references: [id], onDelete: SetNull)
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
 
@@ -368,6 +384,7 @@ model Order {
   delivery            Delivery?
   paymentTransactions PaymentTransaction[]
 
+  @@index([placed_by_user_id])
   @@map("orders")
 }
 

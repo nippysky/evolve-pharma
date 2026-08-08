@@ -102,11 +102,31 @@ export async function GET(
       }
     }
 
+    // On-behalf attribution. Raw SQL because placed_by_user_id comes from a
+    // manual migration and isn't in the generated Prisma types.
+    let placedBy: { id: number; name: string; role: string } | null = null;
+    try {
+      const pbRows = await db.$queryRaw<Array<{ placed_by_user_id: number | null }>>`
+        SELECT placed_by_user_id FROM orders WHERE id = ${orderId}
+      `;
+      const pbId = pbRows[0]?.placed_by_user_id;
+      if (pbId) {
+        const u = await db.user.findUnique({
+          where:  { id: pbId },
+          select: { id: true, first_name: true, last_name: true, role: true },
+        });
+        if (u) {
+          placedBy = { id: u.id, name: `${u.first_name} ${u.last_name}`, role: u.role };
+        }
+      }
+    } catch { /* column may not exist yet — degrade quietly */ }
+
     return apiSuccess({
       order: {
         id:                o.id,
         uuid:              o.uuid,
         order_number:      o.order_number,
+        placed_by:         placedBy,
         status:            o.status,
         payment_status:    o.payment_status,
         payment_reference: o.payment_reference,

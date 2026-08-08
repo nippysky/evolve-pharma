@@ -3,6 +3,7 @@ import { z }                  from 'zod';
 import { db }                 from '@/lib/db';
 import { getSession }         from '@/lib/auth';
 import { revalidateSettings } from '@/lib/revalidate';
+import { writeAuditLog }      from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -27,6 +28,11 @@ const ALLOWED_KEYS = new Set([
   'hq_address', 'currency', 'timezone',
   'email_audit_summary', 'auto_logout',
   'vat_enabled', 'vat_rate',
+  // Referral programme — referee must spend `referral_threshold` for the
+  // referrer to earn `referral_reward`. Both in naira.
+  'referral_threshold', 'referral_reward',
+  // Who a STAFF member may place orders on behalf of: 'ALL' | 'ASSIGNED'
+  'staff_order_scope',
 ]);
 
 export async function GET(req: NextRequest) {
@@ -71,6 +77,14 @@ export async function PATCH(req: NextRequest) {
 
     await ensureTable();
 
+    // Snapshot current values so the audit log can record before → after.
+    // Settings here control money (VAT, referral reward) so the trail matters.
+    const beforeRows = await db.$queryRaw<Array<{ key: string; value: string }>>`
+      SELECT \`key\`, \`value\` FROM app_settings
+    `;
+    const before: Record<string, string> = {};
+    for (const r of beforeRows) before[r.key] = r.value;
+
     // Upsert each key sequentially (tiny pool — avoid parallel)
     for (const [key, value] of updates) {
       await db.$executeRawUnsafe(
@@ -80,6 +94,24 @@ export async function PATCH(req: NextRequest) {
         key,
         value,
       );
+    }
+
+    // Audit — only record keys whose value actually changed
+    const changed = updates.filter(([k, v]) => (before[k] ?? '') !== v);
+    if (changed.length > 0) {
+      void writeAuditLog({
+        userId:      session.userId,
+        userType:    session.role,
+        userName:    `${session.first_name} ${session.last_name}`,
+        email:       session.email,
+        action:      'UPDATE_SETTINGS',
+        entityType:  'AppSettings',
+        entityId:    changed.map(([k]) => k).join(','),
+        description: changed
+          .map(([k, v]) => `${k}: "${before[k] ?? '(unset)'}" → "${v}"`)
+          .join('; '),
+        req,
+      });
     }
 
     revalidateSettings();

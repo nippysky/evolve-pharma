@@ -6,6 +6,8 @@ import {
   getPaymentTransactionByRef,
   updatePaymentTransactionStatus,
 }                                      from '@/lib/cart-db';
+import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { writeAuditLog }               from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       if (verification.paid) {
         const order = await db.order.findUnique({
           where:  { id: txRecord.order_id },
-          select: { id: true, customer: { select: { user_id: true } } },
+          select: { id: true, customer_id: true, customer: { select: { user_id: true } } },
         });
         if (!order) return apiNotFound('Order');
 
@@ -53,6 +55,24 @@ export async function GET(req: NextRequest, { params }: Ctx) {
             status:            'CONFIRMED',
           },
         });
+
+        // Audit — this path marks orders PAID, so it needs a trail just like
+        // the webhook does. Attributed to the customer who completed checkout.
+        void writeAuditLog({
+          userId:      session.userId,
+          userType:    session.role,
+          userName:    `${session.first_name} ${session.last_name}`,
+          email:       session.email,
+          action:      'PAYMENT_CONFIRMED',
+          entityType:  'Order',
+          entityId:    String(order.id),
+          description: `Paystack payment verified at checkout for ref ${reference}. ` +
+                       `Amount: ₦${verification.amount ? (verification.amount / 100).toLocaleString('en-NG') : '?'}.`,
+          req,
+        });
+
+        // Trigger referral reward check (non-blocking)
+        void checkAndAwardReferralReward(order.customer_id);
       }
     }
 

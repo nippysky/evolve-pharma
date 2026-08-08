@@ -2,6 +2,7 @@ import { NextRequest }       from 'next/server';
 import { z }                 from 'zod';
 import bcrypt                from 'bcryptjs';
 import { db }                from '@/lib/db';
+import { writeAuditLog }     from '@/lib/audit';
 import {
   apiSuccess,
   apiError,
@@ -111,6 +112,18 @@ export async function POST(req: NextRequest) {
         data: { used_at: new Date() },
       }),
     ]);
+
+    // Security-relevant: a credential changed, so it belongs in the audit trail.
+    void writeAuditLog({
+      userId:      user.id,
+      userType:    'CUSTOMER',
+      email,
+      action:      'PASSWORD_RESET',
+      entityType:  'User',
+      entityId:    String(user.id),
+      description: `Customer password reset completed via emailed OTP.`,
+      req,
+    });
 
     return apiSuccess(
       { email },
