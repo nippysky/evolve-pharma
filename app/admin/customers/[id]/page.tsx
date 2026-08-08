@@ -408,8 +408,9 @@ function StaffAssignPanel({
   useEffect(() => {
     fetch('/api/staff?role=STAFF&limit=200', { credentials: 'include' })
       .then(r => r.json())
-      .then((j: { data?: { items?: StaffUser[] } }) => {
-        setStaffList(j.data?.items ?? []);
+      // apiPaginated returns { data: { records, pagination } } — not `items`.
+      .then((j: { data?: { records?: StaffUser[] } }) => {
+        setStaffList(j.data?.records ?? []);
       })
       .catch(() => {/* silent */})
       .finally(() => setLoadingList(false));

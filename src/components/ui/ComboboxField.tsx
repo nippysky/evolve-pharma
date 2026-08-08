@@ -158,6 +158,7 @@ export function ComboboxField({
           type="text"
           role="combobox"
           aria-expanded={open}
+          aria-controls={`${id}-listbox`}
           aria-autocomplete="list"
           aria-haspopup="listbox"
           autoComplete="off"
@@ -185,6 +186,7 @@ export function ComboboxField({
         {open && totalRows > 0 && (
           <ul
             ref={listRef}
+            id={`${id}-listbox`}
             role="listbox"
             aria-label={label}
             className="absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-y-auto rounded-lg border border-line bg-white py-1 shadow-xl"
@@ -225,7 +227,7 @@ export function ComboboxField({
               >
                 <Plus size={12} className="shrink-0" />
                 <span>
-                  {createLabel} <strong className="text-ink">"{value.trim()}"</strong>
+                  {createLabel} <strong className="text-ink">&ldquo;{value.trim()}&rdquo;</strong>
                 </span>
               </li>
             )}

@@ -416,6 +416,15 @@ export interface CustomerAdminRecord {
   email:                string;
   phone?:               string | null;
   created_at:           string;
+  /** Sales rep who owns this account. Null when unassigned. */
+  assigned_staff?:      AssignedStaff | null;
+}
+
+export interface AssignedStaff {
+  id:         number;
+  first_name: string;
+  last_name:  string;
+  email:      string;
 }
 
 export interface RegisterCustomerPayload {

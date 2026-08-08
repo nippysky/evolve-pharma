@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter }   from 'next/navigation';
 import Image           from 'next/image';
 import Link            from 'next/link';
@@ -155,11 +155,14 @@ export default function NewProductPage() {
   const queryClient = useQueryClient();
   const { user }    = useUser();
 
-  // Guard: only ADMIN can create products
-  if (user && user.role !== 'ADMIN') {
-    router.replace('/admin/products');
-    return null;
-  }
+  // Guard: only ADMIN may reach this page.
+  // The redirect runs in an effect and the early return happens *after* every
+  // hook has been called — returning early from here would render fewer hooks
+  // than the previous pass and make React throw.
+  const isForbidden = !!user && user.role !== 'ADMIN';
+  useEffect(() => {
+    if (isForbidden) router.replace('/admin/products');
+  }, [isForbidden, router]);
 
   // Category + Manufacturer data
   const { data: categoryData,     isLoading: catsLoading } = useProductCategories();
@@ -309,6 +312,10 @@ export default function NewProductPage() {
       setSaving(false);
     }
   }
+
+  // Every hook has run by this point, so bailing out here is safe.
+  // The effect above handles the actual redirect.
+  if (isForbidden) return null;
 
   return (
     <>

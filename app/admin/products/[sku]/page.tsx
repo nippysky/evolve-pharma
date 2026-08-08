@@ -275,11 +275,14 @@ export default function ProductEditPage({
   const queryClient = useQueryClient();
   const { user }    = useUser();
 
-  // Guard: only ADMIN can edit products
-  if (user && user.role !== 'ADMIN') {
-    router.replace('/admin/products');
-    return null;
-  }
+  // Guard: only ADMIN may reach this page.
+  // The redirect runs in an effect and the early return happens *after* every
+  // hook has been called — returning early from here would render fewer hooks
+  // than the previous pass and make React throw.
+  const isForbidden = !!user && user.role !== 'ADMIN';
+  useEffect(() => {
+    if (isForbidden) router.replace('/admin/products');
+  }, [isForbidden, router]);
 
   // Remote product state
   const [product,        setProduct]        = useState<ProductDTO | null>(null);
@@ -467,6 +470,10 @@ export default function ProductEditPage({
       setSaving(false);
     }
   }
+
+  // Every hook has run by this point, so bailing out here is safe.
+  // The effect above handles the actual redirect.
+  if (isForbidden) return null;
 
   // ── Render: loading ──────────────────────────────────────────────────────
 

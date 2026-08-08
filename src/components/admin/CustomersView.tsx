@@ -15,7 +15,7 @@ import { customerOnboardSchema } from '@/lib/schemas';
 import { NIGERIAN_STATES } from '@/lib/constants';
 import { formatDate, cn } from '@/lib/utils';
 import type { Role } from '@/types';
-import type { CustomerAdminRecord } from '@/lib/api/types';
+import type { CustomerAdminRecord, AssignedStaff } from '@/lib/api/types';
 
 type CustomerBulkResult = {
   total_records:  number;
@@ -933,6 +933,145 @@ function TableSkeleton() {
   );
 }
 
+/**
+ * Assign (or reassign) the sales rep who owns a customer account.
+ *
+ * Mirrors the driver-assignment flow on deliveries so the two feel identical.
+ * Admin-only — the API enforces this too, this just avoids showing a control
+ * that would fail.
+ */
+function AssignRepModal({
+  customer,
+  onClose,
+  onSaved,
+}: {
+  customer: CustomerAdminRecord;
+  onClose:  () => void;
+  onSaved:  () => void;
+}) {
+  const toast = useToast();
+  const [staff,    setStaff]    = useState<AssignedStaff[]>([]);
+  const [selected, setSelected] = useState<string>(customer.assigned_staff?.id.toString() ?? '');
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+
+  useEffect(() => {
+    // apiPaginated returns { data: { records, pagination } } — not `items`.
+    fetch('/api/staff?role=STAFF&limit=200', { credentials: 'include' })
+      .then(r => r.json())
+      .then((j: { data?: { records?: AssignedStaff[] } }) => setStaff(j.data?.records ?? []))
+      .catch(() => {/* leave the list empty; the empty state explains it */})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save(staffId: number | null) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/customers/${customer.id}/assign-staff`, {
+        method:      'PATCH',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        // API field is staff_user_id (the users.id, not a staff-table id).
+        body:        JSON.stringify({ staff_user_id: staffId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message ?? 'Could not update assignment.');
+      toast.show({
+        tone:  'success',
+        title: staffId ? 'Rep assigned' : 'Assignment removed',
+        description: `${customer.first_name} ${customer.last_name} updated.`,
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      toast.show({ tone: 'error', title: 'Failed', description: (err as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-xl">
+        <h2 className="text-base font-semibold text-ink">Assign sales rep</h2>
+        <p className="mt-1 text-sm text-ink-3">
+          {customer.company_name ?? `${customer.first_name} ${customer.last_name}`}
+        </p>
+
+        {customer.assigned_staff && (
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-line bg-bg-subtle px-3.5 py-2.5">
+            <User size={13} className="shrink-0 text-ink-3" />
+            <span className="text-sm text-ink-2">
+              Currently&nbsp;
+              <strong className="text-ink">
+                {customer.assigned_staff.first_name} {customer.assigned_staff.last_name}
+              </strong>
+            </span>
+          </div>
+        )}
+
+        <label className="mt-4 block">
+          <span className="mb-1 block text-xs font-semibold text-ink-2">Assign to</span>
+          {loading ? (
+            <div className="h-10 animate-pulse rounded-xl bg-bg-muted" />
+          ) : staff.length === 0 ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+              No active staff accounts found. Invite a staff member first, and make
+              sure they have verified their email.
+            </p>
+          ) : (
+            <select
+              value={selected}
+              onChange={e => setSelected(e.target.value)}
+              className="h-10 w-full rounded-xl border border-line bg-white px-3 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            >
+              <option value="">— Unassigned —</option>
+              {staff.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.first_name} {s.last_name} ({s.email})
+                </option>
+              ))}
+            </select>
+          )}
+        </label>
+
+        <div className="mt-5 flex items-center justify-between gap-2">
+          {customer.assigned_staff ? (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => save(null)}
+              className="rounded-xl px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+            >
+              Remove assignment
+            </button>
+          ) : <span />}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-bg-muted disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={saving || loading || staff.length === 0}
+              onClick={() => save(selected ? Number(selected) : null)}
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+            >
+              {saving && <RotateCw size={13} className="animate-spin" />}
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CustomerTable({
   records,
   isLoading,
@@ -941,6 +1080,7 @@ function CustomerTable({
   isAdmin,
   onReview,
   onReReview,
+  onAssign,
 }: {
   records: TaggedCustomerRecord[];
   isLoading: boolean;
@@ -949,6 +1089,7 @@ function CustomerTable({
   isAdmin: boolean;
   onReview: (c: CustomerAdminRecord) => void;
   onReReview: (c: CustomerAdminRecord, decision: 'APPROVE' | 'REJECTED') => void;
+  onAssign: (c: CustomerAdminRecord) => void;
 }) {
   const [page, setPage] = useState(1);
 
@@ -970,12 +1111,15 @@ function CustomerTable({
     return list;
   }, [records, activeFilter, query]);
 
-  // Reset page when filter or search changes
-  const prevFilterRef = useRef(activeFilter);
-  const prevQueryRef  = useRef(query);
-  if (prevFilterRef.current !== activeFilter || prevQueryRef.current !== query) {
-    prevFilterRef.current = activeFilter;
-    prevQueryRef.current  = query;
+  // Reset to page 1 whenever the filter or search changes.
+  // Uses React's "adjust state during render" pattern rather than mutating a
+  // ref — refs must not be read or written during render, and doing so here
+  // meant the reset could be skipped on a re-render React discarded.
+  const [prevFilter, setPrevFilter] = useState(activeFilter);
+  const [prevQuery,  setPrevQuery]  = useState(query);
+  if (prevFilter !== activeFilter || prevQuery !== query) {
+    setPrevFilter(activeFilter);
+    setPrevQuery(query);
     if (page !== 1) setPage(1);
   }
 
@@ -1016,6 +1160,7 @@ function CustomerTable({
               <Th>Stage</Th>
               <Th>Review note</Th>
               <Th>Registered</Th>
+              {isAdmin && <Th>Assigned rep</Th>}
               <Th align="right">Actions</Th>
             </tr>
           </Thead>
@@ -1062,6 +1207,35 @@ function CustomerTable({
 
                 {/* Date */}
                 <Td muted>{formatDate(c.created_at)}</Td>
+
+                {/* Assigned rep — admin only, mirrors the driver-assign control
+                    on deliveries so the two flows feel the same. */}
+                {isAdmin && (
+                  <Td>
+                    {c.assigned_staff ? (
+                      <button
+                        type="button"
+                        onClick={() => onAssign(c)}
+                        title="Change assigned rep"
+                        className="inline-flex max-w-[11rem] items-center gap-1.5 rounded-lg border border-line bg-bg-subtle px-2.5 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-brand-300 hover:text-brand-700"
+                      >
+                        <User size={11} className="shrink-0" />
+                        <span className="truncate">
+                          {c.assigned_staff.first_name} {c.assigned_staff.last_name}
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onAssign(c)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100"
+                      >
+                        <User size={11} />
+                        Assign rep
+                      </button>
+                    )}
+                  </Td>
+                )}
 
                 {/* Actions */}
                 <Td align="right">
@@ -1553,6 +1727,7 @@ export function CustomersView({ role }: { role: Role }) {
   const [importing,          setImporting]          = useState(false);
   const [reviewTarget,       setReviewTarget]       = useState<CustomerAdminRecord | null>(null);
   const [reviewInitDecision, setReviewInitDecision] = useState<'APPROVE' | 'REJECTED'>('APPROVE');
+  const [assignTarget,       setAssignTarget]       = useState<CustomerAdminRecord | null>(null);
 
   const { allRecords, counts, isLoading, errors, refetchAll } = useAllCustomers();
 
@@ -1723,7 +1898,17 @@ export function CustomersView({ role }: { role: Role }) {
         isAdmin={isAdmin}
         onReview={handleReview}
         onReReview={handleReReview}
+        onAssign={setAssignTarget}
       />
+
+      {/* ── Assign sales rep modal ── */}
+      {assignTarget && (
+        <AssignRepModal
+          customer={assignTarget}
+          onClose={() => setAssignTarget(null)}
+          onSaved={refetchAll}
+        />
+      )}
 
       {/* ── Review modal ──
           key forces a full remount whenever the target or initial decision changes,

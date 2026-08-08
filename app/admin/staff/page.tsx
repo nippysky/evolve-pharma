@@ -1,33 +1,12 @@
 'use client';
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  Users,
-  Mail,
-  CheckCircle,
-  Clock,
-  Search,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  RotateCw,
-  Building,
-  FileText,
-  Send,
-  XCircle,
-  Trash,
-} from '@/components/icons';
+import {Users, Mail, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, RotateCw, Building, FileText, Send, XCircle, Trash} from '@/components/icons';
 import { PageHead }   from '@/components/shared/PageHead';
 import { Avatar }     from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { StaffActions } from '@/components/admin/StaffActions';
-import {
-  useAllStaff,
-  useToggleStaffStatus,
-  useDeleteStaff,
-  type StaffStatus,
-  type TaggedStaffRecord,
-} from '@/hooks/staff/useStaff';
+import {useAllStaff, useToggleStaffStatus, useDeleteStaff, type StaffStatus, type TaggedStaffRecord} from '@/hooks/staff/useStaff';
 import { useToast }      from '@/contexts/ToastContext';
 import { formatDate, cn } from '@/lib/utils';
 
@@ -491,11 +470,15 @@ function StaffTable({
     return list;
   }, [records, activeFilter, query]);
 
-  const prevFilterRef = useRef(activeFilter);
-  const prevQueryRef  = useRef(query);
-  if (prevFilterRef.current !== activeFilter || prevQueryRef.current !== query) {
-    prevFilterRef.current = activeFilter;
-    prevQueryRef.current  = query;
+  // Reset to page 1 whenever the filter or search changes.
+  // Uses React's "adjust state during render" pattern rather than mutating a
+  // ref — refs must not be read or written during render, and doing so here
+  // meant the reset could be skipped on a re-render React discarded.
+  const [prevFilter, setPrevFilter] = useState(activeFilter);
+  const [prevQuery,  setPrevQuery]  = useState(query);
+  if (prevFilter !== activeFilter || prevQuery !== query) {
+    setPrevFilter(activeFilter);
+    setPrevQuery(query);
     if (page !== 1) setPage(1);
   }
 

@@ -67,7 +67,7 @@ function AddStaffModal({ open, onClose }: { open: boolean; onClose: () => void }
       <div className="w-full max-w-lg rounded-2xl border border-line bg-white p-6 shadow-xl">
         <h2 className="text-base font-semibold tracking-tight text-ink">Add a staff member</h2>
         <p className="mt-1 text-sm text-ink-3">
-          They'll receive an email to verify their account and set a password.
+          They&rsquo;ll receive an email to verify their account and set a password.
         </p>
 
         <form onSubmit={submit} className="mt-5 space-y-0">

@@ -66,6 +66,10 @@ export async function GET(req: NextRequest) {
           reviewed_by: {
             select: { first_name: true, last_name: true, email: true },
           },
+          // Sales rep who owns the account — powers the assign column on the list.
+          assigned_staff: {
+            select: { id: true, first_name: true, last_name: true, email: true },
+          },
         },
       }),
       db.customer.count({ where }),
@@ -99,6 +103,14 @@ export async function GET(req: NextRequest) {
       },
       reviewed_by: c.reviewed_by
         ? `${c.reviewed_by.first_name} ${c.reviewed_by.last_name}`
+        : null,
+      assigned_staff: c.assigned_staff
+        ? {
+            id:         c.assigned_staff.id,
+            first_name: c.assigned_staff.first_name,
+            last_name:  c.assigned_staff.last_name,
+            email:      c.assigned_staff.email,
+          }
         : null,
     }));
 

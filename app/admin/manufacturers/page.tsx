@@ -191,7 +191,7 @@ function RenameModal({ manufacturer, onClose, onRenamed }: RenameModalProps) {
           <div>
             <h2 className="text-base font-semibold text-ink">Rename manufacturer</h2>
             <p className="mt-0.5 text-xs text-amber-700 font-medium">
-              ⚠ The manufacturer name is part of each product's SKU. Renaming changes how <em>new</em> products are slugged — existing SKUs are unaffected.
+              ⚠ The manufacturer name is part of each product&rsquo;s SKU. Renaming changes how <em>new</em> products are slugged — existing SKUs are unaffected.
             </p>
           </div>
           <button type="button" onClick={onClose} className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ink-4 transition-colors hover:bg-bg-muted hover:text-ink">
@@ -260,7 +260,7 @@ function DeleteModal({ manufacturer, onClose, onDeleted }: DeleteModalProps) {
         </div>
         <h2 className="mb-1.5 text-base font-semibold text-ink">Delete manufacturer?</h2>
         <p className="text-sm text-ink-2">
-          <span className="font-semibold">"{manufacturer.name}"</span> will be removed.
+          <span className="font-semibold">&ldquo;{manufacturer.name}&rdquo;</span> will be removed.
           {manufacturer.product_count > 0 && (
             <span className="mt-1 block font-medium text-amber-700">
               ⚠ {manufacturer.product_count} product(s) will lose their manufacturer assignment.

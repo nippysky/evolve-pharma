@@ -1,28 +1,11 @@
 'use client';
-import React, { useMemo, useState, useRef } from 'react';
-import {
-  Truck,
-  Mail,
-  Phone,
-  CheckCircle,
-  Clock,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  RotateCw,
-  AlertTriangle,
-  XCircle,
-  Trash,
-} from '@/components/icons';
+import React, { useMemo, useState } from 'react';
+import {Truck, Mail, Phone, CheckCircle, Clock, Search, ChevronLeft, ChevronRight, RotateCw, AlertTriangle, XCircle, Trash} from '@/components/icons';
 import { PageHead }          from '@/components/shared/PageHead';
 import { Avatar }            from '@/components/ui/Primitives';
 import { TableWrap, Table, Thead, Tbody, Tr, Th, Td } from '@/components/ui/Table';
 import { DriversActions }    from '@/components/admin/DriversActions';
-import {
-  useDrivers,
-  useToggleDriverStatus,
-  useDeleteDriver,
-} from '@/hooks/staff/useStaff';
+import {useDrivers, useToggleDriverStatus, useDeleteDriver} from '@/hooks/staff/useStaff';
 import type { DriverRecord } from '@/hooks/staff/useStaff';
 import { useToast }          from '@/contexts/ToastContext';
 import { formatDate, cn }    from '@/lib/utils';
@@ -436,11 +419,15 @@ function DriverTable({
     return list;
   }, [records, activeFilter, query]);
 
-  const prevFilterRef = useRef(activeFilter);
-  const prevQueryRef  = useRef(query);
-  if (prevFilterRef.current !== activeFilter || prevQueryRef.current !== query) {
-    prevFilterRef.current = activeFilter;
-    prevQueryRef.current  = query;
+  // Reset to page 1 whenever the filter or search changes.
+  // Uses React's "adjust state during render" pattern rather than mutating a
+  // ref — refs must not be read or written during render, and doing so here
+  // meant the reset could be skipped on a re-render React discarded.
+  const [prevFilter, setPrevFilter] = useState(activeFilter);
+  const [prevQuery,  setPrevQuery]  = useState(query);
+  if (prevFilter !== activeFilter || prevQuery !== query) {
+    setPrevFilter(activeFilter);
+    setPrevQuery(query);
     if (page !== 1) setPage(1);
   }
 

@@ -54,7 +54,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error,     setError]     = useState<string | null>(null);
 
-  const lastRefreshAt = useRef<number>(Date.now());
+  // Seeded to 0 rather than Date.now(): reading the clock during render is a
+  // side effect. The first refresh below sets the real timestamp.
+  const lastRefreshAt = useRef<number>(0);
 
   const refetch = useCallback(async () => {
     const me = await fetchMe();

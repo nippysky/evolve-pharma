@@ -156,7 +156,7 @@ function DeleteModal({ category, onClose, onDeleted }: DeleteModalProps) {
         </div>
         <h2 className="mb-1.5 text-base font-semibold text-ink">Delete category?</h2>
         <p className="text-sm text-ink-2">
-          <span className="font-semibold">"{category.name}"</span> will be removed.
+          <span className="font-semibold">&ldquo;{category.name}&rdquo;</span> will be removed.
           {(category.product_count ?? 0) > 0 && (
             <span className="block mt-1 text-amber-700 font-medium">
               ⚠ {category.product_count} product(s) will become uncategorised.

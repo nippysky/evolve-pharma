@@ -140,7 +140,7 @@ export function GlobalSearch() {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        open ? close() : openSearch();
+        if (open) close(); else openSearch();
       }
     };
     window.addEventListener('keydown', handler);
@@ -243,7 +243,7 @@ export function GlobalSearch() {
               )}
 
               {showEmpty && (
-                <p className="px-4 py-6 text-center text-sm text-ink-3">No results for <span className="font-medium text-ink">"{query}"</span></p>
+                <p className="px-4 py-6 text-center text-sm text-ink-3">No results for <span className="font-medium text-ink">&ldquo;{query}&rdquo;</span></p>
               )}
 
               {/* Products */}

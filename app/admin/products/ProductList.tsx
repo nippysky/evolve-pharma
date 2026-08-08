@@ -576,7 +576,7 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
   function toggleSelect(sku: string) {
     setSelected(prev => {
       const next = new Set(prev);
-      next.has(sku) ? next.delete(sku) : next.add(sku);
+      if (next.has(sku)) next.delete(sku); else next.add(sku);
       return next;
     });
   }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { ProductCard } from '@/components/shared/ProductCard';
 import { EmptyState } from '@/components/ui/Primitives';
 import { Search, CheckCircle, Pill, X } from '@/components/icons';

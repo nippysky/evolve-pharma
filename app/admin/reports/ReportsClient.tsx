@@ -39,7 +39,7 @@ interface ReportData {
 interface ApiResponse { status: string; data: ReportData }
 
 interface StaffMember { id: number; first_name: string; last_name: string; email: string; role?: string }
-interface StaffApiResponse { status: string; data: { items: StaffMember[] } }
+interface StaffApiResponse { status: string; data: { records: StaffMember[] } }
 
 const PERIODS = [
   { label: '7D',  value: 7   },
@@ -184,12 +184,17 @@ function DonutChart({ segments, colorMap, size = 140 }: {
 
   const cx = size / 2, cy = size / 2, r = size * 0.36, strokeW = size * 0.13;
   const circumference = 2 * Math.PI * r;
-  let cumFrac = 0;
-  const arcs = segments.map(seg => {
-    const frac   = seg.count / total;
-    const offset = circumference * (1 - cumFrac);
+  // Prefix sums computed up front — mutating a running total inside .map()
+  // is a side effect during render, which React's compiler lints reject.
+  const fracs  = segments.map(seg => seg.count / total);
+  const starts = fracs.reduce<number[]>(
+    (acc, f, i) => [...acc, (acc[i] ?? 0) + f],
+    [0],
+  );
+  const arcs = segments.map((seg, i) => {
+    const frac   = fracs[i]!;
+    const offset = circumference * (1 - starts[i]!);
     const dash   = circumference * frac;
-    cumFrac += frac;
     return { ...seg, frac, offset, dash, color: colorMap[seg.status] ?? '#94a3b8' };
   });
 
@@ -261,7 +266,7 @@ export default function ReportsClient({
     if (!isStaff) {
       fetch('/api/staff?limit=200', { credentials: 'include' })
         .then(r => r.json())
-        .then((j: StaffApiResponse) => setStaffList(j.data?.items ?? []))
+        .then((j: StaffApiResponse) => setStaffList(j.data?.records ?? []))
         .catch(() => {/* silent */});
     }
   }, [isStaff]);

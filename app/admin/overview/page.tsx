@@ -1,6 +1,7 @@
 import { Suspense }   from 'react';
 import { redirect }   from 'next/navigation';
 import { getSession } from '@/lib/auth';
+import Link from 'next/link';
 import { PageHead }   from '@/components/shared/PageHead';
 import { getDashboardKpis, getRecentOrders } from '@/lib/data/dashboard.server';
 import {
@@ -85,7 +86,7 @@ async function RecentOrdersFeed() {
           || (`${o.customer?.user?.first_name ?? ''} ${o.customer?.user?.last_name ?? ''}`.trim() || '—');
         const sk = (o.status as string).toUpperCase() as keyof typeof ORDER_STATUS_LABEL;
         return (
-          <a key={o.id} href={`/admin/orders/${o.id}`}
+          <Link key={o.id} href={`/admin/orders/${o.id}`}
             className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-bg-subtle">
             <div className="min-w-0 flex-1">
               <p className="truncate font-mono text-xs font-semibold text-ink">{o.order_number}</p>
@@ -93,7 +94,7 @@ async function RecentOrdersFeed() {
             </div>
             <Badge tone={ORDER_STATUS_TONE[sk] ?? 'neutral'}>{ORDER_STATUS_LABEL[sk] ?? o.status}</Badge>
             <p className="num shrink-0 text-sm font-semibold text-ink">{formatNaira(Number(o.total))}</p>
-          </a>
+          </Link>
         );
       })}
     </div>
@@ -101,12 +102,26 @@ async function RecentOrdersFeed() {
 }
 
 async function PendingReviewFeed() {
+  // Only the fetch is wrapped. Constructing JSX inside a try/catch swallows
+  // render errors from children as if they were data errors, which hides real
+  // bugs behind a generic "could not load" panel.
+  let customers;
   try {
-    const customers = await db.customer.findMany({
+    customers = await db.customer.findMany({
       where: { status: 'PENDING_REVIEW' }, take: 8, orderBy: { created_at: 'desc' },
       select: { id: true, company_name: true, created_at: true,
         user: { select: { first_name: true, last_name: true, email: true } } },
     });
+  } catch {
+    return (
+      <div className="flex flex-col items-center gap-2 py-10 text-center">
+        <AlertTriangle size={20} className="text-ink-4" />
+        <p className="text-xs text-ink-4">Could not load data</p>
+      </div>
+    );
+  }
+
+  {
     if (customers.length === 0) {
       return (
         <div className="flex flex-col items-center gap-2 py-14 text-center">
@@ -118,7 +133,7 @@ async function PendingReviewFeed() {
     return (
       <div className="divide-y divide-line-subtle">
         {customers.map((c) => (
-          <a key={c.id} href={`/admin/customers/${c.id}`}
+          <Link key={c.id} href={`/admin/customers/${c.id}`}
             className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-bg-subtle">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-ink">
@@ -127,15 +142,8 @@ async function PendingReviewFeed() {
               <p className="mt-0.5 truncate text-[11px] text-ink-3">{c.user.email}</p>
             </div>
             <span className="shrink-0 text-[10px] text-ink-4">{formatDate(c.created_at.toISOString())}</span>
-          </a>
+          </Link>
         ))}
-      </div>
-    );
-  } catch {
-    return (
-      <div className="flex flex-col items-center gap-2 py-10 text-center">
-        <AlertTriangle size={20} className="text-ink-4" />
-        <p className="text-xs text-ink-4">Could not load data</p>
       </div>
     );
   }
@@ -151,7 +159,7 @@ async function QuickStats() {
         { label: 'Awaiting review',   value: kpis.pendingReview,    Icon: Users,      href: '/admin/customers'  },
         { label: 'Orders this month', value: kpis.ordersThisMonth,  Icon: TrendingUp, href: '/admin/reports'    },
       ] as const).map(({ label, value, Icon, href }) => (
-        <a key={label} href={href}
+        <Link key={label} href={href}
           className="flex items-center gap-4 rounded-xl border border-line bg-white p-4 transition-all hover:border-brand-300 hover:shadow-sm">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-bg-subtle">
             <Icon size={18} className="text-ink-3" />
@@ -160,7 +168,7 @@ async function QuickStats() {
             <div className="num font-display text-lg font-semibold text-ink">{value}</div>
             <div className="text-xs text-ink-3">{label}</div>
           </div>
-        </a>
+        </Link>
       ))}
     </div>
   );
@@ -189,7 +197,7 @@ export default async function AdminOverviewPage() {
         <section className="rounded-xl border border-line bg-white">
           <div className="flex items-center justify-between border-b border-line-subtle px-5 py-4">
             <h2 className="text-sm font-semibold text-ink">Recent orders</h2>
-            <a href="/admin/orders" className="text-xs font-medium text-brand-600 hover:underline">View all →</a>
+            <Link href="/admin/orders" className="text-xs font-medium text-brand-600 hover:underline">View all →</Link>
           </div>
           <Suspense fallback={<FeedSkeleton />}><RecentOrdersFeed /></Suspense>
         </section>
@@ -197,7 +205,7 @@ export default async function AdminOverviewPage() {
         <section className="rounded-xl border border-line bg-white">
           <div className="flex items-center justify-between border-b border-line-subtle px-5 py-4">
             <h2 className="text-sm font-semibold text-ink">Pending customer review</h2>
-            <a href="/admin/customers" className="text-xs font-medium text-brand-600 hover:underline">View all →</a>
+            <Link href="/admin/customers" className="text-xs font-medium text-brand-600 hover:underline">View all →</Link>
           </div>
           <Suspense fallback={<FeedSkeleton />}><PendingReviewFeed /></Suspense>
         </section>

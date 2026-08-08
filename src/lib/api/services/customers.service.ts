@@ -60,6 +60,7 @@ function mapRecord(raw: Record<string, unknown>): CustomerAdminRecord {
     email:                ((user.email      ?? raw.email)            as string),
     phone:                ((user.phone      ?? raw.phone)            as string | null | undefined),
     created_at:           (raw.created_at                            as string),
+    assigned_staff:       (raw.assigned_staff as CustomerAdminRecord['assigned_staff']) ?? null,
   };
 }
 
