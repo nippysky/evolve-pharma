@@ -107,6 +107,17 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Assigned-customer counts — one grouped query for the whole page rather
+    // than a count per row, which on a pool of 1 would serialise into N round trips.
+    const assignedCounts = await db.customer.groupBy({
+      by:    ['assigned_staff_id'],
+      where: { assigned_staff_id: { in: userIds } },
+      _count: { _all: true },
+    });
+    const assignedMap = new Map(
+      assignedCounts.map(a => [a.assigned_staff_id, a._count._all]),
+    );
+
     // ── Merge in JS ───────────────────────────────────────────────────────────
     const staffMap  = new Map(staffRecords.map(s  => [s.user_id,  s]));
     const driverMap = new Map(driverRecords.map(d => [d.user_id, d]));
@@ -135,6 +146,8 @@ export async function GET(req: NextRequest) {
         // driver_record_id is the driver TABLE primary key (needed for delivery assignment)
         // distinct from user.id which is the user TABLE id
         driver_record_id:    driver?.id ?? null,
+        // How many customer accounts this person owns as their sales rep.
+        assigned_customers:  assignedMap.get(u.id) ?? 0,
       };
     });
 

@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {Users, Mail, CheckCircle, Clock, Search, AlertTriangle, ChevronLeft, ChevronRight, RotateCw, Building, FileText, Send, XCircle, Trash} from '@/components/icons';
 import { PageHead }   from '@/components/shared/PageHead';
@@ -435,6 +435,154 @@ function PaginationBar({
   );
 }
 
+/**
+ * Customers owned by one sales rep.
+ *
+ * Fetched on open rather than preloaded with the staff list — most rows are
+ * never expanded, so paying for the join up front would be wasted work.
+ */
+function AssignedCustomersModal({
+  staff,
+  onClose,
+}: {
+  staff:   TaggedStaffRecord;
+  onClose: () => void;
+}) {
+  interface Row {
+    id:            number;
+    company_name:  string | null;
+    status:        string;
+    created_at:    string;
+    user: { first_name: string; last_name: string; email: string; phone: string | null };
+  }
+
+  const [rows,    setRows]    = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [failed,  setFailed]  = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/customers?assigned_staff_id=${staff.id}&limit=200`, { credentials: 'include' })
+      .then(r => r.json())
+      .then((j: { data?: { records?: Row[] } }) => setRows(j.data?.records ?? []))
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false));
+  }, [staff.id]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+          <div className="flex items-center gap-3">
+            <Avatar name={`${staff.first_name} ${staff.last_name}`} size={40} />
+            <div>
+              <h2 className="text-base font-semibold text-ink">
+                {staff.first_name} {staff.last_name}
+              </h2>
+              <p className="mt-0.5 text-xs text-ink-3">
+                {loading
+                  ? 'Loading assigned customers…'
+                  : `${rows.length} customer${rows.length === 1 ? '' : 's'} assigned`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-bg-muted hover:text-ink"
+          >
+            <XCircle size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-bg-muted" />
+              ))}
+            </div>
+          ) : failed ? (
+            <div className="flex flex-col items-center gap-2 py-14 text-center">
+              <AlertTriangle size={22} className="text-red-400" />
+              <p className="text-sm text-ink-3">Could not load customers.</p>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-14 text-center">
+              <Building size={22} className="text-ink-4" />
+              <p className="text-sm font-medium text-ink-2">No customers assigned yet</p>
+              <p className="max-w-xs text-xs text-ink-4">
+                Assign customers from the Customers page to build up this rep&rsquo;s book.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {rows.map(c => (
+                <Link
+                  key={c.id}
+                  href={`/admin/customers/${c.id}`}
+                  className="flex items-center gap-3 rounded-xl border border-line px-4 py-3 transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+                >
+                  <Avatar
+                    name={c.company_name ?? `${c.user.first_name} ${c.user.last_name}`}
+                    size={34}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">
+                      {c.company_name ?? `${c.user.first_name} ${c.user.last_name}`}
+                    </p>
+                    <p className="truncate text-xs text-ink-3">
+                      {c.company_name ? `${c.user.first_name} ${c.user.last_name} · ` : ''}
+                      {c.user.email}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
+                      c.status === 'APPROVED'
+                        ? 'bg-leaf-50 text-leaf-700 ring-leaf-200'
+                        : c.status === 'REJECTED'
+                        ? 'bg-red-50 text-red-700 ring-red-200'
+                        : 'bg-amber-50 text-amber-700 ring-amber-200',
+                    )}
+                  >
+                    {c.status.replace(/_/g, ' ').toLowerCase()}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-line px-6 py-4">
+          <Link
+            href={`/admin/reports?staff_id=${staff.id}`}
+            className="text-xs font-semibold text-brand-600 hover:underline"
+          >
+            View this rep&rsquo;s report →
+          </Link>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-bg-muted"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StaffTable({
   records,
   isLoading,
@@ -449,6 +597,7 @@ function StaffTable({
   refetchAll:   () => void;
 }) {
   const [page, setPage] = useState(1);
+  const [customersFor, setCustomersFor] = useState<TaggedStaffRecord | null>(null);
 
   const filtered = useMemo(() => {
     let list = activeFilter === 'all'
@@ -522,6 +671,7 @@ function StaffTable({
               <Th>Contact</Th>
               <Th>Department / Role</Th>
               <Th>Status</Th>
+              <Th>Customers</Th>
               <Th>Joined</Th>
               <Th>Actions</Th>
             </tr>
@@ -589,6 +739,25 @@ function StaffTable({
                   )}
                 </Td>
 
+                {/* Assigned customers — click through to the full list */}
+                <Td>
+                  <button
+                    type="button"
+                    onClick={() => setCustomersFor(s)}
+                    disabled={!s.assigned_customers}
+                    title={s.assigned_customers ? 'View assigned customers' : 'No customers assigned'}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors',
+                      s.assigned_customers
+                        ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100'
+                        : 'cursor-default border border-dashed border-line text-ink-4',
+                    )}
+                  >
+                    <Building size={11} />
+                    {s.assigned_customers ?? 0}
+                  </button>
+                </Td>
+
                 {/* Joined */}
                 <Td muted>{formatDate(s.created_at)}</Td>
 
@@ -609,6 +778,13 @@ function StaffTable({
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
       />
+
+      {customersFor && (
+        <AssignedCustomersModal
+          staff={customersFor}
+          onClose={() => setCustomersFor(null)}
+        />
+      )}
     </>
   );
 }

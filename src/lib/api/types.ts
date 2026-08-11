@@ -368,6 +368,8 @@ export interface StaffRecord {
   phone?:              string | null;
   email_verified_at?:  string | null;
   created_at:          string;
+  /** Number of customer accounts this staff member owns as sales rep. */
+  assigned_customers?: number;
 }
 
 /**

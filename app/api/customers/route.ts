@@ -20,6 +20,9 @@ export async function GET(req: NextRequest) {
 
     const statusFilter = sp.get('status') as string | null;
     const search       = sp.get('search') ?? '';
+    // Filter to one sales rep's book — powers the staff page's customers modal.
+    const assignedRaw  = sp.get('assigned_staff_id');
+    const assignedTo   = assignedRaw ? parseInt(assignedRaw, 10) : NaN;
 
     const validStatuses = ['REGISTERED','OTP_CONFIRMED','PCN_CERT_UPLOADED','PENDING_REVIEW','APPROVED','REJECTED'];
 
@@ -34,6 +37,7 @@ export async function GET(req: NextRequest) {
           ],
         } : {}),
       },
+      ...(Number.isFinite(assignedTo) ? { assigned_staff_id: assignedTo } : {}),
       ...(statusFilter && validStatuses.includes(statusFilter)
         ? { status: statusFilter as 'REGISTERED' | 'OTP_CONFIRMED' | 'PCN_CERT_UPLOADED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' }
         : {}),
