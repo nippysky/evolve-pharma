@@ -109,6 +109,20 @@ export async function PATCH(
       return apiError('Please review the fields below.', 422, errors);
     }
 
+    // Price guard — a product cannot go ACTIVE without a real selling price.
+    // Quick-added products sit at 0 until priced; publishing one would put it
+    // in the catalogue orderable at zero. Mirrors the bulk-publish guard.
+    if (parsed.data.status === 'ACTIVE') {
+      const effectivePrice = parsed.data.selling_price ?? Number(existing.selling_price);
+      if (!effectivePrice || effectivePrice <= 0) {
+        return apiError(
+          'Set a selling price before activating this product.',
+          422,
+          { selling_price: ['A selling price greater than zero is required to publish.'] },
+        );
+      }
+    }
+
     const updated = await db.product.update({
       where: { id: existing.id },
       data:  { ...parsed.data, updated_by_id: session.userId },

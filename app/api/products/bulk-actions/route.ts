@@ -46,13 +46,38 @@ export async function POST(req: NextRequest) {
     if (!normalised.length) return apiError('No valid SKUs provided.', 400);
     //  PUBLISH
     if (action === 'publish') {
+      // ── Price guard ───────────────────────────────────────────────────────
+      // Quick-added products land as DRAFT with selling_price 0 so pricing can
+      // be filled in later. Publishing one of those would put it in the
+      // catalogue purchasable at zero, so refuse the whole batch and name the
+      // offenders rather than silently publishing part of it.
+      const unpriced = await db.product.findMany({
+        where: {
+          sku:           { in: normalised },
+          status:        'DRAFT',
+          deleted_at:    null,
+          selling_price: { lte: 0 },
+        },
+        select: { sku: true, brand_name: true },
+      });
+
+      if (unpriced.length > 0) {
+        return apiError(
+          `${unpriced.length} product${unpriced.length !== 1 ? 's have' : ' has'} no selling price yet. ` +
+          `Set a price before publishing: ${unpriced.map(u => u.sku).join(', ')}.`,
+          422,
+          { unpriced: unpriced.map(u => `${u.sku} — ${u.brand_name}`) },
+        );
+      }
+
       // Single updateMany — only affects DRAFT products; ACTIVE/DISCONTINUED
       // are silently skipped (counted as `skipped`).
       const result = await db.product.updateMany({
         where: {
-          sku:        { in: normalised },
-          status:     'DRAFT',
-          deleted_at: null,
+          sku:           { in: normalised },
+          status:        'DRAFT',
+          deleted_at:    null,
+          selling_price: { gt: 0 },
         },
         data: {
           status:        'ACTIVE',

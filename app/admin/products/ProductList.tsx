@@ -801,7 +801,19 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
                       <td className="px-4 py-3.5 font-mono text-xs text-ink-2">{p.sku}</td>
                       <td className="px-4 py-3.5 text-ink-2">{p.category?.name ?? '—'}</td>
                       <td className="px-4 py-3.5">
-                        <span className="num font-medium text-ink">{formatNaira(Number(p.selling_price))}</span>
+                        {/* Quick-added products carry no price yet. Flag them
+                            clearly — publishing one is blocked server-side. */}
+                        {Number(p.selling_price) > 0 ? (
+                          <span className="num font-medium text-ink">{formatNaira(Number(p.selling_price))}</span>
+                        ) : (
+                          <span
+                            title="No selling price set — this product cannot be published yet"
+                            className="inline-flex items-center gap-1 rounded-md border border-dashed border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+                          >
+                            <AlertTriangle size={10} />
+                            Needs price
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={cn('num text-sm font-medium', low ? 'text-danger' : 'text-ink')}>

@@ -5,6 +5,7 @@ import { ButtonLink } from '@/components/ui/Button';
 import { Plus } from '@/components/icons';
 import { ProductsList } from './ProductList';
 import { ProductsImport } from './ProductsImport';
+import { QuickProductsImport } from './QuickProductsImport';
 
 export const metadata = {
   title: 'Products',
@@ -25,6 +26,7 @@ export default async function ConsoleProductsPage() {
         actions={
           isAdmin ? (
             <>
+              <QuickProductsImport />
               <ProductsImport />
               <ButtonLink href="/admin/products/new" leadingIcon={<Plus size={14} />}>
                 New product
