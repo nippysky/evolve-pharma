@@ -19,7 +19,7 @@ import { getSession }                  from '@/lib/auth';
 import { revalidateOrders }            from '@/lib/revalidate';
 import { writeAuditLog }               from '@/lib/audit';
 import { sendPaymentStatusEmail }      from '@/lib/mail';
-import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { checkAndAwardSpendReward } from '@/lib/referral';
 import { notifyUser }                  from '@/lib/notifications';
 import {
   apiSuccess,
@@ -155,7 +155,7 @@ export async function PATCH(
       link:  `/portal/orders/${orderId}`,
     });
 
-    void checkAndAwardReferralReward(order.customer_id);
+    void checkAndAwardSpendReward(order.customer_id);
 
     return apiSuccess(
       { order_id: orderId, payment_status: 'PAID', payment_reference },

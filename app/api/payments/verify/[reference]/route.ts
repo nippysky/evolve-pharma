@@ -3,7 +3,7 @@ import { db }                          from '@/lib/db';
 import { getSession }                  from '@/lib/auth';
 import { verifyPaystackPayment }       from '@/lib/paystack';
 import {getPaymentTransactionByRef, updatePaymentTransactionStatus}                                      from '@/lib/cart-db';
-import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { checkAndAwardSpendReward } from '@/lib/referral';
 import { writeAuditLog }               from '@/lib/audit';
 import {apiSuccess, apiUnauthorized, apiForbidden, apiNotFound, apiInternalError} from '@/lib/api/response';
 
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
         });
 
         // Trigger referral reward check (non-blocking)
-        void checkAndAwardReferralReward(order.customer_id);
+        void checkAndAwardSpendReward(order.customer_id);
       }
     }
 

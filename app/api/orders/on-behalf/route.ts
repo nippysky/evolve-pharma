@@ -22,7 +22,7 @@ import { createPaymentTransaction } from '@/lib/cart-db';
 import { getStaffOrderScope }       from '@/lib/data/settings.server';
 import { writeAuditLog }            from '@/lib/audit';
 import { sendOrderReceiptEmail }    from '@/lib/mail';
-import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { checkAndAwardSpendReward } from '@/lib/referral';
 import {
   apiSuccess,
   apiError,
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Offline payments count toward the referral threshold too.
-      void checkAndAwardReferralReward(customer.id);
+      void checkAndAwardSpendReward(customer.id);
     }
 
     // ── Generate the Paystack checkout link ─────────────────────────────────

@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Customer: 'Customer',
+  ReferralLedger: 'ReferralLedger',
   Staff: 'Staff',
   Driver: 'Driver',
   Category: 'Category',
@@ -125,6 +126,7 @@ export const CustomerScalarFieldEnum = {
   status: 'status',
   referral_code: 'referral_code',
   referred_by: 'referred_by',
+  referred_by_customer_id: 'referred_by_customer_id',
   referral_points: 'referral_points',
   referral_threshold_awarded: 'referral_threshold_awarded',
   review_note: 'review_note',
@@ -136,6 +138,21 @@ export const CustomerScalarFieldEnum = {
 } as const
 
 export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const ReferralLedgerScalarFieldEnum = {
+  id: 'id',
+  customer_id: 'customer_id',
+  delta: 'delta',
+  balance_after: 'balance_after',
+  type: 'type',
+  description: 'description',
+  related_customer_id: 'related_customer_id',
+  order_id: 'order_id',
+  created_at: 'created_at'
+} as const
+
+export type ReferralLedgerScalarFieldEnum = (typeof ReferralLedgerScalarFieldEnum)[keyof typeof ReferralLedgerScalarFieldEnum]
 
 
 export const StaffScalarFieldEnum = {
@@ -485,6 +502,14 @@ export const CustomerOrderByRelevanceFieldEnum = {
 } as const
 
 export type CustomerOrderByRelevanceFieldEnum = (typeof CustomerOrderByRelevanceFieldEnum)[keyof typeof CustomerOrderByRelevanceFieldEnum]
+
+
+export const ReferralLedgerOrderByRelevanceFieldEnum = {
+  type: 'type',
+  description: 'description'
+} as const
+
+export type ReferralLedgerOrderByRelevanceFieldEnum = (typeof ReferralLedgerOrderByRelevanceFieldEnum)[keyof typeof ReferralLedgerOrderByRelevanceFieldEnum]
 
 
 export const StaffOrderByRelevanceFieldEnum = {

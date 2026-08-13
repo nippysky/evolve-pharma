@@ -34,6 +34,12 @@ const orderSchema = z.object({
   delivery_notes:     z.string().optional(),
   po_number:          z.string().optional(),
   payment_method:     z.enum(['paystack', 'bank_transfer', 'cash_on_delivery']),
+  /**
+   * Naira of referral credit to apply. Treated as a request — the server
+   * re-checks the live balance, the redemption toggle and the order subtotal,
+   * and applies whatever survives.
+   */
+  referral_credit:    z.number().int().min(0).optional(),
   paystack_reference: z.string().optional(),
 });
 
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest) {
     const {
       items, state, city, street_address,
       contact_phone, delivery_notes, po_number,
-      payment_method, paystack_reference,
+      payment_method, paystack_reference, referral_credit,
     } = parsed.data;
 
     // Verify Paystack payment before touching inventory
@@ -90,6 +96,7 @@ export async function POST(req: NextRequest) {
       poNumber:         po_number,
       paymentMethod:    payment_method,
       paystackReference: paystack_reference,
+      referralCredit:   referral_credit,
     });
 
     if (!result.ok) return apiError(result.message, 400);

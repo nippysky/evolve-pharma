@@ -28,6 +28,20 @@ export type User = Prisma.UserModel
  */
 export type Customer = Prisma.CustomerModel
 /**
+ * Model ReferralLedger
+ * Every movement of referral credit, in naira.
+ * 
+ * Exists because `Customer.referral_points` is money the customer can spend.
+ * A balance column alone can't answer "where did this ₦1,600 come from?" or
+ * survive a disputed redemption, so nothing writes the balance without also
+ * writing a row here.
+ * 
+ * `delta` is signed: positive credits, negative debits. `balance_after` is
+ * recorded at write time so the history stays readable even if the balance is
+ * later corrected by hand.
+ */
+export type ReferralLedger = Prisma.ReferralLedgerModel
+/**
  * Model Staff
  * 
  */

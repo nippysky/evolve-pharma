@@ -26,7 +26,7 @@ export function ProfileClient({ profile }: Props) {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch('/api/auth/customer/profile', {
+      const res = await fetch('/api/customers/me', {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

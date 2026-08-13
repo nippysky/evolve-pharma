@@ -13,7 +13,7 @@ import {
 import { writeAuditLog }          from '@/lib/audit';
 import { sendOrderStatusEmail }   from '@/lib/mail';
 import { revalidateDeliveries }   from '@/lib/revalidate';
-import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { checkAndAwardSpendReward } from '@/lib/referral';
 import { notifyUser, notifyRoles } from '@/lib/notifications';
 
 const ADMIN_TRANSITIONS: Record<string, string[]> = {
@@ -193,7 +193,7 @@ export async function PATCH(
             link:  `/admin/orders`,
           });
 
-          void checkAndAwardReferralReward(ord.customer_id);
+          void checkAndAwardSpendReward(ord.customer_id);
         }
       }
 

@@ -167,8 +167,20 @@ model Customer {
   status               CustomerStatus @default(REGISTERED)
   // Unique referral code e.g. "ENV58A5D112"
   referral_code        String?        @unique @db.VarChar(50)
-  referred_by          String?        @db.VarChar(50) // referral_code of referrer
-  referral_points      Int            @default(0)     // points earned from referrals
+  // The code that was actually typed at signup — kept for provenance even if
+  // the referrer later changes their code or is deleted.
+  referred_by          String?        @db.VarChar(50)
+  // Resolved referrer. This is the queryable link; `referred_by` is the receipt.
+  // Null means nobody referred them (the platform sentinel is not a referrer).
+  referred_by_customer_id Int?
+  referred_by_customer    Customer?   @relation("CustomerReferrals", fields: [referred_by_customer_id], references: [id], onDelete: SetNull)
+  referrals               Customer[]  @relation("CustomerReferrals")
+  // Reward wallet balance, in NAIRA (not dimensionless points).
+  //
+  // Every movement in or out is mirrored by a ReferralLedger row, so this
+  // column is a cached balance and the ledger is the source of truth. If they
+  // ever disagree, trust the ledger.
+  referral_points      Int            @default(0)
   // One-time guard: set once this customer's spend has triggered a reward for
   // their referrer, so additional purchases can't award it again.
   referral_threshold_awarded Boolean   @default(false)
@@ -185,9 +197,44 @@ model Customer {
 
   orders               Order[]
   cart                 Cart?
+  referralLedger       ReferralLedger[]
 
   @@index([assigned_staff_id])
+  @@index([referred_by_customer_id])
   @@map("customers")
+}
+
+/// Every movement of referral credit, in naira.
+///
+/// Exists because `Customer.referral_points` is money the customer can spend.
+/// A balance column alone can't answer "where did this ₦1,600 come from?" or
+/// survive a disputed redemption, so nothing writes the balance without also
+/// writing a row here.
+///
+/// `delta` is signed: positive credits, negative debits. `balance_after` is
+/// recorded at write time so the history stays readable even if the balance is
+/// later corrected by hand.
+model ReferralLedger {
+  id             Int      @id @default(autoincrement())
+  customer_id    Int
+  customer       Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  /// Naira. Positive = earned, negative = spent.
+  delta          Int
+  /// Wallet balance immediately after this entry was applied.
+  balance_after  Int
+  /// SIGNUP_BONUS | SPEND_THRESHOLD | REDEEMED | ADJUSTMENT | REVERSAL
+  type           String   @db.VarChar(40)
+  /// Human-readable explanation shown to the customer.
+  description    String   @db.VarChar(500)
+  /// The pharmacy whose signup or spend triggered this credit.
+  related_customer_id Int?
+  /// The order this credit was spent on.
+  order_id       Int?
+  created_at     DateTime @default(now())
+
+  @@index([customer_id, created_at])
+  @@index([order_id])
+  @@map("referral_ledger")
 }
 
 // ─── Staff ───────────────────────────────────────────────────────────────────

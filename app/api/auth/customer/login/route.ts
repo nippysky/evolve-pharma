@@ -111,12 +111,5 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[POST /api/auth/customer/login]', err);
     return handlePrismaError(err) ?? apiInternalError();
-    // Log the failed attempt
-    void writeLoginHistory({
-      userType: 'CUSTOMER',
-      event:    'LOGIN_FAILED',
-      req: { headers: { get: (h: string) => h === 'x-forwarded-for' ? (ip ?? null) : h === 'user-agent' ? (userAgent ?? null) : null } } as unknown as import('next/server').NextRequest,
-    });
-    return apiInternalError();
   }
 }

@@ -399,6 +399,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   Customer: 'Customer',
+  ReferralLedger: 'ReferralLedger',
   Staff: 'Staff',
   Driver: 'Driver',
   Category: 'Category',
@@ -434,7 +435,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "customer" | "staff" | "driver" | "category" | "manufacturer" | "product" | "productImage" | "inventoryBatch" | "stockMovement" | "order" | "orderItem" | "delivery" | "cart" | "cartItem" | "paymentTransaction" | "refreshToken" | "otpToken" | "loginHistory" | "auditLog" | "appSettings" | "notification"
+    modelProps: "user" | "customer" | "referralLedger" | "staff" | "driver" | "category" | "manufacturer" | "product" | "productImage" | "inventoryBatch" | "stockMovement" | "order" | "orderItem" | "delivery" | "cart" | "cartItem" | "paymentTransaction" | "refreshToken" | "otpToken" | "loginHistory" | "auditLog" | "appSettings" | "notification"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -567,6 +568,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CustomerCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CustomerCountAggregateOutputType> | number
+        }
+      }
+    }
+    ReferralLedger: {
+      payload: Prisma.$ReferralLedgerPayload<ExtArgs>
+      fields: Prisma.ReferralLedgerFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ReferralLedgerFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ReferralLedgerFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>
+        }
+        findFirst: {
+          args: Prisma.ReferralLedgerFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ReferralLedgerFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>
+        }
+        findMany: {
+          args: Prisma.ReferralLedgerFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>[]
+        }
+        create: {
+          args: Prisma.ReferralLedgerCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>
+        }
+        createMany: {
+          args: Prisma.ReferralLedgerCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.ReferralLedgerDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>
+        }
+        update: {
+          args: Prisma.ReferralLedgerUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>
+        }
+        deleteMany: {
+          args: Prisma.ReferralLedgerDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ReferralLedgerUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.ReferralLedgerUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReferralLedgerPayload>
+        }
+        aggregate: {
+          args: Prisma.ReferralLedgerAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReferralLedger>
+        }
+        groupBy: {
+          args: Prisma.ReferralLedgerGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReferralLedgerGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ReferralLedgerCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReferralLedgerCountAggregateOutputType> | number
         }
       }
     }
@@ -1963,6 +2030,7 @@ export const CustomerScalarFieldEnum = {
   status: 'status',
   referral_code: 'referral_code',
   referred_by: 'referred_by',
+  referred_by_customer_id: 'referred_by_customer_id',
   referral_points: 'referral_points',
   referral_threshold_awarded: 'referral_threshold_awarded',
   review_note: 'review_note',
@@ -1974,6 +2042,21 @@ export const CustomerScalarFieldEnum = {
 } as const
 
 export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const ReferralLedgerScalarFieldEnum = {
+  id: 'id',
+  customer_id: 'customer_id',
+  delta: 'delta',
+  balance_after: 'balance_after',
+  type: 'type',
+  description: 'description',
+  related_customer_id: 'related_customer_id',
+  order_id: 'order_id',
+  created_at: 'created_at'
+} as const
+
+export type ReferralLedgerScalarFieldEnum = (typeof ReferralLedgerScalarFieldEnum)[keyof typeof ReferralLedgerScalarFieldEnum]
 
 
 export const StaffScalarFieldEnum = {
@@ -2323,6 +2406,14 @@ export const CustomerOrderByRelevanceFieldEnum = {
 } as const
 
 export type CustomerOrderByRelevanceFieldEnum = (typeof CustomerOrderByRelevanceFieldEnum)[keyof typeof CustomerOrderByRelevanceFieldEnum]
+
+
+export const ReferralLedgerOrderByRelevanceFieldEnum = {
+  type: 'type',
+  description: 'description'
+} as const
+
+export type ReferralLedgerOrderByRelevanceFieldEnum = (typeof ReferralLedgerOrderByRelevanceFieldEnum)[keyof typeof ReferralLedgerOrderByRelevanceFieldEnum]
 
 
 export const StaffOrderByRelevanceFieldEnum = {
@@ -2782,6 +2873,7 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   customer?: Prisma.CustomerOmit
+  referralLedger?: Prisma.ReferralLedgerOmit
   staff?: Prisma.StaffOmit
   driver?: Prisma.DriverOmit
   category?: Prisma.CategoryOmit

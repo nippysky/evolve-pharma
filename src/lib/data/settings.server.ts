@@ -6,11 +6,30 @@ export interface VatSettings {
   rate: number;
 }
 
+/**
+ * Referral programme terms.
+ *
+ * All monetary values are NAIRA. The wallet these feed
+ * (`Customer.referral_points`) is naira too — it is not a dimensionless point
+ * balance, despite the column name.
+ */
 export interface ReferralSettings {
-  /** Minimum total purchase (kobo/naira) by a referee to trigger reward */
+  /** Credited to the referrer the moment a pharmacy signs up with their code. */
+  signupBonus: number;
+  /** Paid orders a referee must accumulate before the second award fires. */
   threshold: number;
-  /** Naira amount credited to the referrer when threshold is reached */
+  /** Credited to the referrer once that threshold is crossed. */
   reward: number;
+  /**
+   * Whether customers may spend their balance against an order.
+   *
+   * Defaults to FALSE. Earning runs from day one so balances accrue, but
+   * spending stays closed until the business decides to open it — flipping
+   * this on is a commercial decision, not a technical one.
+   */
+  redemptionEnabled: boolean;
+  /** Balance a customer must reach before any of it can be spent. */
+  minRedemption: number;
 }
 
 /**
@@ -50,17 +69,30 @@ export async function getReferralSettings(): Promise<ReferralSettings> {
   try {
     const rows = await db.$queryRaw<Array<{ key: string; value: string }>>`
       SELECT \`key\`, \`value\` FROM app_settings
-      WHERE \`key\` IN ('referral_threshold', 'referral_reward')
+      WHERE \`key\` IN (
+        'referral_threshold', 'referral_reward', 'referral_signup_bonus',
+        'referral_redemption_enabled', 'referral_min_redemption'
+      )
     `;
     const m: Record<string, string> = {};
     for (const r of rows) m[r.key] = r.value;
 
     return {
-      threshold: Math.max(1, parseFloat(m.referral_threshold ?? '500000')),
-      reward:    Math.max(0, parseFloat(m.referral_reward    ?? '500')),
+      // ₦100 matches the flat award the platform has paid on signup since
+      // launch; it was previously stored as a dimensionless 100 and is now
+      // stated in the unit it always effectively was.
+      signupBonus:       Math.max(0, parseFloat(m.referral_signup_bonus ?? '100')),
+      threshold:         Math.max(1, parseFloat(m.referral_threshold    ?? '500000')),
+      reward:            Math.max(0, parseFloat(m.referral_reward       ?? '500')),
+      // Closed until the business opens it.
+      redemptionEnabled: m.referral_redemption_enabled === 'true',
+      minRedemption:     Math.max(0, parseFloat(m.referral_min_redemption ?? '0')),
     };
   } catch {
-    return { threshold: 500000, reward: 500 };
+    return {
+      signupBonus: 100, threshold: 500000, reward: 500,
+      redemptionEnabled: false, minRedemption: 0,
+    };
   }
 }
 

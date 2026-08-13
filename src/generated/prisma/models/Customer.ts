@@ -29,6 +29,7 @@ export type AggregateCustomer = {
 export type CustomerAvgAggregateOutputType = {
   id: number | null
   user_id: number | null
+  referred_by_customer_id: number | null
   referral_points: number | null
   reviewed_by_id: number | null
   assigned_staff_id: number | null
@@ -37,6 +38,7 @@ export type CustomerAvgAggregateOutputType = {
 export type CustomerSumAggregateOutputType = {
   id: number | null
   user_id: number | null
+  referred_by_customer_id: number | null
   referral_points: number | null
   reviewed_by_id: number | null
   assigned_staff_id: number | null
@@ -55,6 +57,7 @@ export type CustomerMinAggregateOutputType = {
   status: $Enums.CustomerStatus | null
   referral_code: string | null
   referred_by: string | null
+  referred_by_customer_id: number | null
   referral_points: number | null
   referral_threshold_awarded: boolean | null
   review_note: string | null
@@ -78,6 +81,7 @@ export type CustomerMaxAggregateOutputType = {
   status: $Enums.CustomerStatus | null
   referral_code: string | null
   referred_by: string | null
+  referred_by_customer_id: number | null
   referral_points: number | null
   referral_threshold_awarded: boolean | null
   review_note: string | null
@@ -101,6 +105,7 @@ export type CustomerCountAggregateOutputType = {
   status: number
   referral_code: number
   referred_by: number
+  referred_by_customer_id: number
   referral_points: number
   referral_threshold_awarded: number
   review_note: number
@@ -116,6 +121,7 @@ export type CustomerCountAggregateOutputType = {
 export type CustomerAvgAggregateInputType = {
   id?: true
   user_id?: true
+  referred_by_customer_id?: true
   referral_points?: true
   reviewed_by_id?: true
   assigned_staff_id?: true
@@ -124,6 +130,7 @@ export type CustomerAvgAggregateInputType = {
 export type CustomerSumAggregateInputType = {
   id?: true
   user_id?: true
+  referred_by_customer_id?: true
   referral_points?: true
   reviewed_by_id?: true
   assigned_staff_id?: true
@@ -142,6 +149,7 @@ export type CustomerMinAggregateInputType = {
   status?: true
   referral_code?: true
   referred_by?: true
+  referred_by_customer_id?: true
   referral_points?: true
   referral_threshold_awarded?: true
   review_note?: true
@@ -165,6 +173,7 @@ export type CustomerMaxAggregateInputType = {
   status?: true
   referral_code?: true
   referred_by?: true
+  referred_by_customer_id?: true
   referral_points?: true
   referral_threshold_awarded?: true
   review_note?: true
@@ -188,6 +197,7 @@ export type CustomerCountAggregateInputType = {
   status?: true
   referral_code?: true
   referred_by?: true
+  referred_by_customer_id?: true
   referral_points?: true
   referral_threshold_awarded?: true
   review_note?: true
@@ -298,6 +308,7 @@ export type CustomerGroupByOutputType = {
   status: $Enums.CustomerStatus
   referral_code: string | null
   referred_by: string | null
+  referred_by_customer_id: number | null
   referral_points: number
   referral_threshold_awarded: boolean
   review_note: string | null
@@ -344,6 +355,7 @@ export type CustomerWhereInput = {
   status?: Prisma.EnumCustomerStatusFilter<"Customer"> | $Enums.CustomerStatus
   referral_code?: Prisma.StringNullableFilter<"Customer"> | string | null
   referred_by?: Prisma.StringNullableFilter<"Customer"> | string | null
+  referred_by_customer_id?: Prisma.IntNullableFilter<"Customer"> | number | null
   referral_points?: Prisma.IntFilter<"Customer"> | number
   referral_threshold_awarded?: Prisma.BoolFilter<"Customer"> | boolean
   review_note?: Prisma.StringNullableFilter<"Customer"> | string | null
@@ -353,10 +365,13 @@ export type CustomerWhereInput = {
   created_at?: Prisma.DateTimeFilter<"Customer"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Customer"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  referred_by_customer?: Prisma.XOR<Prisma.CustomerNullableScalarRelationFilter, Prisma.CustomerWhereInput> | null
+  referrals?: Prisma.CustomerListRelationFilter
   reviewed_by?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   assigned_staff?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   orders?: Prisma.OrderListRelationFilter
   cart?: Prisma.XOR<Prisma.CartNullableScalarRelationFilter, Prisma.CartWhereInput> | null
+  referralLedger?: Prisma.ReferralLedgerListRelationFilter
 }
 
 export type CustomerOrderByWithRelationInput = {
@@ -372,6 +387,7 @@ export type CustomerOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   referral_code?: Prisma.SortOrderInput | Prisma.SortOrder
   referred_by?: Prisma.SortOrderInput | Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrderInput | Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   referral_threshold_awarded?: Prisma.SortOrder
   review_note?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -381,10 +397,13 @@ export type CustomerOrderByWithRelationInput = {
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  referred_by_customer?: Prisma.CustomerOrderByWithRelationInput
+  referrals?: Prisma.CustomerOrderByRelationAggregateInput
   reviewed_by?: Prisma.UserOrderByWithRelationInput
   assigned_staff?: Prisma.UserOrderByWithRelationInput
   orders?: Prisma.OrderOrderByRelationAggregateInput
   cart?: Prisma.CartOrderByWithRelationInput
+  referralLedger?: Prisma.ReferralLedgerOrderByRelationAggregateInput
   _relevance?: Prisma.CustomerOrderByRelevanceInput
 }
 
@@ -404,6 +423,7 @@ export type CustomerWhereUniqueInput = Prisma.AtLeast<{
   pcn_verified?: Prisma.BoolFilter<"Customer"> | boolean
   status?: Prisma.EnumCustomerStatusFilter<"Customer"> | $Enums.CustomerStatus
   referred_by?: Prisma.StringNullableFilter<"Customer"> | string | null
+  referred_by_customer_id?: Prisma.IntNullableFilter<"Customer"> | number | null
   referral_points?: Prisma.IntFilter<"Customer"> | number
   referral_threshold_awarded?: Prisma.BoolFilter<"Customer"> | boolean
   review_note?: Prisma.StringNullableFilter<"Customer"> | string | null
@@ -413,10 +433,13 @@ export type CustomerWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeFilter<"Customer"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Customer"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  referred_by_customer?: Prisma.XOR<Prisma.CustomerNullableScalarRelationFilter, Prisma.CustomerWhereInput> | null
+  referrals?: Prisma.CustomerListRelationFilter
   reviewed_by?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   assigned_staff?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   orders?: Prisma.OrderListRelationFilter
   cart?: Prisma.XOR<Prisma.CartNullableScalarRelationFilter, Prisma.CartWhereInput> | null
+  referralLedger?: Prisma.ReferralLedgerListRelationFilter
 }, "id" | "uuid" | "user_id" | "referral_code">
 
 export type CustomerOrderByWithAggregationInput = {
@@ -432,6 +455,7 @@ export type CustomerOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   referral_code?: Prisma.SortOrderInput | Prisma.SortOrder
   referred_by?: Prisma.SortOrderInput | Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrderInput | Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   referral_threshold_awarded?: Prisma.SortOrder
   review_note?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -463,6 +487,7 @@ export type CustomerScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumCustomerStatusWithAggregatesFilter<"Customer"> | $Enums.CustomerStatus
   referral_code?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
   referred_by?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
+  referred_by_customer_id?: Prisma.IntNullableWithAggregatesFilter<"Customer"> | number | null
   referral_points?: Prisma.IntWithAggregatesFilter<"Customer"> | number
   referral_threshold_awarded?: Prisma.BoolWithAggregatesFilter<"Customer"> | boolean
   review_note?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
@@ -491,10 +516,13 @@ export type CustomerCreateInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
   reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
   assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
   orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerUncheckedCreateInput = {
@@ -510,6 +538,7 @@ export type CustomerUncheckedCreateInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -518,8 +547,10 @@ export type CustomerUncheckedCreateInput = {
   assigned_staff_id?: number | null
   created_at?: Date | string
   updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerUpdateInput = {
@@ -540,10 +571,13 @@ export type CustomerUpdateInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
   reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
   assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
   orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateInput = {
@@ -559,6 +593,7 @@ export type CustomerUncheckedUpdateInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -567,8 +602,10 @@ export type CustomerUncheckedUpdateInput = {
   assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerCreateManyInput = {
@@ -584,6 +621,7 @@ export type CustomerCreateManyInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -626,6 +664,7 @@ export type CustomerUncheckedUpdateManyInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -670,6 +709,7 @@ export type CustomerCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   referral_code?: Prisma.SortOrder
   referred_by?: Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   referral_threshold_awarded?: Prisma.SortOrder
   review_note?: Prisma.SortOrder
@@ -683,6 +723,7 @@ export type CustomerCountOrderByAggregateInput = {
 export type CustomerAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   user_id?: Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   reviewed_by_id?: Prisma.SortOrder
   assigned_staff_id?: Prisma.SortOrder
@@ -701,6 +742,7 @@ export type CustomerMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   referral_code?: Prisma.SortOrder
   referred_by?: Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   referral_threshold_awarded?: Prisma.SortOrder
   review_note?: Prisma.SortOrder
@@ -724,6 +766,7 @@ export type CustomerMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   referral_code?: Prisma.SortOrder
   referred_by?: Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   referral_threshold_awarded?: Prisma.SortOrder
   review_note?: Prisma.SortOrder
@@ -737,6 +780,7 @@ export type CustomerMinOrderByAggregateInput = {
 export type CustomerSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   user_id?: Prisma.SortOrder
+  referred_by_customer_id?: Prisma.SortOrder
   referral_points?: Prisma.SortOrder
   reviewed_by_id?: Prisma.SortOrder
   assigned_staff_id?: Prisma.SortOrder
@@ -863,6 +907,26 @@ export type CustomerUncheckedUpdateManyWithoutAssigned_staffNestedInput = {
   deleteMany?: Prisma.CustomerScalarWhereInput | Prisma.CustomerScalarWhereInput[]
 }
 
+export type CustomerCreateNestedOneWithoutReferralsInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferralsInput, Prisma.CustomerUncheckedCreateWithoutReferralsInput>
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferralsInput
+  connect?: Prisma.CustomerWhereUniqueInput
+}
+
+export type CustomerCreateNestedManyWithoutReferred_by_customerInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput> | Prisma.CustomerCreateWithoutReferred_by_customerInput[] | Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput[]
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput | Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput[]
+  createMany?: Prisma.CustomerCreateManyReferred_by_customerInputEnvelope
+  connect?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+}
+
+export type CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput> | Prisma.CustomerCreateWithoutReferred_by_customerInput[] | Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput[]
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput | Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput[]
+  createMany?: Prisma.CustomerCreateManyReferred_by_customerInputEnvelope
+  connect?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+}
+
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
@@ -871,12 +935,64 @@ export type EnumCustomerStatusFieldUpdateOperationsInput = {
   set?: $Enums.CustomerStatus
 }
 
+export type CustomerUpdateOneWithoutReferralsNestedInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferralsInput, Prisma.CustomerUncheckedCreateWithoutReferralsInput>
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferralsInput
+  upsert?: Prisma.CustomerUpsertWithoutReferralsInput
+  disconnect?: Prisma.CustomerWhereInput | boolean
+  delete?: Prisma.CustomerWhereInput | boolean
+  connect?: Prisma.CustomerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CustomerUpdateToOneWithWhereWithoutReferralsInput, Prisma.CustomerUpdateWithoutReferralsInput>, Prisma.CustomerUncheckedUpdateWithoutReferralsInput>
+}
+
+export type CustomerUpdateManyWithoutReferred_by_customerNestedInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput> | Prisma.CustomerCreateWithoutReferred_by_customerInput[] | Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput[]
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput | Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput[]
+  upsert?: Prisma.CustomerUpsertWithWhereUniqueWithoutReferred_by_customerInput | Prisma.CustomerUpsertWithWhereUniqueWithoutReferred_by_customerInput[]
+  createMany?: Prisma.CustomerCreateManyReferred_by_customerInputEnvelope
+  set?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  disconnect?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  delete?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  connect?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  update?: Prisma.CustomerUpdateWithWhereUniqueWithoutReferred_by_customerInput | Prisma.CustomerUpdateWithWhereUniqueWithoutReferred_by_customerInput[]
+  updateMany?: Prisma.CustomerUpdateManyWithWhereWithoutReferred_by_customerInput | Prisma.CustomerUpdateManyWithWhereWithoutReferred_by_customerInput[]
+  deleteMany?: Prisma.CustomerScalarWhereInput | Prisma.CustomerScalarWhereInput[]
+}
+
 export type NullableIntFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput> | Prisma.CustomerCreateWithoutReferred_by_customerInput[] | Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput[]
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput | Prisma.CustomerCreateOrConnectWithoutReferred_by_customerInput[]
+  upsert?: Prisma.CustomerUpsertWithWhereUniqueWithoutReferred_by_customerInput | Prisma.CustomerUpsertWithWhereUniqueWithoutReferred_by_customerInput[]
+  createMany?: Prisma.CustomerCreateManyReferred_by_customerInputEnvelope
+  set?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  disconnect?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  delete?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  connect?: Prisma.CustomerWhereUniqueInput | Prisma.CustomerWhereUniqueInput[]
+  update?: Prisma.CustomerUpdateWithWhereUniqueWithoutReferred_by_customerInput | Prisma.CustomerUpdateWithWhereUniqueWithoutReferred_by_customerInput[]
+  updateMany?: Prisma.CustomerUpdateManyWithWhereWithoutReferred_by_customerInput | Prisma.CustomerUpdateManyWithWhereWithoutReferred_by_customerInput[]
+  deleteMany?: Prisma.CustomerScalarWhereInput | Prisma.CustomerScalarWhereInput[]
+}
+
+export type CustomerCreateNestedOneWithoutReferralLedgerInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferralLedgerInput, Prisma.CustomerUncheckedCreateWithoutReferralLedgerInput>
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferralLedgerInput
+  connect?: Prisma.CustomerWhereUniqueInput
+}
+
+export type CustomerUpdateOneRequiredWithoutReferralLedgerNestedInput = {
+  create?: Prisma.XOR<Prisma.CustomerCreateWithoutReferralLedgerInput, Prisma.CustomerUncheckedCreateWithoutReferralLedgerInput>
+  connectOrCreate?: Prisma.CustomerCreateOrConnectWithoutReferralLedgerInput
+  upsert?: Prisma.CustomerUpsertWithoutReferralLedgerInput
+  connect?: Prisma.CustomerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CustomerUpdateToOneWithWhereWithoutReferralLedgerInput, Prisma.CustomerUpdateWithoutReferralLedgerInput>, Prisma.CustomerUncheckedUpdateWithoutReferralLedgerInput>
 }
 
 export type CustomerCreateNestedOneWithoutOrdersInput = {
@@ -924,10 +1040,13 @@ export type CustomerCreateWithoutUserInput = {
   reviewed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
   reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
   assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
   orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerUncheckedCreateWithoutUserInput = {
@@ -942,6 +1061,7 @@ export type CustomerUncheckedCreateWithoutUserInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -950,8 +1070,10 @@ export type CustomerUncheckedCreateWithoutUserInput = {
   assigned_staff_id?: number | null
   created_at?: Date | string
   updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerCreateOrConnectWithoutUserInput = {
@@ -977,9 +1099,12 @@ export type CustomerCreateWithoutReviewed_byInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
   assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
   orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerUncheckedCreateWithoutReviewed_byInput = {
@@ -995,6 +1120,7 @@ export type CustomerUncheckedCreateWithoutReviewed_byInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -1002,8 +1128,10 @@ export type CustomerUncheckedCreateWithoutReviewed_byInput = {
   assigned_staff_id?: number | null
   created_at?: Date | string
   updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerCreateOrConnectWithoutReviewed_byInput = {
@@ -1034,9 +1162,12 @@ export type CustomerCreateWithoutAssigned_staffInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
   reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
   orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerUncheckedCreateWithoutAssigned_staffInput = {
@@ -1052,6 +1183,7 @@ export type CustomerUncheckedCreateWithoutAssigned_staffInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -1059,8 +1191,10 @@ export type CustomerUncheckedCreateWithoutAssigned_staffInput = {
   reviewed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerCreateOrConnectWithoutAssigned_staffInput = {
@@ -1101,10 +1235,13 @@ export type CustomerUpdateWithoutUserInput = {
   reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
   reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
   assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
   orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateWithoutUserInput = {
@@ -1119,6 +1256,7 @@ export type CustomerUncheckedUpdateWithoutUserInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1127,8 +1265,10 @@ export type CustomerUncheckedUpdateWithoutUserInput = {
   assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUpsertWithWhereUniqueWithoutReviewed_byInput = {
@@ -1163,6 +1303,7 @@ export type CustomerScalarWhereInput = {
   status?: Prisma.EnumCustomerStatusFilter<"Customer"> | $Enums.CustomerStatus
   referral_code?: Prisma.StringNullableFilter<"Customer"> | string | null
   referred_by?: Prisma.StringNullableFilter<"Customer"> | string | null
+  referred_by_customer_id?: Prisma.IntNullableFilter<"Customer"> | number | null
   referral_points?: Prisma.IntFilter<"Customer"> | number
   referral_threshold_awarded?: Prisma.BoolFilter<"Customer"> | boolean
   review_note?: Prisma.StringNullableFilter<"Customer"> | string | null
@@ -1189,7 +1330,7 @@ export type CustomerUpdateManyWithWhereWithoutAssigned_staffInput = {
   data: Prisma.XOR<Prisma.CustomerUpdateManyMutationInput, Prisma.CustomerUncheckedUpdateManyWithoutAssigned_staffInput>
 }
 
-export type CustomerCreateWithoutOrdersInput = {
+export type CustomerCreateWithoutReferralsInput = {
   uuid?: string
   company_name?: string | null
   address?: string | null
@@ -1207,12 +1348,73 @@ export type CustomerCreateWithoutOrdersInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
   reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
   assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
+  orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
 }
 
-export type CustomerUncheckedCreateWithoutOrdersInput = {
+export type CustomerUncheckedCreateWithoutReferralsInput = {
+  id?: number
+  uuid?: string
+  user_id: number
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referred_by_customer_id?: number | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_by_id?: number | null
+  reviewed_at?: Date | string | null
+  assigned_staff_id?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
+}
+
+export type CustomerCreateOrConnectWithoutReferralsInput = {
+  where: Prisma.CustomerWhereUniqueInput
+  create: Prisma.XOR<Prisma.CustomerCreateWithoutReferralsInput, Prisma.CustomerUncheckedCreateWithoutReferralsInput>
+}
+
+export type CustomerCreateWithoutReferred_by_customerInput = {
+  uuid?: string
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
+  reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
+  assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
+  orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
+  cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
+}
+
+export type CustomerUncheckedCreateWithoutReferred_by_customerInput = {
   id?: number
   uuid?: string
   user_id: number
@@ -1233,7 +1435,275 @@ export type CustomerUncheckedCreateWithoutOrdersInput = {
   assigned_staff_id?: number | null
   created_at?: Date | string
   updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
+}
+
+export type CustomerCreateOrConnectWithoutReferred_by_customerInput = {
+  where: Prisma.CustomerWhereUniqueInput
+  create: Prisma.XOR<Prisma.CustomerCreateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput>
+}
+
+export type CustomerCreateManyReferred_by_customerInputEnvelope = {
+  data: Prisma.CustomerCreateManyReferred_by_customerInput | Prisma.CustomerCreateManyReferred_by_customerInput[]
+  skipDuplicates?: boolean
+}
+
+export type CustomerUpsertWithoutReferralsInput = {
+  update: Prisma.XOR<Prisma.CustomerUpdateWithoutReferralsInput, Prisma.CustomerUncheckedUpdateWithoutReferralsInput>
+  create: Prisma.XOR<Prisma.CustomerCreateWithoutReferralsInput, Prisma.CustomerUncheckedCreateWithoutReferralsInput>
+  where?: Prisma.CustomerWhereInput
+}
+
+export type CustomerUpdateToOneWithWhereWithoutReferralsInput = {
+  where?: Prisma.CustomerWhereInput
+  data: Prisma.XOR<Prisma.CustomerUpdateWithoutReferralsInput, Prisma.CustomerUncheckedUpdateWithoutReferralsInput>
+}
+
+export type CustomerUpdateWithoutReferralsInput = {
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
+  assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
+  cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
+}
+
+export type CustomerUncheckedUpdateWithoutReferralsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  user_id?: Prisma.IntFieldUpdateOperationsInput | number
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
+}
+
+export type CustomerUpsertWithWhereUniqueWithoutReferred_by_customerInput = {
+  where: Prisma.CustomerWhereUniqueInput
+  update: Prisma.XOR<Prisma.CustomerUpdateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedUpdateWithoutReferred_by_customerInput>
+  create: Prisma.XOR<Prisma.CustomerCreateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedCreateWithoutReferred_by_customerInput>
+}
+
+export type CustomerUpdateWithWhereUniqueWithoutReferred_by_customerInput = {
+  where: Prisma.CustomerWhereUniqueInput
+  data: Prisma.XOR<Prisma.CustomerUpdateWithoutReferred_by_customerInput, Prisma.CustomerUncheckedUpdateWithoutReferred_by_customerInput>
+}
+
+export type CustomerUpdateManyWithWhereWithoutReferred_by_customerInput = {
+  where: Prisma.CustomerScalarWhereInput
+  data: Prisma.XOR<Prisma.CustomerUpdateManyMutationInput, Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerInput>
+}
+
+export type CustomerCreateWithoutReferralLedgerInput = {
+  uuid?: string
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
+  reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
+  assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
+  orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
+  cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+}
+
+export type CustomerUncheckedCreateWithoutReferralLedgerInput = {
+  id?: number
+  uuid?: string
+  user_id: number
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referred_by_customer_id?: number | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_by_id?: number | null
+  reviewed_at?: Date | string | null
+  assigned_staff_id?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+}
+
+export type CustomerCreateOrConnectWithoutReferralLedgerInput = {
+  where: Prisma.CustomerWhereUniqueInput
+  create: Prisma.XOR<Prisma.CustomerCreateWithoutReferralLedgerInput, Prisma.CustomerUncheckedCreateWithoutReferralLedgerInput>
+}
+
+export type CustomerUpsertWithoutReferralLedgerInput = {
+  update: Prisma.XOR<Prisma.CustomerUpdateWithoutReferralLedgerInput, Prisma.CustomerUncheckedUpdateWithoutReferralLedgerInput>
+  create: Prisma.XOR<Prisma.CustomerCreateWithoutReferralLedgerInput, Prisma.CustomerUncheckedCreateWithoutReferralLedgerInput>
+  where?: Prisma.CustomerWhereInput
+}
+
+export type CustomerUpdateToOneWithWhereWithoutReferralLedgerInput = {
+  where?: Prisma.CustomerWhereInput
+  data: Prisma.XOR<Prisma.CustomerUpdateWithoutReferralLedgerInput, Prisma.CustomerUncheckedUpdateWithoutReferralLedgerInput>
+}
+
+export type CustomerUpdateWithoutReferralLedgerInput = {
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
+  reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
+  assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
+  cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+}
+
+export type CustomerUncheckedUpdateWithoutReferralLedgerInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  user_id?: Prisma.IntFieldUpdateOperationsInput | number
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+}
+
+export type CustomerCreateWithoutOrdersInput = {
+  uuid?: string
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
+  reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
+  assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
+  cart?: Prisma.CartCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
+}
+
+export type CustomerUncheckedCreateWithoutOrdersInput = {
+  id?: number
+  uuid?: string
+  user_id: number
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referred_by_customer_id?: number | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_by_id?: number | null
+  reviewed_at?: Date | string | null
+  assigned_staff_id?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerCreateOrConnectWithoutOrdersInput = {
@@ -1270,9 +1740,12 @@ export type CustomerUpdateWithoutOrdersInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
   reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
   assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
   cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateWithoutOrdersInput = {
@@ -1288,6 +1761,7 @@ export type CustomerUncheckedUpdateWithoutOrdersInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1296,7 +1770,9 @@ export type CustomerUncheckedUpdateWithoutOrdersInput = {
   assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerCreateWithoutCartInput = {
@@ -1317,9 +1793,12 @@ export type CustomerCreateWithoutCartInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user: Prisma.UserCreateNestedOneWithoutCustomerInput
+  referred_by_customer?: Prisma.CustomerCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.CustomerCreateNestedManyWithoutReferred_by_customerInput
   reviewed_by?: Prisma.UserCreateNestedOneWithoutReviewedCustomersInput
   assigned_staff?: Prisma.UserCreateNestedOneWithoutAssignedCustomersInput
   orders?: Prisma.OrderCreateNestedManyWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerUncheckedCreateWithoutCartInput = {
@@ -1335,6 +1814,7 @@ export type CustomerUncheckedCreateWithoutCartInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -1343,7 +1823,9 @@ export type CustomerUncheckedCreateWithoutCartInput = {
   assigned_staff_id?: number | null
   created_at?: Date | string
   updated_at?: Date | string
+  referrals?: Prisma.CustomerUncheckedCreateNestedManyWithoutReferred_by_customerInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutCustomerInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type CustomerCreateOrConnectWithoutCartInput = {
@@ -1380,9 +1862,12 @@ export type CustomerUpdateWithoutCartInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
   reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
   assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
   orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateWithoutCartInput = {
@@ -1398,6 +1883,7 @@ export type CustomerUncheckedUpdateWithoutCartInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1406,7 +1892,9 @@ export type CustomerUncheckedUpdateWithoutCartInput = {
   assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerCreateManyReviewed_byInput = {
@@ -1422,6 +1910,7 @@ export type CustomerCreateManyReviewed_byInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -1444,6 +1933,7 @@ export type CustomerCreateManyAssigned_staffInput = {
   status?: $Enums.CustomerStatus
   referral_code?: string | null
   referred_by?: string | null
+  referred_by_customer_id?: number | null
   referral_points?: number
   referral_threshold_awarded?: boolean
   review_note?: string | null
@@ -1471,9 +1961,12 @@ export type CustomerUpdateWithoutReviewed_byInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
   assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
   orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateWithoutReviewed_byInput = {
@@ -1489,6 +1982,7 @@ export type CustomerUncheckedUpdateWithoutReviewed_byInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1496,8 +1990,10 @@ export type CustomerUncheckedUpdateWithoutReviewed_byInput = {
   assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateManyWithoutReviewed_byInput = {
@@ -1513,6 +2009,7 @@ export type CustomerUncheckedUpdateManyWithoutReviewed_byInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1540,9 +2037,12 @@ export type CustomerUpdateWithoutAssigned_staffInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referred_by_customer?: Prisma.CustomerUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
   reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
   orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateWithoutAssigned_staffInput = {
@@ -1558,6 +2058,7 @@ export type CustomerUncheckedUpdateWithoutAssigned_staffInput = {
   status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
   referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   referral_points?: Prisma.IntFieldUpdateOperationsInput | number
   referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1565,11 +2066,85 @@ export type CustomerUncheckedUpdateWithoutAssigned_staffInput = {
   reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type CustomerUncheckedUpdateManyWithoutAssigned_staffInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  user_id?: Prisma.IntFieldUpdateOperationsInput | number
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by_customer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type CustomerCreateManyReferred_by_customerInput = {
+  id?: number
+  uuid?: string
+  user_id: number
+  company_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pcn_certificate_url?: string | null
+  pcn_verified?: boolean
+  status?: $Enums.CustomerStatus
+  referral_code?: string | null
+  referred_by?: string | null
+  referral_points?: number
+  referral_threshold_awarded?: boolean
+  review_note?: string | null
+  reviewed_by_id?: number | null
+  reviewed_at?: Date | string | null
+  assigned_staff_id?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+}
+
+export type CustomerUpdateWithoutReferred_by_customerInput = {
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutCustomerNestedInput
+  referrals?: Prisma.CustomerUpdateManyWithoutReferred_by_customerNestedInput
+  reviewed_by?: Prisma.UserUpdateOneWithoutReviewedCustomersNestedInput
+  assigned_staff?: Prisma.UserUpdateOneWithoutAssignedCustomersNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutCustomerNestedInput
+  cart?: Prisma.CartUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUpdateManyWithoutCustomerNestedInput
+}
+
+export type CustomerUncheckedUpdateWithoutReferred_by_customerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   user_id?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1587,6 +2162,34 @@ export type CustomerUncheckedUpdateManyWithoutAssigned_staffInput = {
   review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reviewed_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.CustomerUncheckedUpdateManyWithoutReferred_by_customerNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutCustomerNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutCustomerNestedInput
+  referralLedger?: Prisma.ReferralLedgerUncheckedUpdateManyWithoutCustomerNestedInput
+}
+
+export type CustomerUncheckedUpdateManyWithoutReferred_by_customerInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  uuid?: Prisma.StringFieldUpdateOperationsInput | string
+  user_id?: Prisma.IntFieldUpdateOperationsInput | number
+  company_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_certificate_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pcn_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.EnumCustomerStatusFieldUpdateOperationsInput | $Enums.CustomerStatus
+  referral_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referred_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referral_points?: Prisma.IntFieldUpdateOperationsInput | number
+  referral_threshold_awarded?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  review_note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewed_by_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reviewed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assigned_staff_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1597,11 +2200,15 @@ export type CustomerUncheckedUpdateManyWithoutAssigned_staffInput = {
  */
 
 export type CustomerCountOutputType = {
+  referrals: number
   orders: number
+  referralLedger: number
 }
 
 export type CustomerCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  referrals?: boolean | CustomerCountOutputTypeCountReferralsArgs
   orders?: boolean | CustomerCountOutputTypeCountOrdersArgs
+  referralLedger?: boolean | CustomerCountOutputTypeCountReferralLedgerArgs
 }
 
 /**
@@ -1617,8 +2224,22 @@ export type CustomerCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
 /**
  * CustomerCountOutputType without action
  */
+export type CustomerCountOutputTypeCountReferralsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CustomerWhereInput
+}
+
+/**
+ * CustomerCountOutputType without action
+ */
 export type CustomerCountOutputTypeCountOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.OrderWhereInput
+}
+
+/**
+ * CustomerCountOutputType without action
+ */
+export type CustomerCountOutputTypeCountReferralLedgerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReferralLedgerWhereInput
 }
 
 
@@ -1635,6 +2256,7 @@ export type CustomerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   status?: boolean
   referral_code?: boolean
   referred_by?: boolean
+  referred_by_customer_id?: boolean
   referral_points?: boolean
   referral_threshold_awarded?: boolean
   review_note?: boolean
@@ -1644,10 +2266,13 @@ export type CustomerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   created_at?: boolean
   updated_at?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  referred_by_customer?: boolean | Prisma.Customer$referred_by_customerArgs<ExtArgs>
+  referrals?: boolean | Prisma.Customer$referralsArgs<ExtArgs>
   reviewed_by?: boolean | Prisma.Customer$reviewed_byArgs<ExtArgs>
   assigned_staff?: boolean | Prisma.Customer$assigned_staffArgs<ExtArgs>
   orders?: boolean | Prisma.Customer$ordersArgs<ExtArgs>
   cart?: boolean | Prisma.Customer$cartArgs<ExtArgs>
+  referralLedger?: boolean | Prisma.Customer$referralLedgerArgs<ExtArgs>
   _count?: boolean | Prisma.CustomerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["customer"]>
 
@@ -1666,6 +2291,7 @@ export type CustomerSelectScalar = {
   status?: boolean
   referral_code?: boolean
   referred_by?: boolean
+  referred_by_customer_id?: boolean
   referral_points?: boolean
   referral_threshold_awarded?: boolean
   review_note?: boolean
@@ -1676,13 +2302,16 @@ export type CustomerSelectScalar = {
   updated_at?: boolean
 }
 
-export type CustomerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "user_id" | "company_name" | "address" | "city" | "state" | "pcn_certificate_url" | "pcn_verified" | "status" | "referral_code" | "referred_by" | "referral_points" | "referral_threshold_awarded" | "review_note" | "reviewed_by_id" | "reviewed_at" | "assigned_staff_id" | "created_at" | "updated_at", ExtArgs["result"]["customer"]>
+export type CustomerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "user_id" | "company_name" | "address" | "city" | "state" | "pcn_certificate_url" | "pcn_verified" | "status" | "referral_code" | "referred_by" | "referred_by_customer_id" | "referral_points" | "referral_threshold_awarded" | "review_note" | "reviewed_by_id" | "reviewed_at" | "assigned_staff_id" | "created_at" | "updated_at", ExtArgs["result"]["customer"]>
 export type CustomerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  referred_by_customer?: boolean | Prisma.Customer$referred_by_customerArgs<ExtArgs>
+  referrals?: boolean | Prisma.Customer$referralsArgs<ExtArgs>
   reviewed_by?: boolean | Prisma.Customer$reviewed_byArgs<ExtArgs>
   assigned_staff?: boolean | Prisma.Customer$assigned_staffArgs<ExtArgs>
   orders?: boolean | Prisma.Customer$ordersArgs<ExtArgs>
   cart?: boolean | Prisma.Customer$cartArgs<ExtArgs>
+  referralLedger?: boolean | Prisma.Customer$referralLedgerArgs<ExtArgs>
   _count?: boolean | Prisma.CustomerCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -1690,10 +2319,13 @@ export type $CustomerPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   name: "Customer"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    referred_by_customer: Prisma.$CustomerPayload<ExtArgs> | null
+    referrals: Prisma.$CustomerPayload<ExtArgs>[]
     reviewed_by: Prisma.$UserPayload<ExtArgs> | null
     assigned_staff: Prisma.$UserPayload<ExtArgs> | null
     orders: Prisma.$OrderPayload<ExtArgs>[]
     cart: Prisma.$CartPayload<ExtArgs> | null
+    referralLedger: Prisma.$ReferralLedgerPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1708,6 +2340,7 @@ export type $CustomerPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     status: $Enums.CustomerStatus
     referral_code: string | null
     referred_by: string | null
+    referred_by_customer_id: number | null
     referral_points: number
     referral_threshold_awarded: boolean
     review_note: string | null
@@ -2057,10 +2690,13 @@ readonly fields: CustomerFieldRefs;
 export interface Prisma__CustomerClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  referred_by_customer<T extends Prisma.Customer$referred_by_customerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$referred_by_customerArgs<ExtArgs>>): Prisma.Prisma__CustomerClient<runtime.Types.Result.GetResult<Prisma.$CustomerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  referrals<T extends Prisma.Customer$referralsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$referralsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CustomerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reviewed_by<T extends Prisma.Customer$reviewed_byArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$reviewed_byArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   assigned_staff<T extends Prisma.Customer$assigned_staffArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$assigned_staffArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   orders<T extends Prisma.Customer$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   cart<T extends Prisma.Customer$cartArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$cartArgs<ExtArgs>>): Prisma.Prisma__CartClient<runtime.Types.Result.GetResult<Prisma.$CartPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  referralLedger<T extends Prisma.Customer$referralLedgerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Customer$referralLedgerArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReferralLedgerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2102,6 +2738,7 @@ export interface CustomerFieldRefs {
   readonly status: Prisma.FieldRef<"Customer", 'CustomerStatus'>
   readonly referral_code: Prisma.FieldRef<"Customer", 'String'>
   readonly referred_by: Prisma.FieldRef<"Customer", 'String'>
+  readonly referred_by_customer_id: Prisma.FieldRef<"Customer", 'Int'>
   readonly referral_points: Prisma.FieldRef<"Customer", 'Int'>
   readonly referral_threshold_awarded: Prisma.FieldRef<"Customer", 'Boolean'>
   readonly review_note: Prisma.FieldRef<"Customer", 'String'>
@@ -2458,6 +3095,49 @@ export type CustomerDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
 }
 
 /**
+ * Customer.referred_by_customer
+ */
+export type Customer$referred_by_customerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Customer
+   */
+  select?: Prisma.CustomerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Customer
+   */
+  omit?: Prisma.CustomerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CustomerInclude<ExtArgs> | null
+  where?: Prisma.CustomerWhereInput
+}
+
+/**
+ * Customer.referrals
+ */
+export type Customer$referralsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Customer
+   */
+  select?: Prisma.CustomerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Customer
+   */
+  omit?: Prisma.CustomerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CustomerInclude<ExtArgs> | null
+  where?: Prisma.CustomerWhereInput
+  orderBy?: Prisma.CustomerOrderByWithRelationInput | Prisma.CustomerOrderByWithRelationInput[]
+  cursor?: Prisma.CustomerWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CustomerScalarFieldEnum | Prisma.CustomerScalarFieldEnum[]
+}
+
+/**
  * Customer.reviewed_by
  */
 export type Customer$reviewed_byArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2536,6 +3216,30 @@ export type Customer$cartArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   include?: Prisma.CartInclude<ExtArgs> | null
   where?: Prisma.CartWhereInput
+}
+
+/**
+ * Customer.referralLedger
+ */
+export type Customer$referralLedgerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ReferralLedger
+   */
+  select?: Prisma.ReferralLedgerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ReferralLedger
+   */
+  omit?: Prisma.ReferralLedgerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReferralLedgerInclude<ExtArgs> | null
+  where?: Prisma.ReferralLedgerWhereInput
+  orderBy?: Prisma.ReferralLedgerOrderByWithRelationInput | Prisma.ReferralLedgerOrderByWithRelationInput[]
+  cursor?: Prisma.ReferralLedgerWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReferralLedgerScalarFieldEnum | Prisma.ReferralLedgerScalarFieldEnum[]
 }
 
 /**

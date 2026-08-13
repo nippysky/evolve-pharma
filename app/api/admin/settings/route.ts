@@ -28,9 +28,20 @@ const ALLOWED_KEYS = new Set([
   'hq_address', 'currency', 'timezone',
   'email_audit_summary', 'auto_logout',
   'vat_enabled', 'vat_rate',
-  // Referral programme — referee must spend `referral_threshold` for the
-  // referrer to earn `referral_reward`. Both in naira.
-  'referral_threshold', 'referral_reward',
+  // Referral programme. Every monetary value here is NAIRA, and they all feed
+  // the same wallet (`customers.referral_points`), which is a naira balance
+  // despite the column name.
+  //
+  //   referral_signup_bonus       → credited when someone signs up with a code
+  //   referral_threshold          → paid orders a referee must reach
+  //   referral_reward             → credited once they reach it
+  //   referral_redemption_enabled → 'true' lets customers spend the balance
+  //   referral_min_redemption     → balance required before spending is allowed
+  //
+  // Redemption is off by default: balances accrue from day one, but spending
+  // opens on a commercial decision, not a deploy.
+  'referral_threshold', 'referral_reward', 'referral_signup_bonus',
+  'referral_redemption_enabled', 'referral_min_redemption',
   // Who a STAFF member may place orders on behalf of: 'ALL' | 'ASSIGNED'
   'staff_order_scope',
 ]);

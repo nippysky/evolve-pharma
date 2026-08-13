@@ -225,5 +225,9 @@ export const PRODUCT_CATEGORIES = [
  *  No points are awarded for this code — it's just a sentinel for analytics. */
 export const DEFAULT_REFERRAL_CODE = 'ENV-PLATFORM';
 
-/** Points credited to a referrer each time their code is used at signup. */
-export const REFERRAL_POINTS_PER_SIGNUP = 100;
+/**
+ * The signup award moved into admin settings as `referral_signup_bonus`, in
+ * naira, so the business can change it without a deploy. Read it through
+ * `getReferralSettings()` — there is no longer a hardcoded value, and the
+ * old dimensionless "points" unit no longer exists.
+ */

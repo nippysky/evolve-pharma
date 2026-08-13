@@ -10,6 +10,7 @@
  */
 export type * from './models/User'
 export type * from './models/Customer'
+export type * from './models/ReferralLedger'
 export type * from './models/Staff'
 export type * from './models/Driver'
 export type * from './models/Category'

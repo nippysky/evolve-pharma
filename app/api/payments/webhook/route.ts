@@ -6,7 +6,7 @@ import {
   updatePaymentTransactionStatus,
 }                                    from '@/lib/cart-db';
 import { writeAuditLog }                from '@/lib/audit';
-import { checkAndAwardReferralReward } from '@/lib/referral-reward';
+import { checkAndAwardSpendReward } from '@/lib/referral';
 import { notifyCustomerAndOwner } from '@/lib/notifications';
 
 export async function POST(req: NextRequest) {
@@ -91,7 +91,7 @@ async function handleWebhookEvent(
 
         console.log(`[webhook] charge.success → order #${tx.order_id} marked PAID`);
         // Trigger referral reward check (non-blocking)
-        void checkAndAwardReferralReward(updatedOrder.customer_id);
+        void checkAndAwardSpendReward(updatedOrder.customer_id);
 
         void notifyCustomerAndOwner(
           updatedOrder.customer_id,
@@ -120,7 +120,7 @@ async function handleWebhookEvent(
             where: { id: updated.id },
             data:  { payment_status: 'PAID', status: 'CONFIRMED' },
           });
-          void checkAndAwardReferralReward(updated.customer_id);
+          void checkAndAwardSpendReward(updated.customer_id);
         } else {
           await db.order.updateMany({
             where: { payment_reference: reference, payment_status: 'UNPAID' },

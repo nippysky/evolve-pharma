@@ -9,10 +9,8 @@ import {
   handlePrismaError,
 } from '@/lib/api/response';
 import { generateOtp, otpExpiresAt } from '@/lib/api/issue-tokens';
-import {
-  DEFAULT_REFERRAL_CODE,
-  REFERRAL_POINTS_PER_SIGNUP,
-}                                    from '@/lib/constants';
+import { DEFAULT_REFERRAL_CODE }      from '@/lib/constants';
+import { awardSignupBonus }           from '@/lib/referral';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +19,15 @@ export async function POST(req: NextRequest) {
     catch { return apiError('Multipart form data required', 400); }
 
     const str  = (k: string) => (formData.get(k) as string | null)?.trim() || null;
-    const file  = formData.get('file') as File | null;
+
+    // The PCN certificate.
+    //
+    // `file` is the canonical field name and matches every other multipart
+    // route in this API (bulk imports, upload-pcn, invited-pcn). `pcn_certificate`
+    // is accepted as an alias because that is the key this endpoint reports
+    // validation errors under, and clients reasonably infer the field name from
+    // the error response.
+    const file = (formData.get('file') ?? formData.get('pcn_certificate')) as File | null;
 
     const first_name    = str('first_name');
     const last_name     = str('last_name');
@@ -45,7 +51,9 @@ export async function POST(req: NextRequest) {
     if (!address)                     errs.address       = ['Address is required'];
     if (!city)                        errs.city          = ['City is required'];
     if (!state)                       errs.state         = ['State is required'];
-    if (!file)                        errs.pcn_certificate = ['PCN certificate is required'];
+    // Keyed to match the field name so the error is actionable, with the alias
+    // named explicitly rather than leaving the client to guess.
+    if (!file) errs.file = ['PCN certificate is required. Send it as the `file` field (alias: `pcn_certificate`).'];
     if (Object.keys(errs).length) return apiError('Please review the fields below.', 422, errs);
 
     // Email uniqueness
@@ -94,16 +102,19 @@ export async function POST(req: NextRequest) {
     const referrerCode = referral_code && referral_code !== DEFAULT_REFERRAL_CODE
       ? referral_code
       : null;
-    let referrerExists = false;
+    // Resolve the code to an actual customer row. The id is what gets stored —
+    // a code string alone can't survive the referrer changing theirs, and can't
+    // be joined on to answer "who did I refer?".
+    let referrer: { id: number } | null = null;
     if (referrerCode) {
-      const referrer = await db.customer.findUnique({
+      referrer = await db.customer.findUnique({
         where:  { referral_code: referrerCode },
         select: { id: true },
       });
-      referrerExists = !!referrer;
     }
+    const referrerExists = !!referrer;
 
-    const user = await db.$transaction(async (tx: any) => {
+    const created = await db.$transaction(async (tx: any) => {
       const u = await tx.user.create({
         data: {
           first_name,
@@ -117,7 +128,7 @@ export async function POST(req: NextRequest) {
           status:        'INACTIVE',
         },
       });
-      await tx.customer.create({
+      const c = await tx.customer.create({
         data: {
           user_id:             u.id,
           company_name,
@@ -126,26 +137,34 @@ export async function POST(req: NextRequest) {
           state,
           pcn_certificate_url: pcnUrl,
           referral_code:       newReferralCode,
-          // Store the real referrer code if valid, otherwise the platform sentinel
-          referred_by:         referrerExists ? referrerCode! : DEFAULT_REFERRAL_CODE,
-          status:              'REGISTERED',
+          // `referred_by` records the code that was typed (the receipt);
+          // `referred_by_customer_id` is the resolved link everything queries.
+          // The platform sentinel is stored when nobody referred them so the
+          // provenance is explicit, but the FK stays null — the platform is not
+          // a referrer and must never appear in anyone's referral list.
+          referred_by:             referrerExists ? referrerCode! : DEFAULT_REFERRAL_CODE,
+          referred_by_customer_id: referrer?.id ?? null,
+          status:                  'REGISTERED',
         },
       });
-      return u;
+      return { user: u, customerId: c.id };
     });
-    // referral_points: added in schema — run `npx prisma generate` if types lag
-    if (referrerExists && referrerCode) {
-      void (db.customer.update as any)({
-        where: { referral_code: referrerCode },
-        data:  { referral_points: { increment: REFERRAL_POINTS_PER_SIGNUP } },
-      }).catch((err: unknown) => console.error('[register] referral points update failed:', err));
+    // Credit the referrer. Goes through the ledger so the balance is always
+    // explainable, and is idempotent on (referrer, referee) so a retried
+    // registration can't pay twice.
+    if (referrer) {
+      void awardSignupBonus({
+        referrerCustomerId: referrer.id,
+        refereeCustomerId:  created.customerId,
+        refereeName:        company_name || `${first_name} ${last_name}`.trim(),
+      });
     }
 
     // Generate + store OTP
     const otp       = generateOtp();
     const expiresAt = otpExpiresAt();
     await db.otpToken.create({
-      data: { user_id: user.id, token: otp, type: 'EMAIL_VERIFICATION', expires_at: expiresAt },
+      data: { user_id: created.user.id, token: otp, type: 'EMAIL_VERIFICATION', expires_at: expiresAt },
     });
 
     // Send OTP email (non-blocking)

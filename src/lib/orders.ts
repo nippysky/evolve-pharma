@@ -7,6 +7,7 @@ import {
   clearCartItems,
   getOrCreateCart,
 }                                     from '@/lib/cart-db';
+import { getReferralWallet, capRedemption, redeemReferralCredit } from '@/lib/referral';
 import { getVatSettings }             from '@/lib/data/settings.server';
 import { notifyUser, notifyRoles }    from '@/lib/notifications';
 
@@ -41,6 +42,15 @@ export interface CreateOrderParams {
   poNumber?:        string;
   paymentMethod:    'paystack' | 'bank_transfer' | 'cash_on_delivery';
   paystackReference?: string;
+  /**
+   * Naira of referral credit the customer wants to apply.
+   *
+   * Treated as a request, not an instruction: it's re-validated against the
+   * live wallet, the redemption toggle and the order subtotal, and whatever
+   * survives is what gets applied. A balance that changed between quoting and
+   * ordering discounts less rather than failing the order or overdrawing.
+   */
+  referralCredit?:  number;
   /**
    * Set when a staff member or admin places this order on the customer's
    * behalf. Drives attribution on the order row, the audit entry, and the
@@ -102,7 +112,7 @@ export async function createOrder(
     deliveryState, deliveryCity, deliveryAddress,
     contactPhone, deliveryNotes, poNumber,
     paymentMethod, paystackReference,
-    placedBy, deferReceiptEmail,
+    placedBy, deferReceiptEmail, referralCredit,
   } = params;
 
   const isOnBehalf = !!placedBy;
@@ -172,7 +182,20 @@ export async function createOrder(
   const { enabled: vatEnabled, rate: vatRate } = await getVatSettings();
   const deliveryFee = subtotal >= FREE_SHIP_THRESHOLD ? 0 : SHIP_FEE;
   const vat         = vatEnabled ? Math.round(subtotal * vatRate) : 0;
-  const total       = subtotal + deliveryFee + vat;
+
+  // Referral credit is capped here but not yet debited — the order id is needed
+  // for the ledger row, and debiting before the order exists would leave the
+  // customer short if creation then failed.
+  let discount = 0;
+  if (referralCredit && referralCredit > 0) {
+    const wallet = await getReferralWallet(customerId);
+    discount = capRedemption(referralCredit, wallet, subtotal);
+  }
+
+  // `let` because a referral debit that partially fails corrects it below, and
+  // everything downstream (receipt, Paystack amount, notifications) must quote
+  // the figure actually charged.
+  let total = Math.max(0, subtotal - discount + deliveryFee + vat);
 
   // Create Order (temp order_number avoids UNIQUE collision)
   const tempNum = `TEMP-${crypto.randomUUID()}`;
@@ -191,6 +214,7 @@ export async function createOrder(
       delivery_city:    deliveryCity,
       delivery_state:   deliveryState,
       subtotal,
+      discount,
       delivery_fee:     deliveryFee,
       total,
       notes: JSON.stringify({
@@ -199,6 +223,7 @@ export async function createOrder(
         contact_phone:  contactPhone,
         vat,
         vat_rate:       vatEnabled ? vatRate * 100 : 0,
+        referral_credit_applied: discount,
       }),
     },
   });
@@ -253,12 +278,39 @@ export async function createOrder(
     data:  { order_number: orderNumber },
   });
 
-  // Persist on-behalf attribution. Raw SQL because placed_by_user_id is added
-  // via manual migration and isn't in the generated Prisma types.
+  // Debit the referral wallet now the order exists and has a number, so the
+  // ledger entry can name it. If the debit fails (balance moved underneath us),
+  // the discount is reversed off the order rather than being given away free.
+  if (discount > 0) {
+    const applied = await redeemReferralCredit({
+      customerId,
+      requested:   discount,
+      subtotal,
+      orderId:     order.id,
+      orderNumber,
+    });
+
+    if (applied !== discount) {
+      const correctedTotal = Math.max(0, subtotal - applied + deliveryFee + vat);
+      await db.order.update({
+        where: { id: order.id },
+        data:  { discount: applied, total: correctedTotal },
+      });
+      console.warn(
+        `[orders] Referral credit for ${orderNumber} adjusted ${discount} → ${applied}; ` +
+        `total corrected to ${correctedTotal}.`,
+      );
+      discount = applied;
+      total    = correctedTotal;
+    }
+  }
+
+  // Persist on-behalf attribution.
   if (isOnBehalf) {
-    await db.$executeRaw`
-      UPDATE orders SET placed_by_user_id = ${placedBy.userId} WHERE id = ${order.id}
-    `;
+    await db.order.update({
+      where: { id: order.id },
+      data:  { placed_by_user_id: placedBy.userId },
+    });
   }
 
   // Payment transaction record
@@ -300,29 +352,23 @@ export async function createOrder(
     let assignedStaffId: number | null = null;
 
     try {
-      const rows = await db.$queryRaw<Array<{
-        user_id:           number;
-        company_name:      string | null;
-        assigned_staff_id: number | null;
-        first_name:        string;
-        last_name:         string;
-        email:             string;
-      }>>`
-        SELECT c.user_id, c.company_name, c.assigned_staff_id,
-               u.first_name, u.last_name, u.email
-        FROM customers c
-        JOIN users u ON u.id = c.user_id
-        WHERE c.id = ${customerId}
-        LIMIT 1
-      `;
-      const c = rows[0];
+      // One query, one round trip — the nested select pulls the user in the
+      // same statement rather than a second lookup, which matters on a
+      // connection pool of one.
+      const c = await db.customer.findUnique({
+        where:  { id: customerId },
+        select: {
+          user_id: true, company_name: true, assigned_staff_id: true,
+          user: { select: { first_name: true, last_name: true, email: true } },
+        },
+      });
       if (c) {
-        customerLabel   = `${c.first_name} ${c.last_name}` +
+        customerLabel   = `${c.user.first_name} ${c.user.last_name}` +
                           (c.company_name ? ` (${c.company_name})` : '') +
-                          ` <${c.email}>`;
+                          ` <${c.user.email}>`;
         custUserId      = c.user_id;
-        custEmail       = c.email;
-        custFirst       = c.first_name;
+        custEmail       = c.user.email;
+        custFirst       = c.user.first_name;
         assignedStaffId = c.assigned_staff_id;
       }
     } catch { /* fall back to the id label; notifications degrade quietly */ }

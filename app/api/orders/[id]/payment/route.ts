@@ -13,7 +13,7 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog }                  from '@/lib/audit';
 import { sendPaymentStatusEmail }         from '@/lib/mail';
-import { checkAndAwardReferralReward }    from '@/lib/referral-reward';
+import { checkAndAwardSpendReward }    from '@/lib/referral';
 
 const schema = z.object({
   payment_status: z.enum(['PAID', 'UNPAID', 'PARTIAL', 'REFUNDED', 'FAILED']),
@@ -88,7 +88,7 @@ export async function PATCH(
 
     // 5. Trigger referral reward check if payment just became PAID
     if (newStatus === 'PAID' && prev !== 'PAID') {
-      void checkAndAwardReferralReward(order.customer_id);
+      void checkAndAwardSpendReward(order.customer_id);
     }
 
     // 6. Audit log
