@@ -25,6 +25,9 @@ import { getSession }         from '@/lib/auth';
 import { writeAuditLog }      from '@/lib/audit';
 import { revalidateProducts } from '@/lib/revalidate';
 import {
+  deriveSku, identityKey, findExistingByIdentity,
+} from '@/lib/products/identity';
+import {
   apiSuccess,
   apiError,
   apiUnauthorized,
@@ -54,18 +57,9 @@ interface FailRecord {
   errors: string[];
 }
 
-/**
- * SKU is derived from manufacturer + brand, matching the full importer so the
- * two never produce different SKUs for the same product.
- */
-function deriveSku(manufacturer: string, brandName: string): string {
-  const slug = (s: string) =>
-    s.toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 20);
-  return `${slug(manufacturer)}-${slug(brandName)}`;
-}
+// SKU derivation and duplicate detection live in @/lib/products/identity, so
+// this importer, the full importer and manual creation cannot drift apart —
+// which is exactly how the same product ended up in the catalogue twice.
 
 /** Accept a few spellings per column so the client's sheet doesn't have to be exact. */
 const HEADER_ALIASES: Record<string, string> = {
@@ -143,8 +137,12 @@ export async function POST(req: NextRequest) {
 
     // ── Phase 1: validate + dedupe ──────────────────────────────────────────
     const failed:    FailRecord[] = [];
-    const validRows: Array<z.infer<typeof rowSchema> & { rowNum: number; sku: string }> = [];
-    const seenSkus   = new Map<string, number>();
+    const validRows: Array<
+      z.infer<typeof rowSchema> & { rowNum: number; sku: string; key: string }
+    > = [];
+    // Keyed on identity, not on the derived SKU. Two rows for the same brand at
+    // different strengths are different products and must both import.
+    const seenKeys = new Map<string, number>();
 
     rawRows.forEach((raw, i) => {
       const rowNum = i + 2; // +1 for zero-index, +1 for the header row
@@ -159,17 +157,25 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      const sku = deriveSku(parsed.data.manufacturer, parsed.data.brand_name);
-      const dup = seenSkus.get(sku);
+      const identity = {
+        manufacturer:     parsed.data.manufacturer,
+        brand_name:       parsed.data.brand_name,
+        product_strength: parsed.data.product_strength,
+        pack_size:        parsed.data.pack_size,
+      };
+      const key = identityKey(identity);
+      const sku = deriveSku(identity);
+
+      const dup = seenKeys.get(key);
       if (dup) {
         failed.push({
           row: rowNum, sku,
-          errors: [`Duplicate of row ${dup} — same manufacturer and brand name.`],
+          errors: [`Duplicate of row ${dup} — same manufacturer, brand, strength and pack size.`],
         });
         return;
       }
-      seenSkus.set(sku, rowNum);
-      validRows.push({ ...parsed.data, rowNum, sku });
+      seenKeys.set(key, rowNum);
+      validRows.push({ ...parsed.data, rowNum, sku, key });
     });
 
     if (validRows.length === 0) {
@@ -201,21 +207,28 @@ export async function POST(req: NextRequest) {
     const catMap = new Map(cats.map(c => [c.name, c.id]));
     const mfrMap = new Map(mfrs.map(m => [m.name, m.id]));
 
-    // ── Phase 4: skip SKUs that already exist (1 query) ─────────────────────
+    // ── Phase 4: skip products that already exist (1 query) ─────────────────
     // This importer only creates. Updating an existing product is the full
     // importer's job — silently overwriting a priced product with a blank
     // quick row would wipe real data.
-    const existing = await db.product.findMany({
-      select: { sku: true },
-      where:  { sku: { in: validRows.map(r => r.sku) }, deleted_at: null },
-    });
-    const existingSkus = new Set(existing.map(p => p.sku));
+    //
+    // Matched on identity rather than on the derived SKU. A product created by
+    // hand carries a SKU with a random uniqueness suffix, which no derived SKU
+    // will ever equal — so the old SKU-only check couldn't see it and imported
+    // a second copy. That is the duplicate the client reported.
+    const existing = await findExistingByIdentity(validRows.map(r => ({
+      manufacturer:     r.manufacturer,
+      brand_name:       r.brand_name,
+      product_strength: r.product_strength,
+      pack_size:        r.pack_size,
+    })));
 
     const toCreate = validRows.filter(r => {
-      if (existingSkus.has(r.sku)) {
+      const match = existing.get(r.key);
+      if (match) {
         failed.push({
           row: r.rowNum, sku: r.sku,
-          errors: ['A product with this manufacturer and brand already exists — skipped.'],
+          errors: [`Already in the catalogue as ${match.sku} — skipped.`],
         });
         return false;
       }
@@ -228,6 +241,9 @@ export async function POST(req: NextRequest) {
       const result = await db.product.createMany({
         data: toCreate.map(r => ({
           sku:              r.sku,
+          // UNIQUE in the database — the last line of defence if two
+          // imports race past the check above.
+          identity_key:     r.key,
           brand_name:       r.brand_name,
           generic_name:     r.generic_name,
           product_strength: r.product_strength || null,
@@ -263,7 +279,10 @@ export async function POST(req: NextRequest) {
       {
         total_records:  rawRows.length,
         created,
-        skipped:        existingSkus.size,
+        // Rows skipped because the product already exists. Previously reported
+        // the size of the whole lookup result, which counted matches rather
+        // than skips and could exceed the number of rows in the file.
+        skipped:        validRows.length - toCreate.length,
         failed:         failed.length,
         failed_records: failed,
       },

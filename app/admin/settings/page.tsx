@@ -42,9 +42,14 @@ export default async function SettingsPage() {
     auto_logout:         saved.auto_logout         ?? 'true',
     vat_enabled:              saved.vat_enabled              ?? 'false',
     vat_rate:                 saved.vat_rate                 ?? '7.5',
-    referral_threshold:       saved.referral_threshold       ?? '500000',
-    referral_reward:          saved.referral_reward          ?? '500',
-    staff_order_scope:        saved.staff_order_scope        ?? 'ALL',
+    // Defaults mirror getReferralSettings() — keep the two in step.
+    referral_signup_bonus:       saved.referral_signup_bonus       ?? '100',
+    referral_threshold:          saved.referral_threshold          ?? '500000',
+    referral_reward:             saved.referral_reward             ?? '500',
+    // Off by default: earning runs from day one, spending is a commercial call.
+    referral_redemption_enabled: saved.referral_redemption_enabled ?? 'false',
+    referral_min_redemption:     saved.referral_min_redemption     ?? '0',
+    staff_order_scope:           saved.staff_order_scope           ?? 'ALL',
   };
 
   return (

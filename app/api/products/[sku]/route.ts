@@ -3,6 +3,7 @@ import { z }              from 'zod';
 import { revalidateProducts } from '@/lib/revalidate';
 import { db }             from '@/lib/db';
 import { getSession }     from '@/lib/auth';
+import { identityKey, findExistingByIdentity } from '@/lib/products/identity';
 import {
   apiSuccess,
   apiError,
@@ -109,6 +110,63 @@ export async function PATCH(
       return apiError('Please review the fields below.', 422, errors);
     }
 
+    // Identity guard — editing is the third door into a duplicate.
+    //
+    // Creating and importing both refuse to make a second copy of a product,
+    // but nothing stopped you *editing* one product's brand, strength or pack
+    // size until it matched another. The SKU stays as it is either way (SKUs
+    // are generated once, at creation, and never rewritten), so the collision
+    // would be invisible in the catalogue's own identifiers.
+    const touchesIdentity =
+      parsed.data.brand_name       !== undefined ||
+      parsed.data.product_strength !== undefined ||
+      parsed.data.pack_size        !== undefined ||
+      parsed.data.manufacturer_id  !== undefined;
+
+    /** Set when the edit moves an identity field — used to rewrite the key. */
+    let nextIdentity: {
+      manufacturer: string | null;
+      brand_name: string;
+      product_strength: string | null;
+      pack_size: string | null;
+    } | null = null;
+
+    if (touchesIdentity) {
+      const manufacturerId = parsed.data.manufacturer_id !== undefined
+        ? parsed.data.manufacturer_id
+        : existing.manufacturer_id;
+
+      let manufacturerName: string | null = null;
+      if (manufacturerId) {
+        const mfr = await db.manufacturer.findUnique({
+          where:  { id: manufacturerId },
+          select: { name: true },
+        });
+        manufacturerName = mfr?.name ?? null;
+      }
+
+      const next = {
+        manufacturer:     manufacturerName,
+        brand_name:       parsed.data.brand_name       ?? existing.brand_name,
+        product_strength: parsed.data.product_strength !== undefined
+          ? parsed.data.product_strength : existing.product_strength,
+        pack_size:        parsed.data.pack_size        !== undefined
+          ? parsed.data.pack_size : existing.pack_size,
+      };
+
+      nextIdentity = next;
+
+      const clash = (await findExistingByIdentity([next])).get(identityKey(next));
+      // A product always matches itself — only a *different* row is a conflict.
+      if (clash && clash.id !== existing.id) {
+        return apiError(
+          `Those details belong to another product already in the catalogue (${clash.sku}).`,
+          409,
+          { brand_name: ['A product with this manufacturer, brand, strength and pack size already exists.'] },
+        );
+      }
+    }
+
     // Price guard — a product cannot go ACTIVE without a real selling price.
     // Quick-added products sit at 0 until priced; publishing one would put it
     // in the catalogue orderable at zero. Mirrors the bulk-publish guard.
@@ -125,7 +183,14 @@ export async function PATCH(
 
     const updated = await db.product.update({
       where: { id: existing.id },
-      data:  { ...parsed.data, updated_by_id: session.userId },
+      data: {
+        ...parsed.data,
+        // Recomputed whenever an identity field moves, so the stored key never
+        // drifts from the columns it describes — a stale key would let the
+        // next import create a duplicate of this very product.
+        ...(nextIdentity ? { identity_key: identityKey(nextIdentity) } : {}),
+        updated_by_id: session.userId,
+      },
     });
 
     void writeAuditLog({
@@ -208,6 +273,12 @@ export async function DELETE(
       where: { id: product.id },
       data:  {
         sku:           `${product.sku}__DEL_${product.id}`,
+        // Cleared for the same reason the SKU is mangled. MySQL's unique index
+        // covers deleted rows too, so a soft-deleted product would otherwise
+        // keep occupying its identity and block the drug being re-added.
+        // Multiple NULLs are permitted in a MySQL unique index; multiple equal
+        // values are not.
+        identity_key:  null,
         deleted_at:    new Date(),
         deleted_by_id: session.userId,
         status:        'DISCONTINUED',

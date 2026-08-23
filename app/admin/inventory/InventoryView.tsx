@@ -12,6 +12,7 @@ import { Field, Input } from '@/components/ui/Field';
 import { PageHead }  from '@/components/shared/PageHead';
 import { useToast }  from '@/contexts/ToastContext';
 import { formatNaira, cn } from '@/lib/utils';
+import { useDebounced } from '@/hooks/useDebounced';
 
 interface InventoryBatch {
   id:             number;
@@ -43,6 +44,9 @@ interface ProductOption {
   id:         number;
   sku:        string;
   brand_name: string;
+  /** Shown in the picker so same-brand variants are distinguishable. */
+  strength:   string | null;
+  pack_size:  string | null;
 }
 
 type Tab = 'all' | 'low_stock' | 'expiring';
@@ -64,15 +68,40 @@ async function fetchStats(): Promise<InventoryStats> {
   return json.data;
 }
 
-async function fetchProducts(): Promise<ProductOption[]> {
-  const res  = await fetch('/api/products?limit=500', { credentials: 'include' });
+/**
+ * Search the whole catalogue for the Receive-stock picker.
+ *
+ * This used to fetch a flat `?limit=500` once and filter it in the browser,
+ * which quietly broke the moment the catalogue grew past 500 products: a
+ * freshly bulk-uploaded product simply wasn't in the list, so there was no way
+ * to receive stock against it. Searching server-side keeps products and
+ * inventory in step no matter how large the catalogue gets.
+ *
+ * An empty query returns the first page so the picker still shows something
+ * useful before anyone types.
+ */
+async function fetchProducts(search: string): Promise<ProductOption[]> {
+  const qs = new URLSearchParams({ limit: '20' });
+  if (search.trim()) qs.set('search', search.trim());
+
+  const res  = await fetch(`/api/products?${qs}`, { credentials: 'include' });
   const json = await res.json();
   if (!res.ok) return [];
-  return (json.data?.records ?? []).map((p: any) => ({
+  return (json.data?.records ?? []).map((p: ProductRecordLite) => ({
     id:         p.id,
     sku:        p.sku,
     brand_name: p.brand_name,
+    strength:   p.product_strength ?? null,
+    pack_size:  p.pack_size ?? null,
   }));
+}
+
+interface ProductRecordLite {
+  id: number;
+  sku: string;
+  brand_name: string;
+  product_strength?: string | null;
+  pack_size?: string | null;
 }
 
 function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
@@ -124,23 +153,20 @@ function ReceiveModal({ onClose }: { onClose: () => void }) {
   const toast       = useToast();
   const queryClient = useQueryClient();
 
-  const { data: products = [] } = useQuery({
-    queryKey: ['products-simple'],
-    queryFn:  fetchProducts,
-    staleTime: 30_000,
-  });
-
   const [search,     setSearch]     = useState('');
   const [selected,   setSelected]   = useState<ProductOption | null>(null);
   const [showList,   setShowList]   = useState(false);
   const [errors,     setErrors]     = useState<Record<string, string>>({});
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return products.filter(p =>
-      p.brand_name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q),
-    ).slice(0, 20);
-  }, [products, search]);
+  // Debounced so typing doesn't fire a request per keystroke.
+  const debouncedSearch = useDebounced(search, 300);
+
+  const { data: filtered = [], isFetching: searching } = useQuery({
+    queryKey: ['products-picker', debouncedSearch],
+    queryFn:  () => fetchProducts(debouncedSearch),
+    staleTime: 30_000,
+    placeholderData: prev => prev,
+  });
 
   const receiveMut = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -227,16 +253,32 @@ function ReceiveModal({ onClose }: { onClose: () => void }) {
                   <X size={12} />
                 </button>
               )}
-              {showList && !selected && filtered.length > 0 && (
+              {showList && !selected && (
                 <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-line bg-white shadow-xl">
-                  {filtered.map(p => (
-                    <button key={p.id} type="button"
-                      className="flex w-full flex-col px-3 py-2.5 text-left hover:bg-bg-subtle transition-colors"
-                      onMouseDown={() => { setSelected(p); setShowList(false); setSearch(''); }}>
-                      <span className="text-sm font-medium text-ink">{p.brand_name}</span>
-                      <span className="font-mono text-xs text-ink-3">{p.sku}</span>
-                    </button>
-                  ))}
+                  {filtered.length > 0 ? (
+                    filtered.map(p => (
+                      <button key={p.id} type="button"
+                        className="flex w-full flex-col px-3 py-2.5 text-left hover:bg-bg-subtle transition-colors"
+                        onMouseDown={() => { setSelected(p); setShowList(false); setSearch(''); }}>
+                        <span className="text-sm font-medium text-ink">
+                          {p.brand_name}
+                          {/* Strength and pack are what separate two products
+                              that share a brand — without them the picker
+                              shows the same-looking row twice. */}
+                          {(p.strength || p.pack_size) && (
+                            <span className="text-ink-3">
+                              {' '}{[p.strength, p.pack_size].filter(Boolean).join(' · ')}
+                            </span>
+                          )}
+                        </span>
+                        <span className="font-mono text-xs text-ink-3">{p.sku}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-3 py-2.5 text-xs text-ink-3">
+                      {searching ? 'Searching…' : `No product matches “${search}”.`}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

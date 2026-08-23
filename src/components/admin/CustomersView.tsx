@@ -478,15 +478,13 @@ function isCldPdf(url: string): boolean {
   return url.includes('/raw/upload/') || /\.pdf(\?|$)/i.test(url);
 }
 
-/**
- * Build a Cloudinary page-1 JPEG thumbnail from a raw PDF URL.
- * raw/upload/ → image/upload/pg_1,w_600,f_jpg,q_auto/
+/*
+ * A client-side PDF thumbnail used to be built here by rewriting the delivery
+ * URL. That's now done server-side and returned as `preview_url`, because these
+ * URLs are **signed** — the signature covers the transformation string, so
+ * inserting `pg_1,f_jpg` client-side invalidates it and Cloudinary 401s.
+ * Only the server has the API secret needed to re-sign.
  */
-function cldPdfThumbnail(url: string): string {
-  return url
-    .replace('/raw/upload/', '/image/upload/pg_1,w_600,f_jpg,q_auto/')
-    .replace(/\.pdf(\?.*)?$/i, '.jpg');
-}
 
 interface ReviewModalProps {
   customer: CustomerAdminRecord | null;
@@ -503,16 +501,22 @@ function ReviewModal({ customer, initialDecision = 'APPROVE', onClose, onSuccess
   const [notes,       setNotes]       = useState('');
   const [notesError,  setNotesError]  = useState('');
   const [imgError,    setImgError]    = useState(false);
-  // Signed URL for the PCN file — fetched once when the modal opens.
-  // Falls back to the raw URL if signing fails (e.g. dev without Cloudinary creds).
+  // Deliverable URL for the PCN file, fetched once when the modal opens.
+  // Going through the endpoint rather than using the stored URL directly is
+  // what writes the "who viewed this licence" audit entry.
   const [signedUrl,   setSignedUrl]   = useState<string | null>(null);
+  /** Server-signed page-1 JPEG. Renders even when PDF delivery is blocked. */
+  const [previewUrl,  setPreviewUrl]  = useState<string | null>(null);
 
   useEffect(() => {
     if (!customer?.id || !customer.pcn_certificate_url) return;
     fetch(`/api/customers/${customer.id}/pcn-url`, { credentials: 'include' })
       .then((r) => r.json())
-      .then((d: { signedUrl?: string }) => { if (d.signedUrl) setSignedUrl(d.signedUrl); })
-      .catch((e) => console.warn('[ReviewModal] Could not fetch signed PCN URL:', e));
+      .then((j: { data?: { url?: string; preview_url?: string } }) => {
+        if (j.data?.url)         setSignedUrl(j.data.url);
+        if (j.data?.preview_url) setPreviewUrl(j.data.preview_url);
+      })
+      .catch((e) => console.warn('[ReviewModal] Could not fetch PCN URL:', e));
   }, [customer?.id, customer?.pcn_certificate_url]);
 
   if (!customer) return null;
@@ -522,7 +526,9 @@ function ReviewModal({ customer, initialDecision = 'APPROVE', onClose, onSuccess
   const isPdf       = pcnUrl ? isCldPdf(pcnUrl) : false;
   // Use the signed URL for viewing; the signed URL will also work for thumbnails
   const viewUrl     = signedUrl ?? pcnUrl;
-  const thumbUrl    = viewUrl && isPdf ? cldPdfThumbnail(viewUrl) : viewUrl;
+  // Always prefer the server's signed preview — it renders whatever the source
+  // format is, including PDFs that Cloudinary won't deliver directly.
+  const thumbUrl    = previewUrl ?? viewUrl;
 
   const handleSubmit = () => {
     if (!notes.trim()) {

@@ -11,7 +11,10 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:check-dupes": "npx tsx scripts/check-product-duplicates.ts",
+    "db:backfill-identity": "npx tsx scripts/backfill-identity-keys.ts",
+    "db:retire-product": "npx tsx scripts/retire-duplicate-products.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.0",

@@ -9,6 +9,12 @@ import {
   apiInternalError,
   parsePagination,
 } from '@/lib/api/response';
+import type { OrderStatus } from '@db/enums';
+
+/** Mirrors the Prisma enum. Never invent members — the API filters on these. */
+const VALID_STATUSES: OrderStatus[] = [
+  'PENDING', 'CONFIRMED', 'PROCESSING', 'DISPATCHED', 'DELIVERED', 'CANCELLED',
+];
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,7 +31,32 @@ export async function GET(req: NextRequest) {
     const sp    = req.nextUrl.searchParams;
     const { page, limit, skip } = parsePagination(sp, { limit: 10 });
 
-    const where = { customer_id: customer.id };
+    // ── Status filter ───────────────────────────────────────────────────────
+    // Accepts a concrete OrderStatus, or the shorthand `active` for "not
+    // finished" — the state a customer actually thinks in ("what's still
+    // coming?"). Defining `active` here rather than in the client keeps the
+    // meaning in one place if a status is ever added to the enum.
+    //
+    // An unrecognised value is rejected rather than ignored. Silently dropping
+    // an unknown filter returns the full list, which reads as "the filter did
+    // nothing" and hides the mistake — a bug this codebase has already had.
+    const statusParam = sp.get('status')?.trim().toUpperCase();
+
+    let statusWhere: Record<string, unknown> = {};
+    if (statusParam) {
+      if (statusParam === 'ACTIVE') {
+        statusWhere = { status: { notIn: ['DELIVERED', 'CANCELLED'] } };
+      } else if (VALID_STATUSES.includes(statusParam as OrderStatus)) {
+        statusWhere = { status: statusParam as OrderStatus };
+      } else {
+        return apiError(
+          `Unknown status "${sp.get('status')}". Use one of: ${VALID_STATUSES.join(', ')}, or "active".`,
+          400,
+        );
+      }
+    }
+
+    const where = { customer_id: customer.id, ...statusWhere };
 
     const total = await db.order.count({ where });
 

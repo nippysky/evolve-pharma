@@ -23,6 +23,7 @@ import { getStaffOrderScope }       from '@/lib/data/settings.server';
 import { writeAuditLog }            from '@/lib/audit';
 import { sendOrderReceiptEmail }    from '@/lib/mail';
 import { checkAndAwardSpendReward } from '@/lib/referral';
+import { notifyCustomer }           from '@/lib/notifications';
 import {
   apiSuccess,
   apiError,
@@ -256,6 +257,18 @@ export async function POST(req: NextRequest) {
         console.error('[on-behalf] receipt email failed:', mailErr);
       }
     }
+
+    // The customer never touched this order, so the notification is the only
+    // in-app signal that it exists. Naming the rep matters: an order appearing
+    // unannounced on your account is alarming; "placed by <rep>" is not.
+    void notifyCustomer(customer.id, {
+      title: 'An order was placed for you',
+      body:  `${placedByName} placed order ${result.orderNumber} on your behalf ` +
+             `— ₦${result.total.toLocaleString('en-NG')}, ${items.length} line item(s).` +
+             `${paymentUrl ? ' A payment link has been emailed to you.' : ''}`,
+      type:  'order',
+      link:  `/portal/orders/${result.orderId}`,
+    });
 
     void writeAuditLog({
       userId:      session.userId,

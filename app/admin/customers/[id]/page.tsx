@@ -156,7 +156,11 @@ function PcnViewer({
     setLoading(true);
     fetch(`/api/customers/${customerId}/pcn-url`, { credentials: 'include' })
       .then(r => r.json())
-      .then((j: { data?: { url?: string } }) => { setSignedUrl(j.data?.url ?? rawUrl ?? null); })
+      // `preview_url` is a server-signed page-1 JPEG — it renders even when
+      // Cloudinary blocks direct PDF delivery, which it does by default.
+      .then((j: { data?: { url?: string; preview_url?: string } }) => {
+        setSignedUrl(j.data?.preview_url ?? j.data?.url ?? rawUrl ?? null);
+      })
       .catch(() => { setSignedUrl(rawUrl ?? null); })
       .finally(() => setLoading(false));
   };

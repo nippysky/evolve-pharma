@@ -4,6 +4,7 @@ import { db }           from '@/lib/db';
 import { getSession }   from '@/lib/auth';
 import { createOrder }  from '@/lib/orders';
 import { verifyPaystackPayment } from '@/lib/paystack';
+import { notifyCustomerAndOwner } from '@/lib/notifications';
 import {
   apiSuccess,
   apiPaginated,
@@ -100,6 +101,28 @@ export async function POST(req: NextRequest) {
     });
 
     if (!result.ok) return apiError(result.message, 400);
+
+    // Placing an order is the single most notification-worthy event in the
+    // product, and it was silent. The customer gets a receipt they can tap
+    // straight through to; whoever owns the account gets the operational
+    // heads-up. Fire-and-forget — a notification must never fail an order that
+    // has already been committed.
+    const total = `₦${result.total.toLocaleString('en-NG')}`;
+    void notifyCustomerAndOwner(
+      customer.id,
+      {
+        title: 'Order placed',
+        body:  `We've received order ${result.orderNumber} for ${total}. We'll confirm it shortly.`,
+        type:  'order',
+        link:  `/portal/orders/${result.orderId}`,
+      },
+      {
+        title: 'New order received',
+        body:  `Order ${result.orderNumber} — ${total}, ${items.length} line item(s).`,
+        type:  'order',
+        link:  `/admin/orders/${result.orderId}`,
+      },
+    );
 
     return apiSuccess(
       { order_number: result.orderNumber, order_id: result.orderId, total: result.total },

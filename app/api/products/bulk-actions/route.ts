@@ -158,6 +158,10 @@ export async function POST(req: NextRequest) {
         where: { id: p.id },
         data:  {
           sku:           `${p.sku}__DEL_${p.id}`,
+          // Frees the identity slot as well as the SKU slot — the unique
+          // index spans deleted rows, so leaving it set would stop the same
+          // drug ever being re-added.
+          identity_key:  null,
           deleted_at:    new Date(),
           deleted_by_id: session.userId,
           status:        'DISCONTINUED',

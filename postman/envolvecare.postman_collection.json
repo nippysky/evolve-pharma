@@ -1,2969 +1,2975 @@
 {
-  "info": {
-    "name": "EnvolveCare Express API",
-    "description": "Generated from app/api. See API.md for conventions, the response envelope, and the gotchas (data.records not data.items; cart mutations do not return a cart; payment must be verified before POST /api/orders).",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{accessToken}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "https://envolve-pharma.vercel.app"
-    },
-    {
-      "key": "accessToken",
-      "value": ""
-    },
-    {
-      "key": "refreshToken",
-      "value": ""
-    }
-  ],
-  "item": [
-    {
-      "name": "Public",
-      "item": [
-        {
-          "name": "GET /api/catalog/categories",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/catalog/categories",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "catalog",
-                "categories"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "GET /api/catalog/products",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/catalog/products?search=&category=&sort=newest&page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "catalog",
-                "products"
-              ],
-              "query": [
-                {
-                  "key": "search",
-                  "value": ""
-                },
-                {
-                  "key": "category",
-                  "value": ""
-                },
-                {
-                  "key": "sort",
-                  "value": "newest"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "GET /api/catalog/products/:sku",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/catalog/products/:sku",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "catalog",
-                "products",
-                ":sku"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                }
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "GET /api/track/:code",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/track/:code",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "track",
-                ":code"
-              ],
-              "variable": [
-                {
-                  "key": "code",
-                  "value": ""
-                }
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Auth",
-      "item": [
-        {
-          "name": "POST /api/auth/customer/create-password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/create-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "create-password"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/forgot-password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/forgot-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "forgot-password"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"buyer@pharmacy.com\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/invited-pcn",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/invited-pcn",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "invited-pcn"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "login"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/register",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "register"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "first_name",
-                  "value": "Ada",
-                  "type": "text"
-                },
-                {
-                  "key": "last_name",
-                  "value": "Okoro",
-                  "type": "text"
-                },
-                {
-                  "key": "email",
-                  "value": "buyer@pharmacy.com",
-                  "type": "text"
-                },
-                {
-                  "key": "phone",
-                  "value": "08055136726",
-                  "type": "text"
-                },
-                {
-                  "key": "company_name",
-                  "value": "Okoro Pharmacy Ltd",
-                  "type": "text"
-                },
-                {
-                  "key": "file",
-                  "description": "PCN certificate. Alias: pcn_certificate",
-                  "type": "file",
-                  "src": []
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/resend-otp",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/resend-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "resend-otp"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"buyer@pharmacy.com\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/reset-password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/reset-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "reset-password"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"otp_code\": \"123456\",\n  \"new_password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/upload-pcn",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/upload-pcn",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "upload-pcn"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/customer/verify-otp",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/customer/verify-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "customer",
-                "verify-otp"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"otp_code\": \"123456\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "logout"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/auth/me",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "me"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/refresh",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/refresh",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "refresh"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{refreshToken}}"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/staff/create-password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/staff/create-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "staff",
-                "create-password"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/staff/forgot-password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/staff/forgot-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "staff",
-                "forgot-password"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"you@envolvepharm.com.ng\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/staff/login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/staff/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "staff",
-                "login"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"you@envolvepharm.com.ng\",\n  \"password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/auth/staff/reset-password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/staff/reset-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "staff",
-                "reset-password"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"you@envolvepharm.com.ng\",\n  \"otp_code\": \"123456\",\n  \"new_password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/auth/staff/verify-email",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/staff/verify-email",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "staff",
-                "verify-email"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Customer",
-      "item": [
-        {
-          "name": "GET /api/cart",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/cart",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cart"
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/cart",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/cart",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cart"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/cart/items",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/cart/items",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cart",
-                "items"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 10\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/cart/items/:itemId",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/cart/items/:itemId",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cart",
-                "items",
-                ":itemId"
-              ],
-              "variable": [
-                {
-                  "key": "itemId",
-                  "value": ""
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quantity\": 12\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/cart/items/:itemId",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/cart/items/:itemId",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cart",
-                "items",
-                ":itemId"
-              ],
-              "variable": [
-                {
-                  "key": "itemId",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/customers/me",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                "me"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/customers/me",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                "me"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Okoro\",\n  \"phone\": \"08055136726\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/orders/my",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders/my?page=1&limit=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders",
-                "my"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/payments/initiate",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/payments/initiate",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "payments",
-                "initiate"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"amount\": 125000,\n  \"metadata\": {\n    \"source\": \"postman\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/payments/verify/:reference",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/payments/verify/:reference",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "payments",
-                "verify",
-                ":reference"
-              ],
-              "variable": [
-                {
-                  "key": "reference",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/payments/webhook",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/payments/webhook",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "payments",
-                "webhook"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Orders",
-      "item": [
-        {
-          "name": "POST /api/orders",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 10\n    }\n  ],\n  \"state\": \"Lagos\",\n  \"city\": \"Lagos\",\n  \"street_address\": \"12 Awolowo Road, Ikoyi\",\n  \"contact_phone\": \"08055136726\",\n  \"delivery_notes\": \"Ask for the pharmacist\",\n  \"po_number\": \"PO-2026-001\",\n  \"payment_method\": \"paystack\",\n  \"paystack_reference\": \"EVP-\\u2026\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/orders",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/orders/:id",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/orders/:id/confirm-payment",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders/:id/confirm-payment",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders",
-                ":id",
-                "confirm-payment"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"received_via\": \"bank_transfer\",\n  \"payment_reference\": \"TRF-\\u2026\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/orders/:id/payment",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders/:id/payment",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders",
-                ":id",
-                "payment"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/orders/:id/status",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders/:id/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders",
-                ":id",
-                "status"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"PROCESSING\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /api/orders/on-behalf",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders/on-behalf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "orders",
-                "on-behalf"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Notifications",
-      "item": [
-        {
-          "name": "GET /api/notifications",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications?page=1&limit=20&unread=false",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "notifications"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "unread",
-                  "value": "false"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/notifications",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "notifications"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ids\": [\n    1,\n    2\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/notifications/unread-count",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications/unread-count",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "notifications",
-                "unread-count"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Products",
-      "item": [
-        {
-          "name": "GET /api/products",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/products/:sku",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/products/:sku",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/products/:sku",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/products/:sku/images",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku/images",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku",
-                "images"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products/:sku/images",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku/images",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku",
-                "images"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/products/:sku/images/:imageId",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku/images/:imageId",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku",
-                "images",
-                ":imageId"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                },
-                {
-                  "key": "imageId",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/products/:sku/images/:imageId",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/:sku/images/:imageId",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                ":sku",
-                "images",
-                ":imageId"
-              ],
-              "variable": [
-                {
-                  "key": "sku",
-                  "value": ""
-                },
-                {
-                  "key": "imageId",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products/bulk-actions",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/bulk-actions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "bulk-actions"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products/bulk-import",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/bulk-import",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "bulk-import"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/products/categories",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/categories",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "categories"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products/categories",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/categories",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "categories"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/products/categories/:id",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/categories/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "categories",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/products/categories/:id",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/categories/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "categories",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/products/manufacturers",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/manufacturers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "manufacturers"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products/manufacturers",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/manufacturers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "manufacturers"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/products/manufacturers/:id",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/manufacturers/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "manufacturers",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/products/manufacturers/:id",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/manufacturers/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "manufacturers",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/products/quick-import",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/quick-import",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "quick-import"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Customers",
-      "item": [
-        {
-          "name": "GET /api/customers",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/customers",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/customers/:id",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/customers/:id/assign-staff",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/:id/assign-staff",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                ":id",
-                "assign-staff"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"staff_user_id\": 4\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /api/customers/:id/pcn-url",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/:id/pcn-url",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                ":id",
-                "pcn-url"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/customers/:id/review",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/:id/review",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                ":id",
-                "review"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/customers/bulk",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/customers/bulk",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "customers",
-                "bulk"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Inventory",
-      "item": [
-        {
-          "name": "GET /api/inventory",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/inventory?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "inventory"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/inventory/adjust",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/inventory/adjust",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "inventory",
-                "adjust"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/inventory/batches/:id",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/inventory/batches/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "inventory",
-                "batches",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/inventory/bulk-receive",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/inventory/bulk-receive",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "inventory",
-                "bulk-receive"
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/inventory/receive",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/inventory/receive",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "inventory",
-                "receive"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/inventory/stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/inventory/stats",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "inventory",
-                "stats"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Deliveries",
-      "item": [
-        {
-          "name": "GET /api/deliveries",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/deliveries?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "deliveries"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/deliveries/:id",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/deliveries/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "deliveries",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Staff",
-      "item": [
-        {
-          "name": "GET /api/staff",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/staff?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "staff"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/staff",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/staff",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "staff"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/staff/:id",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/staff/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "staff",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/staff/:id",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/staff/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "staff",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/staff/:id/resend-invite",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/staff/:id/resend-invite",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "staff",
-                ":id",
-                "resend-invite"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/staff/bulk-upload",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/staff/bulk-upload",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "staff",
-                "bulk-upload"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Admin",
-      "item": [
-        {
-          "name": "GET /api/admin/audit-logs",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/audit-logs",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "audit-logs"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/admin/login-history",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/login-history",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "login-history"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/admin/settings",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/settings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "settings"
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/admin/settings",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/settings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "settings"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/reports/summary",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/reports/summary",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "reports",
-                "summary"
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /api/search",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/search",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "search"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Internal",
-      "item": [
-        {
-          "name": "GET /api/cron/prune-notifications",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/cron/prune-notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "cron",
-                "prune-notifications"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "GET /api/proxy/:path",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/:path",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "proxy",
-                ":path"
-              ],
-              "variable": [
-                {
-                  "key": "path",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "POST /api/proxy/:path",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/:path",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "proxy",
-                ":path"
-              ],
-              "variable": [
-                {
-                  "key": "path",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PUT /api/proxy/:path",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/:path",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "proxy",
-                ":path"
-              ],
-              "variable": [
-                {
-                  "key": "path",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "PATCH /api/proxy/:path",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/:path",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "proxy",
-                ":path"
-              ],
-              "variable": [
-                {
-                  "key": "path",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "DELETE /api/proxy/:path",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "X-App-Client",
-                "value": "mobile"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/:path",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "proxy",
-                ":path"
-              ],
-              "variable": [
-                {
-                  "key": "path",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        }
-      ]
-    }
-  ]
+	"info": {
+		"name": "EnvolveCare Express API",
+		"description": "Generated from app/api. See API.md for conventions, the response envelope, and the gotchas (data.records not data.items; cart mutations do not return a cart; payment must be verified before POST /api/orders).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://envolve-pharma.vercel.app"
+		},
+		{
+			"key": "accessToken",
+			"value": ""
+		},
+		{
+			"key": "refreshToken",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Public",
+			"item": [
+				{
+					"name": "GET /api/catalog/categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/catalog/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"catalog",
+								"categories"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/catalog/products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/catalog/products?search=&category=&sort=newest&page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"catalog",
+								"products"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "sort",
+									"value": "newest"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/catalog/products/:sku",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/catalog/products/:sku",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"catalog",
+								"products",
+								":sku"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/track/:code",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/track/:code",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"track",
+								":code"
+							],
+							"variable": [
+								{
+									"key": "code",
+									"value": ""
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "POST /api/auth/customer/create-password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/create-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"create-password"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/forgot-password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"forgot-password"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@pharmacy.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/invited-pcn",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/invited-pcn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"invited-pcn"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"login"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"register"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "first_name",
+									"value": "Ada",
+									"type": "text"
+								},
+								{
+									"key": "last_name",
+									"value": "Okoro",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "buyer@pharmacy.com",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "08055136726",
+									"type": "text"
+								},
+								{
+									"key": "company_name",
+									"value": "Okoro Pharmacy Ltd",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"description": "PCN certificate. Alias: pcn_certificate",
+									"type": "file",
+									"src": []
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/resend-otp",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/resend-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"resend-otp"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@pharmacy.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/reset-password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"reset-password"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"otp_code\": \"123456\",\n  \"new_password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/upload-pcn",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/upload-pcn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"upload-pcn"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/customer/verify-otp",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/customer/verify-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"customer",
+								"verify-otp"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@pharmacy.com\",\n  \"otp_code\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/auth/me",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"me"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/refresh",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{refreshToken}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/staff/create-password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/staff/create-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"staff",
+								"create-password"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/staff/forgot-password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/staff/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"staff",
+								"forgot-password"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"you@envolvepharm.com.ng\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/staff/login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/staff/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"staff",
+								"login"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"you@envolvepharm.com.ng\",\n  \"password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/staff/reset-password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/staff/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"staff",
+								"reset-password"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"you@envolvepharm.com.ng\",\n  \"otp_code\": \"123456\",\n  \"new_password\": \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/auth/staff/verify-email",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/staff/verify-email",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"staff",
+								"verify-email"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Customer",
+			"item": [
+				{
+					"name": "GET /api/cart",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cart"
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cart"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/cart/items",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cart",
+								"items"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"product_id\": 1,\n  \"quantity\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/cart/items/:itemId",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items/:itemId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cart",
+								"items",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": ""
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 12\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/cart/items/:itemId",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/items/:itemId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cart",
+								"items",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/customers/me",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"me"
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/customers/me",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"me"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Okoro\",\n  \"phone\": \"08055136726\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/orders/my",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/my?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"my"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"disabled": true,
+									"description": "Optional. Any OrderStatus (PENDING, CONFIRMED, PROCESSING, DISPATCHED, DELIVERED, CANCELLED) or \"active\" for not-yet-finished. An unknown value returns 400."
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/payments/initiate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/initiate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"initiate"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 125000,\n  \"metadata\": {\n    \"source\": \"postman\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/payments/verify/:reference",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/verify/:reference",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"verify",
+								":reference"
+							],
+							"variable": [
+								{
+									"key": "reference",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/payments/webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"webhook"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "POST /api/orders",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 10\n    }\n  ],\n  \"state\": \"Lagos\",\n  \"city\": \"Lagos\",\n  \"street_address\": \"12 Awolowo Road, Ikoyi\",\n  \"contact_phone\": \"08055136726\",\n  \"delivery_notes\": \"Ask for the pharmacist\",\n  \"po_number\": \"PO-2026-001\",\n  \"payment_method\": \"paystack\",\n  \"paystack_reference\": \"EVP-\\u2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/orders/:id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/orders/:id/confirm-payment",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/:id/confirm-payment",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								":id",
+								"confirm-payment"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"received_via\": \"bank_transfer\",\n  \"payment_reference\": \"TRF-\\u2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/orders/:id/payment",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/:id/payment",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								":id",
+								"payment"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/orders/:id/status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/:id/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"PROCESSING\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/orders/on-behalf",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/on-behalf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"on-behalf"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "GET /api/notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications?page=1&limit=20&unread=false",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "unread",
+									"value": "false"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/notifications",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ids\": [\n    1,\n    2\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/notifications/unread-count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/unread-count",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"unread-count"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "GET /api/products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/products/:sku",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/products/:sku",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/products/:sku",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/products/:sku/images",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku/images",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku",
+								"images"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products/:sku/images",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku/images",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku",
+								"images"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/products/:sku/images/:imageId",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku/images/:imageId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku",
+								"images",
+								":imageId"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								},
+								{
+									"key": "imageId",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/products/:sku/images/:imageId",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/:sku/images/:imageId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":sku",
+								"images",
+								":imageId"
+							],
+							"variable": [
+								{
+									"key": "sku",
+									"value": ""
+								},
+								{
+									"key": "imageId",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products/bulk-actions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/bulk-actions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"bulk-actions"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products/bulk-import",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/bulk-import",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"bulk-import"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/products/categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"categories"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products/categories",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"categories"
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/products/categories/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/categories/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/products/categories/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/categories/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/products/manufacturers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/manufacturers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"manufacturers"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products/manufacturers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/manufacturers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"manufacturers"
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/products/manufacturers/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/manufacturers/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"manufacturers",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/products/manufacturers/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/manufacturers/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"manufacturers",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/products/quick-import",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/quick-import",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"quick-import"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Customers",
+			"item": [
+				{
+					"name": "GET /api/customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/customers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/customers/:id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/customers/:id/assign-staff",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/:id/assign-staff",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								":id",
+								"assign-staff"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"staff_user_id\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/customers/:id/pcn-url",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/:id/pcn-url",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								":id",
+								"pcn-url"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/customers/:id/review",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/:id/review",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								":id",
+								"review"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/customers/bulk",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customers/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"bulk"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Inventory",
+			"item": [
+				{
+					"name": "GET /api/inventory",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inventory/adjust",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/adjust",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"adjust"
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/inventory/batches/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/batches/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"batches",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inventory/bulk-receive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/bulk-receive",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"bulk-receive"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inventory/receive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/receive",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"receive"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/inventory/stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"stats"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Deliveries",
+			"item": [
+				{
+					"name": "GET /api/deliveries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/deliveries?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"deliveries"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/deliveries/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/deliveries/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"deliveries",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Staff",
+			"item": [
+				{
+					"name": "GET /api/staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff"
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/staff/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/staff/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/staff/:id/resend-invite",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/:id/resend-invite",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								":id",
+								"resend-invite"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/staff/bulk-upload",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/staff/bulk-upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"bulk-upload"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "GET /api/admin/audit-logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/audit-logs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"audit-logs"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/admin/login-history",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/login-history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"login-history"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/admin/settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"settings"
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/admin/settings",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"settings"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/reports/summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"summary"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/search",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"search"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Internal",
+			"item": [
+				{
+					"name": "GET /api/cron/prune-notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cron/prune-notifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cron",
+								"prune-notifications"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/proxy/:path",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/proxy/:path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"proxy",
+								":path"
+							],
+							"variable": [
+								{
+									"key": "path",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/proxy/:path",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/proxy/:path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"proxy",
+								":path"
+							],
+							"variable": [
+								{
+									"key": "path",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PUT /api/proxy/:path",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/proxy/:path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"proxy",
+								":path"
+							],
+							"variable": [
+								{
+									"key": "path",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "PATCH /api/proxy/:path",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/proxy/:path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"proxy",
+								":path"
+							],
+							"variable": [
+								{
+									"key": "path",
+									"value": ""
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/proxy/:path",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-App-Client",
+								"value": "mobile"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/proxy/:path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"proxy",
+								":path"
+							],
+							"variable": [
+								{
+									"key": "path",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
 }

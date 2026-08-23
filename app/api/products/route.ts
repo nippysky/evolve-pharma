@@ -3,6 +3,9 @@ import { z }           from 'zod';
 import { db }          from '@/lib/db';
 import { getSession }  from '@/lib/auth';
 import {
+  deriveSku, identityKey, findExistingByIdentity, ensureUniqueSku,
+} from '@/lib/products/identity';
+import {
   apiSuccess,
   apiPaginated,
   apiError,
@@ -34,29 +37,6 @@ const createSchema = z.object({
   shelf_location:     z.string().max(50).optional(),
   status:             z.enum(['ACTIVE', 'DRAFT', 'DISCONTINUED']).default('DRAFT'),
 });
-
-function slugify(s: string): string {
-  return s.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 20);
-}
-
-async function generateUniqueSku(brand: string, manufacturerName: string | null): Promise<string> {
-  const base = manufacturerName
-    ? `${slugify(manufacturerName)}-${slugify(brand)}`
-    : slugify(brand);
-
-  // Try base first, then add 4-char random suffix on collision
-  const candidate = base.slice(0, 95);
-  const existing  = await db.product.findFirst({ where: { sku: candidate } });
-  if (!existing) return candidate;
-
-  for (let i = 0; i < 10; i++) {
-    const suffix  = Math.random().toString(36).slice(2, 6).toUpperCase();
-    const variant = `${base.slice(0, 90)}-${suffix}`;
-    const taken   = await db.product.findFirst({ where: { sku: variant } });
-    if (!taken) return variant;
-  }
-  return `${base.slice(0, 88)}-${Date.now().toString(36).toUpperCase()}`;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -175,11 +155,34 @@ export async function POST(req: NextRequest) {
       manufacturerName = mfr?.name ?? null;
     }
 
-    const sku = await generateUniqueSku(data.brand_name, manufacturerName);
+    const identity = {
+      manufacturer:     manufacturerName,
+      brand_name:       data.brand_name,
+      product_strength: data.product_strength,
+      pack_size:        data.pack_size,
+    };
+
+    // Refuse to create a second copy of a product that already exists. This
+    // check used to be absent entirely — the only guard was the SKU's unique
+    // constraint, which a random suffix sidesteps, so creating the same
+    // product twice by hand quietly succeeded.
+    const clash = (await findExistingByIdentity([identity])).get(identityKey(identity));
+    if (clash) {
+      return apiError(
+        `This product is already in the catalogue as ${clash.sku}.`,
+        409,
+        { brand_name: ['A product with this manufacturer, brand, strength and pack size already exists.'] },
+      );
+    }
+
+    const sku = await ensureUniqueSku(deriveSku(identity));
 
     const product = await db.product.create({
       data: {
         sku,
+        // The database's unique index on this is the real duplicate guard; the
+        // check above is for the error message.
+        identity_key:        identityKey(identity),
         brand_name:          data.brand_name,
         generic_name:        data.generic_name,
         category_id:         data.category_id,

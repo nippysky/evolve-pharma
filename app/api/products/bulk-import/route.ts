@@ -10,6 +10,9 @@ import {
 } from '@/lib/api/response';
 import { writeAuditLog }                        from '@/lib/audit';
 import { revalidateProducts, revalidateInventory } from '@/lib/revalidate';
+import {
+  deriveSku, identityKey, findExistingByIdentity,
+} from '@/lib/products/identity';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_ROWS       = 1_000;
@@ -59,14 +62,8 @@ function cellStr(
   return v != null ? String(v).trim() : '';
 }
 
-function deriveSku(manufacturer: string, brandName: string): string {
-  const slug = (s: string) =>
-    s.toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 20);
-  return `${slug(manufacturer)}-${slug(brandName)}`;
-}
+// SKU + duplicate detection come from @/lib/products/identity so this
+// importer, the quick importer and manual creation share one rule.
 
 function parseDate(raw: string): Date | null {
   if (!raw) return null;
@@ -111,7 +108,12 @@ function parseRows(rawRows: unknown[][]): {
       errs.push('selling_price must be a positive number');
 
     if (errs.length) {
-      const sku = manufacturer && brand_name ? deriveSku(manufacturer, brand_name) : `row ${rowNum}`;
+      // Strength and pack aren't parsed yet at this point in the loop, so this
+      // label is the coarse form. It's only used to identify the failed row
+      // back to the user, never to match a product.
+      const sku = manufacturer && brand_name
+        ? deriveSku({ manufacturer, brand_name })
+        : `row ${rowNum}`;
       errors.push({ row: rowNum, sku, errors: errs });
       continue;
     }
@@ -187,20 +189,23 @@ export async function POST(req: NextRequest) {
     if (!allRows.length) return apiError('No valid rows found.', 422);
 
     // Within-file SKU deduplication (keep first occurrence)
-    const seenSkus  = new Map<string, number>(); // sku → rowNum
+    // Keyed on identity, not on manufacturer + brand alone: two rows for the
+    // same brand at different strengths are different products and must both
+    // import. The old key collapsed them and rejected the second.
+    const seenKeys  = new Map<string, number>(); // identity key → rowNum
     const validRows: ParsedRow[] = [];
     const dupErrors: RowError[]  = [];
 
     for (const row of allRows) {
-      const sku = deriveSku(row.manufacturer, row.brand_name);
-      if (seenSkus.has(sku)) {
+      const key = identityKey(row);
+      if (seenKeys.has(key)) {
         dupErrors.push({
           row:    row.rowNum,
-          sku,
-          errors: [`Duplicate in this file — same manufacturer + brand already in row ${seenSkus.get(sku)}`],
+          sku:    deriveSku(row),
+          errors: [`Duplicate in this file — same manufacturer, brand, strength and pack size as row ${seenKeys.get(key)}`],
         });
       } else {
-        seenSkus.set(sku, row.rowNum);
+        seenKeys.set(key, row.rowNum);
         validRows.push(row);
       }
     }
@@ -239,20 +244,19 @@ export async function POST(req: NextRequest) {
 
     // ── Phase 4: Split rows into inserts vs updates (1 query) ────────────────
 
-    const allSkus     = validRows.map(r => deriveSku(r.manufacturer, r.brand_name));
-    const existingProd = await db.product.findMany({
-      select: { id: true, sku: true },
-      where:  { sku: { in: allSkus }, deleted_at: null },
-    });
-    const existingSkuSet = new Map(existingProd.map(p => [p.sku, p.id]));
+    // Matched on identity rather than on the derived SKU. A product created by
+    // hand carries a random uniqueness suffix in its SKU, which no derived SKU
+    // equals — so a SKU-only lookup missed it and inserted a duplicate instead
+    // of updating the row that was already there.
+    const existingByKey = await findExistingByIdentity(validRows);
 
     const toCreate: ParsedRow[] = [];
-    const toUpdate: ParsedRow[] = [];
+    const toUpdate: Array<ParsedRow & { existingId: number }> = [];
 
     for (const row of validRows) {
-      const sku = deriveSku(row.manufacturer, row.brand_name);
-      if (existingSkuSet.has(sku)) toUpdate.push(row);
-      else                         toCreate.push(row);
+      const match = existingByKey.get(identityKey(row));
+      if (match) toUpdate.push({ ...row, existingId: match.id });
+      else       toCreate.push(row);
     }
 
     // ── Phase 5: Bulk-insert new products (1 query) ───────────────────────────
@@ -261,9 +265,10 @@ export async function POST(req: NextRequest) {
     let updated  = 0;
 
     if (toCreate.length > 0) {
-      await db.product.createMany({
+      const result = await db.product.createMany({
         data: toCreate.map(row => ({
-          sku:                 deriveSku(row.manufacturer, row.brand_name),
+          sku:                 deriveSku(row),
+          identity_key:        identityKey(row),
           brand_name:          row.brand_name,
           generic_name:        row.generic_name,
           product_strength:    row.product_strength    ?? null,
@@ -282,7 +287,10 @@ export async function POST(req: NextRequest) {
         })),
         skipDuplicates: true, // guard against any race
       });
-      inserted = toCreate.length;
+      // `result.count`, not `toCreate.length`. With `skipDuplicates` the two
+      // differ whenever the database rejects a row — which is exactly when the
+      // report mattered, and it was claiming those rows had been imported.
+      inserted = result.count;
     }
 
     // ── Phase 6: Update existing products (serial, N_existing queries) ────────
@@ -291,9 +299,7 @@ export async function POST(req: NextRequest) {
     // has distinct field values and MySQL has no upsertMany.
 
     for (const row of toUpdate) {
-      const sku = deriveSku(row.manufacturer, row.brand_name);
-      const id  = existingSkuSet.get(sku);
-      if (!id) continue;
+      const id = row.existingId;
 
       try {
         await db.product.update({
@@ -303,6 +309,10 @@ export async function POST(req: NextRequest) {
             generic_name:        row.generic_name,
             product_strength:    row.product_strength    ?? null,
             pack_size:           row.pack_size           ?? null,
+            // Kept in step with the columns above. The row matched this
+            // product by identity, so the key is unchanged in practice — but
+            // writing it means a row that predates the column gets one.
+            identity_key:        identityKey(row),
             quantity_per_carton: row.quantity_per_carton ?? null,
             minimum_order:       row.minimum_order,
             selling_price:       row.selling_price,
@@ -317,18 +327,17 @@ export async function POST(req: NextRequest) {
         });
         updated++;
       } catch (err) {
-        const sku2 = deriveSku(row.manufacturer, row.brand_name);
-        failedRecords.push({ row: row.rowNum, sku: sku2, errors: [(err as Error).message] });
+        failedRecords.push({ row: row.rowNum, sku: deriveSku(row), errors: [(err as Error).message] });
       }
     }
 
     // ── Phase 7: Resolve product IDs for batch FK (1 query) ──────────────────
 
-    const allProducts = await db.product.findMany({
-      select: { id: true, sku: true },
-      where:  { sku: { in: allSkus }, deleted_at: null },
-    });
-    const productIdMap = new Map(allProducts.map(p => [p.sku, p.id]));
+    // Re-resolved by identity, not by SKU: rows that matched an existing
+    // product keep whatever SKU that product already had, which is not the one
+    // this file would derive. Keying the map on identity is what lets the
+    // opening-stock batches below attach to the right product either way.
+    const productIdMap = await findExistingByIdentity(validRows);
 
     // ── Phase 8: Inventory batches ────────────────────────────────────────────
 
@@ -353,20 +362,32 @@ export async function POST(req: NextRequest) {
 
       if (newBatchRows.length > 0) {
         // Bulk-insert batches (1 query)
+        // Resolve each batch to its product by identity. Rows that can't be
+        // resolved are reported rather than written: the previous `?? 0` wrote
+        // a batch against product_id 0, which is not a product — silently
+        // orphaning received stock.
+        const resolved = newBatchRows.flatMap(row => {
+          const match = productIdMap.get(identityKey(row));
+          if (!match) {
+            failedRecords.push({
+              row:    row.rowNum,
+              sku:    deriveSku(row),
+              errors: ['Stock not received — could not resolve the product it belongs to.'],
+            });
+            return [];
+          }
+          return [{
+            product_id:    match.id,
+            batch_number:  row.batch_no as string,
+            quantity:      row.quantity_received as number,
+            cost_price:    row.cost_price ?? row.selling_price * 0.85,
+            expiry_date:   parseDate(row.expiry_date ?? ''),
+            created_by_id: session.userId,
+          }];
+        });
+
         await db.inventoryBatch.createMany({
-          data: newBatchRows.map(row => {
-            const sku       = deriveSku(row.manufacturer, row.brand_name);
-            const productId = productIdMap.get(sku) ?? 0;
-            const batchCost = row.cost_price ?? row.selling_price * 0.85;
-            return {
-              product_id:    productId,
-              batch_number:  row.batch_no as string,
-              quantity:      row.quantity_received as number,
-              cost_price:    batchCost,
-              expiry_date:   parseDate(row.expiry_date ?? ''),
-              created_by_id: session.userId,
-            };
-          }),
+          data: resolved,
           skipDuplicates: true,
         });
 
@@ -399,7 +420,7 @@ export async function POST(req: NextRequest) {
       for (const row of skippedBatchRows) {
         failedRecords.push({
           row:    row.rowNum,
-          sku:    deriveSku(row.manufacturer, row.brand_name),
+          sku:    deriveSku(row),
           errors: [`Batch "${row.batch_no}" already exists — product was upserted but stock receipt skipped`],
         });
       }

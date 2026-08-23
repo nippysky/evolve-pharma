@@ -17,8 +17,11 @@ export interface SettingsDefaults {
   auto_logout:         string; // 'true' | 'false'
   vat_enabled:         string; // 'true' | 'false'
   vat_rate:            string; // e.g. '7.5'
-  referral_threshold:  string; // naira, e.g. '500000'
-  referral_reward:     string; // naira, e.g. '500'
+  referral_signup_bonus:       string; // naira, credited on signup
+  referral_threshold:          string; // naira, e.g. '500000'
+  referral_reward:             string; // naira, e.g. '500'
+  referral_redemption_enabled: string; // 'true' | 'false'
+  referral_min_redemption:     string; // naira
   staff_order_scope:   string; // 'ALL' | 'ASSIGNED'
 }
 
@@ -80,8 +83,11 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
   const [vatRate,    setVatRate]    = useState(defaults.vat_rate || '7.5');
 
   // ── Referral state ────────────────────────────────────────────────────────
+  const [referralSignup,    setReferralSignup]    = useState(defaults.referral_signup_bonus || '100');
   const [referralThreshold, setReferralThreshold] = useState(defaults.referral_threshold || '500000');
   const [referralReward,    setReferralReward]    = useState(defaults.referral_reward    || '500');
+  const [redemptionOn,      setRedemptionOn]      = useState(defaults.referral_redemption_enabled === 'true');
+  const [minRedemption,     setMinRedemption]     = useState(defaults.referral_min_redemption || '0');
   const [staffOrderScope,   setStaffOrderScope]   = useState(defaults.staff_order_scope  || 'ALL');
 
   // ── Submit handlers ───────────────────────────────────────────────────────
@@ -144,10 +150,18 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
     setSaving('referral');
     try {
       await saveSettings({
-        referral_threshold: referralThreshold,
-        referral_reward:    referralReward,
+        referral_signup_bonus:       referralSignup,
+        referral_threshold:          referralThreshold,
+        referral_reward:             referralReward,
+        referral_redemption_enabled: redemptionOn ? 'true' : 'false',
+        referral_min_redemption:     minRedemption,
       });
-      toast.success('Referral settings saved', `Referrers earn ₦${Number(referralReward).toLocaleString()} when referee buys ≥ ₦${Number(referralThreshold).toLocaleString()}`);
+      toast.success(
+        'Referral settings saved',
+        redemptionOn
+          ? 'Customers can now spend their balance at checkout.'
+          : 'Balances keep accruing; spending stays switched off.',
+      );
     } catch (err) {
       toast.error('Save failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -340,11 +354,21 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
         <Section
           icon={<Star size={14} className="text-ink-3" />}
           title="Referral Rewards"
-          description="When a referred customer's total purchases reach the threshold, the referrer earns the reward amount."
+          description="Two awards, both in naira, both into one balance: one on signup, one when the referred pharmacy reaches a spend threshold."
         >
           <form onSubmit={handleReferralSubmit}>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Purchase threshold (₦)" htmlFor="referral_threshold" hint="Referee must spend this much to trigger reward">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Signup bonus (₦)" htmlFor="referral_signup_bonus" hint="Credited the moment someone signs up with the code">
+                <Input
+                  id="referral_signup_bonus"
+                  type="number"
+                  step="50"
+                  min="0"
+                  value={referralSignup}
+                  onChange={e => setReferralSignup(e.target.value)}
+                />
+              </Field>
+              <Field label="Purchase threshold (₦)" htmlFor="referral_threshold" hint="Referee must spend this much to trigger the second award">
                 <Input
                   id="referral_threshold"
                   type="number"
@@ -354,7 +378,7 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
                   onChange={e => setReferralThreshold(e.target.value)}
                 />
               </Field>
-              <Field label="Reward amount (₦)" htmlFor="referral_reward" hint="Credited to the referrer's account">
+              <Field label="Reward amount (₦)" htmlFor="referral_reward" hint="Credited to the referrer once they reach it">
                 <Input
                   id="referral_reward"
                   type="number"
@@ -365,10 +389,56 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
                 />
               </Field>
             </div>
+
+            {/* Redemption — the commercial switch. Earning runs from day one;
+                spending opens when the business decides. */}
+            <div className="mt-4 rounded-lg border border-line bg-bg-muted/40 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-teal-600"
+                  checked={redemptionOn}
+                  onChange={e => setRedemptionOn(e.target.checked)}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-ink">
+                    Let customers spend their balance at checkout
+                  </span>
+                  <span className="block text-xs text-ink-3">
+                    Off by default. Balances accrue either way and never expire —
+                    this only controls whether they can be applied to an order.
+                  </span>
+                </span>
+              </label>
+
+              {redemptionOn && (
+                <div className="mt-4 max-w-xs">
+                  <Field
+                    label="Minimum balance to redeem (₦)"
+                    htmlFor="referral_min_redemption"
+                    hint="Below this, the balance can't be spent"
+                  >
+                    <Input
+                      id="referral_min_redemption"
+                      type="number"
+                      step="100"
+                      min="0"
+                      value={minRedemption}
+                      onChange={e => setMinRedemption(e.target.value)}
+                    />
+                  </Field>
+                </div>
+              )}
+            </div>
+
             <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-              Current rule: when a referee&apos;s cumulative purchases reach{' '}
-              <strong>₦{Number(referralThreshold).toLocaleString()}</strong>, the referrer earns{' '}
-              <strong>₦{Number(referralReward).toLocaleString()}</strong> in referral points (one-time per referee).
+              Current rule: a referrer earns{' '}
+              <strong>₦{Number(referralSignup).toLocaleString()}</strong> the moment someone signs
+              up with their code, then a further{' '}
+              <strong>₦{Number(referralReward).toLocaleString()}</strong> once that
+              pharmacy&apos;s paid orders reach{' '}
+              <strong>₦{Number(referralThreshold).toLocaleString()}</strong> (one-time per referee).
+              Both credit the same naira balance.
             </p>
             <div className="flex justify-end pt-3">
               <Button type="submit" loading={saving === 'referral'} leadingIcon={<CheckCircle size={14} />}>

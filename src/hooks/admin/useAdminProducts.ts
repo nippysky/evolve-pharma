@@ -13,8 +13,8 @@ import {
   bulkReceiveStock,
   type GetAdminProductsParams,
   type ReceiveStockInput,
+  type AdminProductPage,
 } from '@/lib/api/services/product.service';
-import type { ProductDTO } from '@/lib/api/types';
 
 export const PRODUCT_KEYS = {
   all:            ['products']                                   as const,
@@ -31,7 +31,9 @@ export function useAdminProducts(params: GetAdminProductsParams = {}) {
     queryKey:        PRODUCT_KEYS.list(params),
     queryFn:         () => getAdminProducts(params),
     staleTime:       20 * 1000,
-    placeholderData: (prev: ProductDTO[] | undefined) => prev,
+    // Keeps the previous page on screen while the next one loads, so paging or
+    // typing a search doesn't flash an empty table.
+    placeholderData: (prev: AdminProductPage | undefined) => prev,
   });
 }
 

@@ -15,11 +15,15 @@ import { Badge }           from '@/components/ui/Primitives';
 import { Button }          from '@/components/ui/Button';
 import { useAdminProducts, useProductCategories, PRODUCT_KEYS } from '@/hooks/admin/useAdminProducts';
 import { useToast }        from '@/contexts/ToastContext';
+import { useDebounced }    from '@/hooks/useDebounced';
 import { cn, formatNaira } from '@/lib/utils';
 import type { AdminProductRecord, ProductImageDTO, CategoryDTO } from '@/lib/api/types';
 
-const ALL        = 'All';
-const PAGE_LIMIT = 50;
+const ALL = 'All';
+
+/** Page sizes offered in the footer. The client asked for 10 and 100 as ends. */
+const PAGE_SIZES = [10, 25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
 
 type BadgeTone    = 'neutral' | 'success' | 'danger';
 type StatusFilter = 'all' | 'active' | 'draft' | 'discontinued';
@@ -482,24 +486,58 @@ function TableSkeleton() {
   );
 }
 
-function PaginationBar({ page, hasMore, total, onPage }: { page: number; hasMore: boolean; total: number; onPage: (p: number) => void }) {
-  if (page === 1 && !hasMore) return null;
+function PaginationBar({
+  page, hasMore, total, totalPages, pageSize, onPage, onPageSize,
+}: {
+  page: number;
+  hasMore: boolean;
+  /** Total matching the current filters, from the API — not the page length. */
+  total: number;
+  totalPages: number;
+  pageSize: number;
+  onPage: (p: number) => void;
+  onPageSize: (n: number) => void;
+}) {
+  // Always rendered when there are results: the page-size control has to stay
+  // reachable even when everything fits on one page.
+  if (total === 0) return null;
+
+  const first = (page - 1) * pageSize + 1;
+  const last  = Math.min(page * pageSize, total);
+
   return (
-    <div className="flex items-center justify-between border-t border-line-subtle bg-bg-subtle px-5 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-subtle bg-bg-subtle px-5 py-3">
       <p className="text-xs text-ink-3">
-        Page <span className="font-semibold text-ink-2">{page}</span>
+        <span className="font-semibold text-ink-2">{first.toLocaleString()}–{last.toLocaleString()}</span>
+        {' of '}
+        <span className="font-semibold text-ink-2">{total.toLocaleString()}</span>
         <span className="mx-1.5 text-ink-4">·</span>
-        <span className="font-semibold text-ink-2">{total.toLocaleString()}</span> shown
+        Page {page} of {totalPages}
       </p>
-      <div className="flex items-center gap-1">
-        <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-ink-3 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 transition-colors">
-          <ChevronLeft size={13} />
-        </button>
-        <button type="button" disabled={!hasMore} onClick={() => onPage(page + 1)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-ink-3 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 transition-colors">
-          <ChevronRight size={13} />
-        </button>
+
+      <div className="flex items-center gap-3">
+        <label className="flex items-center gap-1.5 text-xs text-ink-3">
+          Show
+          <select
+            value={pageSize}
+            onChange={e => onPageSize(Number(e.target.value))}
+            aria-label="Products per page"
+            className="h-7 rounded-md border border-line bg-white px-1.5 text-xs text-ink focus:border-brand-500 focus:outline-none"
+          >
+            {PAGE_SIZES.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+
+        <div className="flex items-center gap-1">
+          <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-ink-3 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 transition-colors">
+            <ChevronLeft size={13} />
+          </button>
+          <button type="button" disabled={!hasMore} onClick={() => onPage(page + 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-ink-3 hover:border-brand-300 hover:text-brand-600 disabled:opacity-30 transition-colors">
+            <ChevronRight size={13} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -511,6 +549,11 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
   const [category, setCategory] = useState<string>(ALL);
   const [status,   setStatus]   = useState<StatusFilter>('all');
   const [page,     setPage]     = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+
+  // Typing shouldn't fire a request per keystroke. 300ms is long enough to
+  // coalesce a burst of typing and short enough that the list feels live.
+  const search = useDebounced(query.trim(), 300);
 
   // ── Single-delete modal ──────────────────────────────────────────────────
   const [deleting, setDeleting] = useState<DeleteTarget | null>(null);
@@ -526,26 +569,49 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
   const toast          = useToast();
 
   // ── Data ─────────────────────────────────────────────────────────────────
-  const { data: products, isLoading, isFetching, error, refetch } = useAdminProducts({ page, limit: PAGE_LIMIT });
-  const { data: categoryData, isLoading: catsLoading }             = useProductCategories();
+  const { data: categoryData, isLoading: catsLoading } = useProductCategories();
 
-  const allProducts:   AdminProductRecord[] = products ?? [];
-  const allCategories: CategoryDTO[]        = (categoryData ?? []) as CategoryDTO[];
+  // Memoised because `?? []` mints a new array every render, which would make
+  // every downstream useMemo that depends on it recompute each time.
+  const allCategories = useMemo<CategoryDTO[]>(
+    () => (categoryData ?? []) as CategoryDTO[],
+    [categoryData],
+  );
 
-  // ── Client-side filtering ────────────────────────────────────────────────
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return allProducts.filter(p => {
-      const matchQ   = !q || p.brand_name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)
-        || p.manufacturer?.name?.toLowerCase().includes(q) || p.generic_name?.toLowerCase().includes(q);
-      const matchCat = category === ALL || p.category?.name === category;
-      const matchSt  = status === 'all' || p.status?.toUpperCase() === status.toUpperCase();
-      return matchQ && matchCat && matchSt;
-    });
-  }, [allProducts, query, category, status]);
+  // The API filters by category id; the pills carry names.
+  const categoryId = useMemo(
+    () => (category === ALL ? undefined : allCategories.find(c => c.name === category)?.id),
+    [category, allCategories],
+  );
 
-  const hasMore   = allProducts.length === PAGE_LIMIT;
+  // Every filter goes to the server.
+  //
+  // These used to be applied with `.filter()` over the current page, which
+  // meant searching only ever looked at the ~50 products already on screen —
+  // the client's "search not filtering, but filter across all products".
+  const { data, isLoading, isFetching, error, refetch } = useAdminProducts({
+    page,
+    limit:    pageSize,
+    search:   search || undefined,
+    category: categoryId ? String(categoryId) : undefined,
+    status:   status === 'all' ? undefined : (status.toUpperCase() as 'ACTIVE' | 'DRAFT' | 'DISCONTINUED'),
+  });
+
+  const visible = useMemo<AdminProductRecord[]>(
+    () => (data?.records ?? []) as AdminProductRecord[],
+    [data],
+  );
+  const total      = data?.pagination.total       ?? 0;
+  const totalPages = data?.pagination.total_pages ?? 1;
+  const hasMore    = page < totalPages;
+
+  const hasActiveFilters = !!search || category !== ALL || status !== 'all';
+
   const setFilter = <T,>(setter: (v: T) => void) => (v: T) => { setter(v); setPage(1); };
+
+  // A filter change can leave you past the end of the new result set — e.g. on
+  // page 4 of "all", then filtering to a status with one page of matches.
+  if (page > totalPages && totalPages > 0) setPage(1);
 
   // ── Derived selection values ─────────────────────────────────────────────
   const visibleSkus       = useMemo(() => visible.map(p => p.sku), [visible]);
@@ -731,9 +797,12 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-12 text-center">
           <span className="text-xl font-semibold text-ink">No products found</span>
           <span className="text-sm text-ink-2">
-            {allProducts.length === 0
-              ? 'Import products using the button above, or add one individually.'
-              : 'Try adjusting your search or filter.'}
+            {/* Filtering is server-side now, so an empty page no longer tells
+                us whether the catalogue is empty — only whether anything
+                matched. The active filters are what distinguishes the two. */}
+            {hasActiveFilters
+              ? 'Try adjusting your search or filter.'
+              : 'Import products using the button above, or add one individually.'}
           </span>
         </div>
       )}
@@ -839,7 +908,15 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
               </tbody>
             </table>
           </div>
-          <PaginationBar page={page} hasMore={hasMore} total={visible.length} onPage={setPage} />
+          <PaginationBar
+            page={page}
+            hasMore={hasMore}
+            total={total}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPage={setPage}
+            onPageSize={n => { setPageSize(n); setPage(1); }}
+          />
         </div>
       )}
 

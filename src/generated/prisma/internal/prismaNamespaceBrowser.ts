@@ -206,6 +206,7 @@ export const ProductScalarFieldEnum = {
   id: 'id',
   uuid: 'uuid',
   sku: 'sku',
+  identity_key: 'identity_key',
   category_id: 'category_id',
   manufacturer_id: 'manufacturer_id',
   brand_name: 'brand_name',
@@ -548,6 +549,7 @@ export type ManufacturerOrderByRelevanceFieldEnum = (typeof ManufacturerOrderByR
 export const ProductOrderByRelevanceFieldEnum = {
   uuid: 'uuid',
   sku: 'sku',
+  identity_key: 'identity_key',
   brand_name: 'brand_name',
   generic_name: 'generic_name',
   product_strength: 'product_strength',

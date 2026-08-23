@@ -64,6 +64,7 @@ export type ProductMinAggregateOutputType = {
   id: number | null
   uuid: string | null
   sku: string | null
+  identity_key: string | null
   category_id: number | null
   manufacturer_id: number | null
   brand_name: string | null
@@ -93,6 +94,7 @@ export type ProductMaxAggregateOutputType = {
   id: number | null
   uuid: string | null
   sku: string | null
+  identity_key: string | null
   category_id: number | null
   manufacturer_id: number | null
   brand_name: string | null
@@ -122,6 +124,7 @@ export type ProductCountAggregateOutputType = {
   id: number
   uuid: number
   sku: number
+  identity_key: number
   category_id: number
   manufacturer_id: number
   brand_name: number
@@ -187,6 +190,7 @@ export type ProductMinAggregateInputType = {
   id?: true
   uuid?: true
   sku?: true
+  identity_key?: true
   category_id?: true
   manufacturer_id?: true
   brand_name?: true
@@ -216,6 +220,7 @@ export type ProductMaxAggregateInputType = {
   id?: true
   uuid?: true
   sku?: true
+  identity_key?: true
   category_id?: true
   manufacturer_id?: true
   brand_name?: true
@@ -245,6 +250,7 @@ export type ProductCountAggregateInputType = {
   id?: true
   uuid?: true
   sku?: true
+  identity_key?: true
   category_id?: true
   manufacturer_id?: true
   brand_name?: true
@@ -361,6 +367,7 @@ export type ProductGroupByOutputType = {
   id: number
   uuid: string
   sku: string
+  identity_key: string | null
   category_id: number | null
   manufacturer_id: number | null
   brand_name: string
@@ -413,6 +420,7 @@ export type ProductWhereInput = {
   id?: Prisma.IntFilter<"Product"> | number
   uuid?: Prisma.StringFilter<"Product"> | string
   sku?: Prisma.StringFilter<"Product"> | string
+  identity_key?: Prisma.StringNullableFilter<"Product"> | string | null
   category_id?: Prisma.IntNullableFilter<"Product"> | number | null
   manufacturer_id?: Prisma.IntNullableFilter<"Product"> | number | null
   brand_name?: Prisma.StringFilter<"Product"> | string
@@ -452,6 +460,7 @@ export type ProductOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   sku?: Prisma.SortOrder
+  identity_key?: Prisma.SortOrderInput | Prisma.SortOrder
   category_id?: Prisma.SortOrderInput | Prisma.SortOrder
   manufacturer_id?: Prisma.SortOrderInput | Prisma.SortOrder
   brand_name?: Prisma.SortOrder
@@ -492,6 +501,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   id?: number
   uuid?: string
   sku?: string
+  identity_key?: string
   AND?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
   OR?: Prisma.ProductWhereInput[]
   NOT?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
@@ -528,12 +538,13 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   stockMovements?: Prisma.StockMovementListRelationFilter
   orderItems?: Prisma.OrderItemListRelationFilter
   cartItems?: Prisma.CartItemListRelationFilter
-}, "id" | "uuid" | "sku">
+}, "id" | "uuid" | "sku" | "identity_key">
 
 export type ProductOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   sku?: Prisma.SortOrder
+  identity_key?: Prisma.SortOrderInput | Prisma.SortOrder
   category_id?: Prisma.SortOrderInput | Prisma.SortOrder
   manufacturer_id?: Prisma.SortOrderInput | Prisma.SortOrder
   brand_name?: Prisma.SortOrder
@@ -571,6 +582,7 @@ export type ProductScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"Product"> | number
   uuid?: Prisma.StringWithAggregatesFilter<"Product"> | string
   sku?: Prisma.StringWithAggregatesFilter<"Product"> | string
+  identity_key?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   category_id?: Prisma.IntNullableWithAggregatesFilter<"Product"> | number | null
   manufacturer_id?: Prisma.IntNullableWithAggregatesFilter<"Product"> | number | null
   brand_name?: Prisma.StringWithAggregatesFilter<"Product"> | string
@@ -599,6 +611,7 @@ export type ProductScalarWhereWithAggregatesInput = {
 export type ProductCreateInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -633,6 +646,7 @@ export type ProductUncheckedCreateInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -666,6 +680,7 @@ export type ProductUncheckedCreateInput = {
 export type ProductUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -700,6 +715,7 @@ export type ProductUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -734,6 +750,7 @@ export type ProductCreateManyInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -762,6 +779,7 @@ export type ProductCreateManyInput = {
 export type ProductUpdateManyMutationInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -786,6 +804,7 @@ export type ProductUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -831,6 +850,7 @@ export type ProductCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   sku?: Prisma.SortOrder
+  identity_key?: Prisma.SortOrder
   category_id?: Prisma.SortOrder
   manufacturer_id?: Prisma.SortOrder
   brand_name?: Prisma.SortOrder
@@ -877,6 +897,7 @@ export type ProductMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   sku?: Prisma.SortOrder
+  identity_key?: Prisma.SortOrder
   category_id?: Prisma.SortOrder
   manufacturer_id?: Prisma.SortOrder
   brand_name?: Prisma.SortOrder
@@ -906,6 +927,7 @@ export type ProductMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   sku?: Prisma.SortOrder
+  identity_key?: Prisma.SortOrder
   category_id?: Prisma.SortOrder
   manufacturer_id?: Prisma.SortOrder
   brand_name?: Prisma.SortOrder
@@ -1256,6 +1278,7 @@ export type ProductUpdateOneRequiredWithoutCartItemsNestedInput = {
 export type ProductCreateWithoutCreated_byInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1289,6 +1312,7 @@ export type ProductUncheckedCreateWithoutCreated_byInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -1331,6 +1355,7 @@ export type ProductCreateManyCreated_byInputEnvelope = {
 export type ProductCreateWithoutUpdated_byInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1364,6 +1389,7 @@ export type ProductUncheckedCreateWithoutUpdated_byInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -1406,6 +1432,7 @@ export type ProductCreateManyUpdated_byInputEnvelope = {
 export type ProductCreateWithoutDeleted_byInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1439,6 +1466,7 @@ export type ProductUncheckedCreateWithoutDeleted_byInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -1501,6 +1529,7 @@ export type ProductScalarWhereInput = {
   id?: Prisma.IntFilter<"Product"> | number
   uuid?: Prisma.StringFilter<"Product"> | string
   sku?: Prisma.StringFilter<"Product"> | string
+  identity_key?: Prisma.StringNullableFilter<"Product"> | string | null
   category_id?: Prisma.IntNullableFilter<"Product"> | number | null
   manufacturer_id?: Prisma.IntNullableFilter<"Product"> | number | null
   brand_name?: Prisma.StringFilter<"Product"> | string
@@ -1561,6 +1590,7 @@ export type ProductUpdateManyWithWhereWithoutDeleted_byInput = {
 export type ProductCreateWithoutCategoryInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1594,6 +1624,7 @@ export type ProductUncheckedCreateWithoutCategoryInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   manufacturer_id?: number | null
   brand_name: string
   generic_name: string
@@ -1652,6 +1683,7 @@ export type ProductUpdateManyWithWhereWithoutCategoryInput = {
 export type ProductCreateWithoutManufacturerInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1685,6 +1717,7 @@ export type ProductUncheckedCreateWithoutManufacturerInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   brand_name: string
   generic_name: string
@@ -1743,6 +1776,7 @@ export type ProductUpdateManyWithWhereWithoutManufacturerInput = {
 export type ProductCreateWithoutImagesInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1776,6 +1810,7 @@ export type ProductUncheckedCreateWithoutImagesInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -1824,6 +1859,7 @@ export type ProductUpdateToOneWithWhereWithoutImagesInput = {
 export type ProductUpdateWithoutImagesInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1857,6 +1893,7 @@ export type ProductUncheckedUpdateWithoutImagesInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1889,6 +1926,7 @@ export type ProductUncheckedUpdateWithoutImagesInput = {
 export type ProductCreateWithoutInventoryBatchesInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -1922,6 +1960,7 @@ export type ProductUncheckedCreateWithoutInventoryBatchesInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -1970,6 +2009,7 @@ export type ProductUpdateToOneWithWhereWithoutInventoryBatchesInput = {
 export type ProductUpdateWithoutInventoryBatchesInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2003,6 +2043,7 @@ export type ProductUncheckedUpdateWithoutInventoryBatchesInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2035,6 +2076,7 @@ export type ProductUncheckedUpdateWithoutInventoryBatchesInput = {
 export type ProductCreateWithoutStockMovementsInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -2068,6 +2110,7 @@ export type ProductUncheckedCreateWithoutStockMovementsInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -2116,6 +2159,7 @@ export type ProductUpdateToOneWithWhereWithoutStockMovementsInput = {
 export type ProductUpdateWithoutStockMovementsInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2149,6 +2193,7 @@ export type ProductUncheckedUpdateWithoutStockMovementsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2181,6 +2226,7 @@ export type ProductUncheckedUpdateWithoutStockMovementsInput = {
 export type ProductCreateWithoutOrderItemsInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -2214,6 +2260,7 @@ export type ProductUncheckedCreateWithoutOrderItemsInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -2262,6 +2309,7 @@ export type ProductUpdateToOneWithWhereWithoutOrderItemsInput = {
 export type ProductUpdateWithoutOrderItemsInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2295,6 +2343,7 @@ export type ProductUncheckedUpdateWithoutOrderItemsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2327,6 +2376,7 @@ export type ProductUncheckedUpdateWithoutOrderItemsInput = {
 export type ProductCreateWithoutCartItemsInput = {
   uuid?: string
   sku: string
+  identity_key?: string | null
   brand_name: string
   generic_name: string
   product_strength?: string | null
@@ -2360,6 +2410,7 @@ export type ProductUncheckedCreateWithoutCartItemsInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -2408,6 +2459,7 @@ export type ProductUpdateToOneWithWhereWithoutCartItemsInput = {
 export type ProductUpdateWithoutCartItemsInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2441,6 +2493,7 @@ export type ProductUncheckedUpdateWithoutCartItemsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2474,6 +2527,7 @@ export type ProductCreateManyCreated_byInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -2502,6 +2556,7 @@ export type ProductCreateManyUpdated_byInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -2530,6 +2585,7 @@ export type ProductCreateManyDeleted_byInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   manufacturer_id?: number | null
   brand_name: string
@@ -2557,6 +2613,7 @@ export type ProductCreateManyDeleted_byInput = {
 export type ProductUpdateWithoutCreated_byInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2590,6 +2647,7 @@ export type ProductUncheckedUpdateWithoutCreated_byInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2623,6 +2681,7 @@ export type ProductUncheckedUpdateManyWithoutCreated_byInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2650,6 +2709,7 @@ export type ProductUncheckedUpdateManyWithoutCreated_byInput = {
 export type ProductUpdateWithoutUpdated_byInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2683,6 +2743,7 @@ export type ProductUncheckedUpdateWithoutUpdated_byInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2716,6 +2777,7 @@ export type ProductUncheckedUpdateManyWithoutUpdated_byInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2743,6 +2805,7 @@ export type ProductUncheckedUpdateManyWithoutUpdated_byInput = {
 export type ProductUpdateWithoutDeleted_byInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2776,6 +2839,7 @@ export type ProductUncheckedUpdateWithoutDeleted_byInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2809,6 +2873,7 @@ export type ProductUncheckedUpdateManyWithoutDeleted_byInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2837,6 +2902,7 @@ export type ProductCreateManyCategoryInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   manufacturer_id?: number | null
   brand_name: string
   generic_name: string
@@ -2864,6 +2930,7 @@ export type ProductCreateManyCategoryInput = {
 export type ProductUpdateWithoutCategoryInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2897,6 +2964,7 @@ export type ProductUncheckedUpdateWithoutCategoryInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2930,6 +2998,7 @@ export type ProductUncheckedUpdateManyWithoutCategoryInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   manufacturer_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2958,6 +3027,7 @@ export type ProductCreateManyManufacturerInput = {
   id?: number
   uuid?: string
   sku: string
+  identity_key?: string | null
   category_id?: number | null
   brand_name: string
   generic_name: string
@@ -2985,6 +3055,7 @@ export type ProductCreateManyManufacturerInput = {
 export type ProductUpdateWithoutManufacturerInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
   product_strength?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3018,6 +3089,7 @@ export type ProductUncheckedUpdateWithoutManufacturerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3051,6 +3123,7 @@ export type ProductUncheckedUpdateManyWithoutManufacturerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   sku?: Prisma.StringFieldUpdateOperationsInput | string
+  identity_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   brand_name?: Prisma.StringFieldUpdateOperationsInput | string
   generic_name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3146,6 +3219,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   id?: boolean
   uuid?: boolean
   sku?: boolean
+  identity_key?: boolean
   category_id?: boolean
   manufacturer_id?: boolean
   brand_name?: boolean
@@ -3188,6 +3262,7 @@ export type ProductSelectScalar = {
   id?: boolean
   uuid?: boolean
   sku?: boolean
+  identity_key?: boolean
   category_id?: boolean
   manufacturer_id?: boolean
   brand_name?: boolean
@@ -3213,7 +3288,7 @@ export type ProductSelectScalar = {
   updated_at?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "sku" | "category_id" | "manufacturer_id" | "brand_name" | "generic_name" | "product_strength" | "pack_size" | "quantity_per_carton" | "allow_unit_sale" | "minimum_order" | "selling_price" | "last_cost_price" | "final_price" | "discount_percentage" | "minimum_stock_level" | "reorder_quantity" | "shelf_location" | "status" | "deleted_at" | "deleted_by_id" | "created_by_id" | "updated_by_id" | "created_at" | "updated_at", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "sku" | "identity_key" | "category_id" | "manufacturer_id" | "brand_name" | "generic_name" | "product_strength" | "pack_size" | "quantity_per_carton" | "allow_unit_sale" | "minimum_order" | "selling_price" | "last_cost_price" | "final_price" | "discount_percentage" | "minimum_stock_level" | "reorder_quantity" | "shelf_location" | "status" | "deleted_at" | "deleted_by_id" | "created_by_id" | "updated_by_id" | "created_at" | "updated_at", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.Product$categoryArgs<ExtArgs>
   manufacturer?: boolean | Prisma.Product$manufacturerArgs<ExtArgs>
@@ -3246,6 +3321,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     id: number
     uuid: string
     sku: string
+    identity_key: string | null
     category_id: number | null
     manufacturer_id: number | null
     brand_name: string
@@ -3651,6 +3727,7 @@ export interface ProductFieldRefs {
   readonly id: Prisma.FieldRef<"Product", 'Int'>
   readonly uuid: Prisma.FieldRef<"Product", 'String'>
   readonly sku: Prisma.FieldRef<"Product", 'String'>
+  readonly identity_key: Prisma.FieldRef<"Product", 'String'>
   readonly category_id: Prisma.FieldRef<"Product", 'Int'>
   readonly manufacturer_id: Prisma.FieldRef<"Product", 'Int'>
   readonly brand_name: Prisma.FieldRef<"Product", 'String'>

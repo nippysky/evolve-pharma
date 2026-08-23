@@ -103,6 +103,12 @@ export function handlePrismaError(err: unknown): NextResponse<ApiErrorBody> | nu
       if (targets.some((f) => f.includes('email'))) {
         return apiError('An account with this email address already exists.', 409);
       }
+      if (targets.some((f) => f.includes('identity_key'))) {
+        return apiError(
+          'This product is already in the catalogue — same manufacturer, brand, strength and pack size.',
+          409,
+        );
+      }
       if (targets.some((f) => f.includes('sku'))) {
         return apiError('A product with this SKU already exists.', 409);
       }

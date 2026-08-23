@@ -1,4 +1,5 @@
 import { NextRequest }               from 'next/server';
+import type { Prisma }                from '@/generated/prisma/client';
 import { db }                        from '@/lib/db';
 import { sendOtpEmail }              from '@/lib/mail';
 import { uploadToCloudinary }        from '@/lib/cloudinary';
@@ -56,8 +57,26 @@ export async function POST(req: NextRequest) {
     if (!file) errs.file = ['PCN certificate is required. Send it as the `file` field (alias: `pcn_certificate`).'];
     if (Object.keys(errs).length) return apiError('Please review the fields below.', 422, errs);
 
+    // Everything above is proven present by the guard, but TypeScript can't
+    // narrow through the `errs` accumulator — the checks and the early return
+    // are separate statements. Rather than scatter `!` across a dozen call
+    // sites, the assertion is made once here and the narrowed values are what
+    // the rest of the handler uses.
+    //
+    // `middle_name` and `gender` stay nullable because they genuinely are.
+    const required = {
+      first_name:   first_name as string,
+      last_name:    last_name as string,
+      email:        email as string,
+      phone:        phone as string,
+      company_name: company_name as string,
+      address:      address as string,
+      city:         city as string,
+      state:        state as string,
+    };
+
     // Email uniqueness
-    const existing = await db.user.findUnique({ where: { email: email! }, select: { id: true } });
+    const existing = await db.user.findUnique({ where: { email: required.email }, select: { id: true } });
     if (existing) return apiError('An account with this email already exists.', 409);
 
     // Upload PCN to Cloudinary — REQUIRED. Registration is blocked if this fails.
@@ -114,14 +133,14 @@ export async function POST(req: NextRequest) {
     }
     const referrerExists = !!referrer;
 
-    const created = await db.$transaction(async (tx: any) => {
+    const created = await db.$transaction(async (tx: Prisma.TransactionClient) => {
       const u = await tx.user.create({
         data: {
-          first_name,
+          first_name:  required.first_name,
           middle_name,
-          last_name,
-          email,
-          phone,
+          last_name:   required.last_name,
+          email:       required.email,
+          phone:       required.phone,
           gender,
           password_hash: 'UNSET',
           role:          'CUSTOMER',
@@ -131,10 +150,10 @@ export async function POST(req: NextRequest) {
       const c = await tx.customer.create({
         data: {
           user_id:             u.id,
-          company_name,
-          address,
-          city,
-          state,
+          company_name:        required.company_name,
+          address:             required.address,
+          city:                required.city,
+          state:               required.state,
           pcn_certificate_url: pcnUrl,
           referral_code:       newReferralCode,
           // `referred_by` records the code that was typed (the receipt);
@@ -156,7 +175,7 @@ export async function POST(req: NextRequest) {
       void awardSignupBonus({
         referrerCustomerId: referrer.id,
         refereeCustomerId:  created.customerId,
-        refereeName:        company_name || `${first_name} ${last_name}`.trim(),
+        refereeName:        required.company_name || `${required.first_name} ${required.last_name}`.trim(),
       });
     }
 
@@ -169,7 +188,7 @@ export async function POST(req: NextRequest) {
 
     // Send OTP email (non-blocking)
     try {
-      await sendOtpEmail({ to: email!, name: first_name!, otp, type: 'EMAIL_VERIFICATION' });
+      await sendOtpEmail({ to: required.email, name: required.first_name, otp, type: 'EMAIL_VERIFICATION' });
     } catch (e) {
       console.error('[register] OTP email failed:', e);
     }

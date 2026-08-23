@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db }         from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { NextRequest }  from 'next/server';
+import { db }          from '@/lib/db';
+import { getSession }  from '@/lib/auth';
 import {
+  apiSuccess,
+  apiError,
   apiUnauthorized,
   apiForbidden,
   apiInternalError,
@@ -77,22 +79,17 @@ export async function GET(req: NextRequest) {
 
     const q = (req.nextUrl.searchParams.get('q') ?? '').trim().toLowerCase();
     if (q.length < 2) {
-      return NextResponse.json(
-        { status: 'error', message: 'Query must be at least 2 characters' },
-        { status: 400 },
-      );
+      return apiError('Query must be at least 2 characters', 400);
     }
 
     // ── Cache hit ──────────────────────────────────────────────────────────
     const cached = cacheGet(q);
-    if (cached) {
-      return NextResponse.json(
-        { status: 'success', message: 'OK', data: cached },
-        { headers: { 'Cache-Control': 'private, max-age=10', 'X-Cache': 'HIT' } },
-      );
-    }
+    if (cached) return apiSuccess(cached, 200, 'Search results retrieved');
 
-    // ── DB queries (parallel, raw SQL) ────────────────────────────────────
+    // ── DB queries (raw SQL) ──────────────────────────────────────────────
+    //
+    // This is the one place in the API that can't use the typed Prisma client,
+    // and the reason is a driver bug rather than convenience:
     //
     // We use $queryRaw instead of the ORM `contains` filter because
     // @prisma/adapter-mariadb sends string parameters with utf8mb4_bin
@@ -124,9 +121,10 @@ export async function GET(req: NextRequest) {
       first_name: string; last_name: string;
     };
 
-    const [products, customers, orders] = await Promise.all([
-
-      db.$queryRaw<ProductRow[]>`
+    // Sequential, not Promise.all. Serverless runs connectionLimit: 1, so the
+    // pool queues these regardless — parallelism buys nothing and adds acquire
+    // contention. This matches the pattern the rest of the API follows.
+    const products = await db.$queryRaw<ProductRow[]>`
         SELECT
           p.id, p.sku, p.brand_name, p.generic_name, p.status,
           (SELECT url FROM product_images
@@ -141,10 +139,10 @@ export async function GET(req: NextRequest) {
             OR m.name         LIKE CONVERT(${pat} USING utf8mb4) COLLATE utf8mb4_unicode_ci
           )
         ORDER BY p.brand_name ASC
-        LIMIT ${MAX_PER}
-      `,
+      LIMIT ${MAX_PER}
+    `;
 
-      db.$queryRaw<CustomerRow[]>`
+    const customers = await db.$queryRaw<CustomerRow[]>`
         SELECT
           c.id, c.company_name, c.status,
           u.first_name, u.last_name, u.email
@@ -156,10 +154,10 @@ export async function GET(req: NextRequest) {
           OR u.last_name  LIKE CONVERT(${pat} USING utf8mb4) COLLATE utf8mb4_unicode_ci
           OR u.email      LIKE CONVERT(${pat} USING utf8mb4) COLLATE utf8mb4_unicode_ci
         ORDER BY c.created_at DESC
-        LIMIT ${MAX_PER}
-      `,
+      LIMIT ${MAX_PER}
+    `;
 
-      db.$queryRaw<OrderRow[]>`
+    const orders = await db.$queryRaw<OrderRow[]>`
         SELECT
           o.id, o.order_number, o.status, o.total,
           c.company_name, u.first_name, u.last_name
@@ -172,9 +170,8 @@ export async function GET(req: NextRequest) {
           OR u.first_name   LIKE CONVERT(${pat} USING utf8mb4) COLLATE utf8mb4_unicode_ci
           OR u.last_name    LIKE CONVERT(${pat} USING utf8mb4) COLLATE utf8mb4_unicode_ci
         ORDER BY o.created_at DESC
-        LIMIT ${MAX_PER}
-      `,
-    ]);
+      LIMIT ${MAX_PER}
+    `;
 
     // ── Shape & cache ──────────────────────────────────────────────────────
     const data: SearchData = {
@@ -206,10 +203,7 @@ export async function GET(req: NextRequest) {
 
     cacheSet(q, data);
 
-    return NextResponse.json(
-      { status: 'success', message: 'OK', data },
-      { headers: { 'Cache-Control': 'private, max-age=10', 'X-Cache': 'MISS' } },
-    );
+    return apiSuccess(data, 200, 'Search results retrieved');
   } catch (err) {
     console.error('[GET /api/search]', err);
     return apiInternalError();

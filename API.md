@@ -121,11 +121,20 @@ Do not "improve" the client by saying "no account found".
 | `PATCH` | `/api/cart/items/:itemId` | CUSTOMER | `{ quantity }` |
 | `DELETE` | `/api/cart/items/:itemId` | CUSTOMER | |
 | `DELETE` | `/api/cart` | CUSTOMER | Clear |
-| `GET` | `/api/orders/my` | CUSTOMER | Paginated summaries with `preview_items` (max 3) |
+| `GET` | `/api/orders/my` | CUSTOMER | Paginated summaries with `preview_items` (max 3). `?status=` filters — see below |
 | `POST` | `/api/orders` | CUSTOMER | Place an order |
 | `GET` | `/api/orders/:id` | any (ownership-checked) | Full detail |
 | `POST` | `/api/payments/initiate` | CUSTOMER | → `{ reference, authorization_url, access_code }` |
 | `GET` | `/api/payments/verify/:reference` | CUSTOMER | → `{ verified, amount, message }` |
+
+> **`GET /api/orders/my?status=`**
+> Accepts any `OrderStatus` (`PENDING`, `CONFIRMED`, `PROCESSING`,
+> `DISPATCHED`, `DELIVERED`, `CANCELLED`) or the shorthand `active`, meaning
+> "not `DELIVERED` and not `CANCELLED`". Omit it for everything.
+>
+> An unrecognised value returns **400** rather than being ignored — a silently
+> dropped filter returns the whole list, which looks like the filter simply not
+> working.
 
 > **Cart mutations do not return a cart.**
 > `GET /api/cart` returns `{ cart: { items, subtotal, item_count } }`. The
@@ -164,24 +173,48 @@ there is nothing to verify yet, and staff settle those manually.
     "referral": {
       "referral_code": "ENV58A5D112",
       "referral_points": 1600,
+      "redeemable": 1600,
       "referral_count": 3,
+      "referred_by": { "id": 4, "name": "Okoro Pharmacy", "code": "ENV11B2C3D4" },
+      "referrals": [
+        { "id": 9, "name": "Bello Chemists", "status": "APPROVED",
+          "joined_at": "…", "reward_earned": 600 }
+      ],
+      "ledger": [
+        { "id": 31, "delta": 500, "balance_after": 1600, "type": "SPEND_THRESHOLD",
+          "description": "Bello Chemists reached ₦500,000 in paid orders.",
+          "order_id": null, "created_at": "…" }
+      ],
       "programme": {
-        "points_per_signup": 100,
+        "signup_bonus": 100,
         "spend_threshold": 500000,
-        "spend_reward": 500
+        "spend_reward": 500,
+        "redemption_enabled": false,
+        "min_redemption": 0
       }
     }
   }
 }
 ```
 
-> **Referral unit caveat.**
-> `referral_points` is one column accumulating two differently-denominated
-> awards: `points_per_signup` is a dimensionless point value credited at
-> signup, while `spend_reward` is credited **in naira** once a referred
-> pharmacy's paid orders cross `spend_threshold`. Render each award in its own
-> unit and label the balance "reward points" — do not put a ₦ sign in front of
-> the total. Reconciling these into one unit is an open product decision.
+> **`referral_points` is naira, despite the column name.**
+> Both awards credit money into one wallet: `signup_bonus` when a pharmacy
+> registers with the code, and `spend_reward` once that pharmacy's paid orders
+> cross `spend_threshold`. Every movement is mirrored by a `ReferralLedger` row,
+> so the balance is a cache and the ledger is the record.
+
+> **Redemption is off by default.**
+> `redemption_enabled` is the business switch (`referral_redemption_enabled` in
+> admin settings). Earning runs from day one; spending opens when the business
+> decides. While it's false, `redeemable` is `0` and `POST /api/orders` ignores
+> any `referral_credit` sent. Clients should hide the "apply credit" affordance
+> entirely rather than offering something the server will refuse.
+
+> **Applying credit.**
+> `POST /api/orders` accepts `referral_credit` (naira). It's a *request* — the
+> server re-checks the live balance, the toggle and the order subtotal, and
+> applies whatever survives to `Order.discount`. Credit can never exceed the
+> subtotal: it's a discount, not a payout.
 
 `programme` is `null` until the customer has a referral code.
 
@@ -216,7 +249,7 @@ translate it to their own route rather than opening a browser.
 | `GET` | `/api/customers/:id` | ADMIN, STAFF |
 | `PATCH` | `/api/customers/:id/review` | ADMIN, STAFF |
 | `PATCH` | `/api/customers/:id/assign-staff` | ADMIN — body key is **`staff_user_id`** |
-| `GET` | `/api/customers/:id/pcn-url` | ADMIN, STAFF |
+| `GET` | `/api/customers/:id/pcn-url` | ADMIN, STAFF — see note |
 | `GET` | `/api/orders` | ADMIN, STAFF |
 | `PATCH` | `/api/orders/:id/status` | ADMIN, STAFF |
 | `POST` | `/api/orders/on-behalf` | ADMIN, STAFF |
@@ -237,6 +270,18 @@ translate it to their own route rather than opening a browser.
 > settled by the Paystack webhook and must not be set by hand. It exists only
 > for orders staff placed on a customer's behalf, where payment may have been
 > taken in cash or by transfer before the order was entered.
+
+> **`pcn-url` returns the stored URL verbatim — never transform it.**
+> This Cloudinary account delivers **signed** URLs, so the stored value carries
+> an `s--<signature>--` segment computed over the delivery path *including any
+> transformation*. Appending `f_auto`, `pg_1` or anything else invalidates it,
+> and so does re-signing with `expires_at` (token auth isn't enabled on this
+> account). Clients must open the URL as-is in the device's own viewer.
+> The endpoint returns `{ url, is_pdf }` and gates *discovery* — only ADMIN and
+> STAFF can ask which URL belongs to which customer, and each request is
+> audited. The signature is unguessable but doesn't expire, so this is not
+> revocable access control; that would need `type: 'authenticated'` at upload
+> plus a migration.
 
 > **Staff list responses.**
 > `/api/staff` is paginated, so the array is at `data.records`. Reading

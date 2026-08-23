@@ -40,9 +40,30 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return json?.data as T;
 }
 
+export interface Pagination {
+  current_page: number;
+  per_page:     number;
+  total:        number;
+  total_pages:  number;
+}
+
+export interface AdminProductPage {
+  records:    ProductDTO[];
+  pagination: Pagination;
+}
+
+/**
+ * Returns the pagination block as well as the records.
+ *
+ * It used to discard it and hand back a bare array, which left the list screen
+ * with no idea how many products existed. That forced two workarounds, both
+ * wrong: guessing "there is a next page" from `records.length === limit`, and
+ * filtering the loaded page in the browser — so searching only ever looked at
+ * the page you happened to be on.
+ */
 export async function getAdminProducts(
   params: GetAdminProductsParams = {},
-): Promise<ProductDTO[]> {
+): Promise<AdminProductPage> {
   const qs = new URLSearchParams();
   if (params.page)     qs.set('page',     String(params.page));
   if (params.limit)    qs.set('limit',    String(params.limit));
@@ -51,10 +72,19 @@ export async function getAdminProducts(
   if (params.status)   qs.set('status',   params.status);
   if (params.sort)     qs.set('sort',     params.sort);
 
-  const data = await apiFetch<{ records: ProductDTO[]; pagination: unknown }>(
+  const data = await apiFetch<AdminProductPage>(
     `/api/products${qs.toString() ? `?${qs}` : ''}`,
   );
-  return data.records ?? [];
+
+  return {
+    records:    data.records ?? [],
+    pagination: data.pagination ?? {
+      current_page: params.page ?? 1,
+      per_page:     params.limit ?? 20,
+      total:        data.records?.length ?? 0,
+      total_pages:  1,
+    },
+  };
 }
 
 export async function getProductCategories(): Promise<CategoryDTO[]> {

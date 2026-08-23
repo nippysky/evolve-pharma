@@ -298,6 +298,18 @@ model Product {
   id                  Int           @id @default(autoincrement())
   uuid                String        @unique @default(uuid()) @db.VarChar(36)
   sku                 String        @unique @db.VarChar(100)
+  // SHA-256 of the normalised manufacturer + brand + strength + pack size.
+  //
+  // The database's own guarantee that a product cannot exist twice. The
+  // application checks identity before writing, which gives a good error
+  // message, but a check-then-insert has a race: two imports running at once
+  // can both pass the check and both insert. This UNIQUE index is what makes
+  // that impossible rather than unlikely.
+  //
+  // Nullable only so the column can be added to a table that already has rows;
+  // every write path populates it, and `scripts/backfill-identity-keys.ts`
+  // fills in the existing ones. Computed in @/lib/products/identity.
+  identity_key        String?       @unique @db.VarChar(64)
   category_id         Int?
   category            Category?     @relation(fields: [category_id], references: [id], onDelete: SetNull)
   manufacturer_id     Int?
