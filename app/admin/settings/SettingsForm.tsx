@@ -10,6 +10,7 @@ export interface SettingsDefaults {
   company_name:        string;
   company_email:       string;
   company_phone:       string;
+  dispatch_phone:      string;
   hq_address:          string;
   currency:            string;
   timezone:            string;
@@ -70,6 +71,7 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
   const [companyName,  setCompanyName]  = useState(defaults.company_name);
   const [companyEmail, setCompanyEmail] = useState(defaults.company_email);
   const [companyPhone, setCompanyPhone] = useState(defaults.company_phone);
+  const [dispatchPhone, setDispatchPhone] = useState(defaults.dispatch_phone);
   const [hqAddress,    setHqAddress]    = useState(defaults.hq_address);
   const [currency,     setCurrency]     = useState(defaults.currency);
   const [timezone,     setTimezone]     = useState(defaults.timezone);
@@ -100,6 +102,7 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
         company_name:  companyName.trim(),
         company_email: companyEmail.trim(),
         company_phone: companyPhone.trim(),
+        dispatch_phone: dispatchPhone.trim(),
         hq_address:    hqAddress.trim(),
         currency,
         timezone,
@@ -228,6 +231,20 @@ export function SettingsForm({ defaults }: { defaults: SettingsDefaults }) {
                 />
               </Field>
             </div>
+
+            <Field
+              label="Dispatch phone"
+              htmlFor="dispatch_phone"
+              hint="Shown to drivers as 'Call dispatch' in the mobile app. Changing it here takes effect without an app release."
+            >
+              <Input
+                id="dispatch_phone"
+                type="tel"
+                value={dispatchPhone}
+                onChange={e => setDispatchPhone(e.target.value)}
+                placeholder="+234 805 513 6726"
+              />
+            </Field>
 
             <Field label="Headquarters address" htmlFor="hq_address">
               <Input

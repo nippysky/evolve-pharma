@@ -102,9 +102,17 @@ export async function PATCH(
       }
     }
 
-    // Only ADMIN may assign/change driver — Staff can update status but not assign drivers
-    if (driver_id !== undefined && session.role !== 'ADMIN' && session.role !== 'DRIVER') {
-      return apiForbidden();
+    // Assignment is an admin action, full stop.
+    //
+    // Staff were already excluded. DRIVER was not, which meant a driver could
+    // PATCH one of their own deliveries and hand it to someone else — or
+    // unassign themselves off a run — since the ownership check above only
+    // proves the delivery is currently theirs. Neither is dispatch's intent.
+    //
+    // Everyone else keeps what they had: staff and drivers still move status,
+    // drivers still confirm cash collected.
+    if (driver_id !== undefined && session.role !== 'ADMIN') {
+      return apiForbidden('Only an administrator can assign a driver to a delivery.');
     }
 
     // Validate driver exists (if assigning) — sequential

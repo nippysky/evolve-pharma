@@ -8,6 +8,7 @@ import { Button }            from '@/components/ui/Button';
 import { Field, Input }      from '@/components/ui/Field';
 import {Search, AlertTriangle, RotateCw, Tag, Plus, Trash, X} from '@/components/icons';
 import { useToast }          from '@/contexts/ToastContext';
+import { useUser }           from '@/contexts/UserContext';
 
 import type { CategoryDTO }  from '@/lib/api/types';
 
@@ -183,6 +184,11 @@ function DeleteModal({ category, onClose, onDeleted }: DeleteModalProps) {
 }
 
 export default function CategoriesPage() {
+  // Deleting a category is ADMIN-only at the API. The button is hidden
+  // rather than shown-and-403'd; creating and renaming stay open to staff.
+  const { user } = useUser();
+  const isAdmin  = user?.role === 'ADMIN';
+
   const queryClient = useQueryClient();
 
   const [query,     setQuery]     = useState('');
@@ -225,13 +231,15 @@ export default function CategoriesPage() {
             >
               ← Products
             </Link>
-            <Button
-              size="sm"
-              leadingIcon={<Plus size={14} />}
-              onClick={() => setShowNew(true)}
-            >
-              New category
-            </Button>
+            {isAdmin && (
+              <Button
+                size="sm"
+                leadingIcon={<Plus size={14} />}
+                onClick={() => setShowNew(true)}
+              >
+                New category
+              </Button>
+            )}
           </div>
         }
       />
@@ -285,9 +293,11 @@ export default function CategoriesPage() {
           <p className="text-sm text-ink-3">
             {query
               ? 'Try a different keyword.'
-              : 'Click "New category" to create one, or bulk-import products — categories are auto-created from the import.'}
+              : isAdmin
+                ? 'Click "New category" to create one, or bulk-import products — categories are auto-created from the import.'
+                : 'Categories are created by an administrator, or automatically when products are bulk-imported.'}
           </p>
-          {!query && (
+          {!query && isAdmin && (
             <Button size="sm" leadingIcon={<Plus size={13} />} onClick={() => setShowNew(true)}>
               New category
             </Button>
@@ -318,14 +328,16 @@ export default function CategoriesPage() {
                 </div>
               </div>
               {/* Delete button — visible on hover */}
-              <button
-                type="button"
-                onClick={() => setToDelete(cat as CategoryDTO & { product_count?: number })}
-                className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-md text-ink-4 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-500"
-                title="Delete category"
-              >
-                <Trash size={12} />
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setToDelete(cat as CategoryDTO & { product_count?: number })}
+                  className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-md text-ink-4 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-500"
+                  title="Delete category"
+                >
+                  <Trash size={12} />
+                </button>
+              )}
             </div>
           ))}
         </div>

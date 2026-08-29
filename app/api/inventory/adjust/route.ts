@@ -23,7 +23,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession(req);
     if (!session) return apiUnauthorized();
-    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
+    // Inventory is read-only for sales reps: they check stock while a
+    // pharmacist is on the phone, but receiving and adjusting are the
+    // warehouse's job. Reads (GET /api/inventory, /stats) stay open to STAFF.
+    if (session.role !== 'ADMIN') {
+      return apiForbidden('Only an administrator can adjust stock.');
+    }
 
     const body   = await req.json();
     const parsed = adjustSchema.safeParse(body);

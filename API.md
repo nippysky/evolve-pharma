@@ -235,34 +235,45 @@ translate it to their own route rather than opening a browser.
 
 ## Admin & staff
 
+**The catalogue is read-only for STAFF.** Every catalogue write — products,
+their images, categories and manufacturers — is ADMIN. Reps browse and search
+the catalogue but do not shape it.
+
 | Method | Path | Role |
 |---|---|---|
-| `GET` `POST` | `/api/products` | ADMIN, STAFF (write: ADMIN) |
-| `GET` `PATCH` `DELETE` | `/api/products/:sku` | ADMIN, STAFF (write: ADMIN) |
-| `GET` `POST` | `/api/products/:sku/images` | ADMIN |
-| `PATCH` `DELETE` | `/api/products/:sku/images/:imageId` | ADMIN |
-| `POST` | `/api/products/bulk-import` | ADMIN |
-| `POST` | `/api/products/quick-import` | ADMIN — 6 columns, lands as `DRAFT` |
-| `POST` | `/api/products/bulk-actions` | ADMIN |
-| `GET` `POST` | `/api/products/categories` · `/manufacturers` | ADMIN, STAFF |
-| `GET` `POST` | `/api/customers` | ADMIN, STAFF |
-| `GET` | `/api/customers/:id` | ADMIN, STAFF |
-| `PATCH` | `/api/customers/:id/review` | ADMIN, STAFF |
+| `GET` | `/api/products` | ADMIN, STAFF |
+| `POST` | `/api/products` | **ADMIN** |
+| `GET` | `/api/products/:sku` | ADMIN, STAFF |
+| `PATCH` `DELETE` | `/api/products/:sku` | **ADMIN** |
+| `GET` | `/api/products/:sku/images` | ADMIN, STAFF |
+| `POST` | `/api/products/:sku/images` | **ADMIN** |
+| `PATCH` `DELETE` | `/api/products/:sku/images/:imageId` | **ADMIN** |
+| `POST` | `/api/products/bulk-import` | **ADMIN** |
+| `POST` | `/api/products/quick-import` | **ADMIN** — 6 columns, lands as `DRAFT` |
+| `POST` | `/api/products/bulk-actions` | **ADMIN** |
+| `GET` | `/api/products/categories` · `/manufacturers` | any signed-in session |
+| `POST` | `/api/products/categories` · `/manufacturers` | **ADMIN** |
+| `PATCH` `DELETE` | `/api/products/categories/:id` · `/manufacturers/:id` | **ADMIN** |
+| `GET` `POST` | `/api/customers` | ADMIN, STAFF — **the whole book**. Filter one rep's accounts with `?assigned_staff_id=` |
+| `GET` | `/api/customers/:id` | ADMIN, STAFF — any customer. Response carries `assigned_staff` |
+| `PATCH` | `/api/customers/:id/review` | ADMIN, STAFF — **STAFF: `PENDING_REVIEW` only**, else 422. ADMIN may also re-review `APPROVED`/`REJECTED` |
 | `PATCH` | `/api/customers/:id/assign-staff` | ADMIN — body key is **`staff_user_id`** |
-| `GET` | `/api/customers/:id/pcn-url` | ADMIN, STAFF — see note |
+| `GET` | `/api/customers/:id/pcn-url` | ADMIN, STAFF — any customer. See note |
 | `GET` | `/api/orders` | ADMIN, STAFF |
 | `PATCH` | `/api/orders/:id/status` | ADMIN, STAFF |
 | `POST` | `/api/orders/on-behalf` | ADMIN, STAFF |
 | `PATCH` | `/api/orders/:id/confirm-payment` | ADMIN, STAFF — **on-behalf orders only** |
-| `GET` `PATCH` | `/api/deliveries` · `/api/deliveries/:id` | ADMIN, STAFF, DRIVER |
+| `GET` `PATCH` | `/api/deliveries` · `/api/deliveries/:id` | ADMIN, STAFF, DRIVER — **`driver_id` is ADMIN-only** |
 | `GET` | `/api/inventory` · `/inventory/stats` | ADMIN, STAFF |
-| `POST` | `/api/inventory/receive` · `/bulk-receive` · `/adjust` | ADMIN, STAFF |
+| `POST` | `/api/inventory/receive` · `/bulk-receive` · `/adjust` | **ADMIN** |
+| `PATCH` | `/api/inventory/batches/:id` | **ADMIN** |
 | `GET` `POST` | `/api/staff` | ADMIN |
 | `PATCH` `DELETE` | `/api/staff/:id` | ADMIN |
 | `POST` | `/api/staff/:id/resend-invite` | ADMIN |
 | `GET` | `/api/reports/summary` | ADMIN, STAFF |
 | `GET` | `/api/search` | ADMIN, STAFF |
 | `GET` `PATCH` | `/api/admin/settings` | ADMIN |
+| `GET` | `/api/settings/app` | any signed-in role — contact details for the apps |
 | `GET` | `/api/admin/audit-logs` · `/login-history` | ADMIN |
 
 > **`confirm-payment` is deliberately narrow.**

@@ -6,6 +6,7 @@ import {
   apiError,
   apiUnauthorized,
   apiForbidden,
+  apiNotFound,
   apiInternalError,
   handlePrismaError,
 } from '@/lib/api/response';
@@ -43,6 +44,13 @@ export async function GET(
         reviewed_by: {
           select: { id: true, first_name: true, last_name: true, email: true },
         },
+        // The sales rep who owns this account. Read through the relation — this
+        // used to be a raw SELECT plus a second lookup, on the grounds that the
+        // column wasn't in the generated client yet. It is: `assigned_staff` is
+        // declared in schema.prisma, so one include replaces two queries.
+        assigned_staff: {
+          select: { id: true, first_name: true, last_name: true, email: true },
+        },
         _count: {
           select: { orders: true },
         },
@@ -50,20 +58,6 @@ export async function GET(
     });
 
     if (!c) return apiError('Customer not found.', 404);
-
-    // Fetch assigned_staff_id via raw SQL (new column not in Prisma types yet)
-    const rawRows = await db.$queryRaw<Array<{ assigned_staff_id: number | null }>>`
-      SELECT assigned_staff_id FROM customers WHERE id = ${id}
-    `;
-    const assignedStaffId = rawRows[0]?.assigned_staff_id ?? null;
-    let assignedStaff: { id: number; first_name: string; last_name: string; email: string } | null = null;
-    if (assignedStaffId) {
-      const u = await db.user.findUnique({
-        where:  { id: assignedStaffId },
-        select: { id: true, first_name: true, last_name: true, email: true },
-      });
-      if (u) assignedStaff = u;
-    }
 
     return apiSuccess({
       // Customer record
@@ -83,7 +77,7 @@ export async function GET(
       created_at:          c.created_at,
       updated_at:          c.updated_at,
       // Assigned staff
-      assigned_staff:      assignedStaff,
+      assigned_staff:      c.assigned_staff,
       // Flattened user
       user: {
         id:                c.user.id,

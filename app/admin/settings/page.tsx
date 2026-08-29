@@ -35,6 +35,8 @@ export default async function SettingsPage() {
     company_name:        saved.company_name        ?? SITE.legalName,
     company_email:       saved.company_email       ?? SITE.email,
     company_phone:       saved.company_phone       ?? SITE.phone,
+    // Falls back to the number that used to be hardcoded in the driver app.
+    dispatch_phone:      saved.dispatch_phone      ?? '+2348055136726',
     hq_address:          saved.hq_address          ?? SITE.address,
     currency:            saved.currency            ?? 'NGN',
     timezone:            saved.timezone            ?? 'Africa/Lagos',

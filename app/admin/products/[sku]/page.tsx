@@ -15,7 +15,8 @@ import {
 import { useToast }             from '@/contexts/ToastContext';
 import { useUser }              from '@/contexts/UserContext';
 import { useProductCategories, useProductManufacturers } from '@/hooks/admin/useAdminProducts';
-import { cn }                   from '@/lib/utils';
+import { Badge }               from '@/components/ui/Primitives';
+import { cn, formatNaira, formatDate } from '@/lib/utils';
 import type { ProductDTO, ProductImageDTO } from '@/lib/api/types';
 
 interface FormErrors { [field: string]: string }
@@ -264,6 +265,182 @@ function EditSkeleton() {
   );
 }
 
+/* ─── Read-only view (sales reps) ──────────────────────────────────────────── */
+
+const STATUS_TONE: Record<string, 'success' | 'warning' | 'neutral'> = {
+  ACTIVE: 'success', DRAFT: 'warning', DISCONTINUED: 'neutral',
+};
+
+/** One label/value line. Renders "Not set" rather than an empty gap. */
+function Fact({ label, value }: { label: string; value: string | number | null | undefined }) {
+  const shown = value === null || value === undefined || value === '' ? null : String(value);
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-3 last:border-0">
+      <span className="text-sm text-ink-3">{label}</span>
+      <span className={cn('text-sm text-right', shown ? 'font-medium text-ink' : 'text-ink-4')}>
+        {shown ?? 'Not set'}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * What a rep sees at this URL.
+ *
+ * Reps used to be redirected away, which left them with nothing but the list
+ * row — no pack size, no reorder level, nothing to answer "what is this and
+ * have we got it?" while a pharmacy is on the phone. This is that answer, and
+ * nothing more: there is no form, no upload control and no save.
+ *
+ * Cost price is deliberately absent. Beside the selling price it would hand
+ * every rep the margin on the whole catalogue.
+ */
+function ProductReadOnlyView({ product }: { product: ProductDTO }) {
+  const selling  = parseFloat(product.selling_price);
+  const finalP   = product.final_price != null ? parseFloat(product.final_price) : null;
+  const price    = finalP ?? selling;
+  const unpriced = !Number.isFinite(price) || price <= 0;
+  const discounted = finalP != null && Number.isFinite(selling) && finalP < selling;
+
+  const primary = product.images?.find(i => i.is_primary) ?? product.images?.[0] ?? null;
+
+  return (
+    <>
+      <Link
+        href="/admin/products"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-3 transition-colors hover:text-ink"
+      >
+        <ArrowLeft size={14} /> Back to products
+      </Link>
+
+      <PageHead title={product.brand_name} subtitle={product.sku} />
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-[320px_1fr] lg:items-start">
+        {/* ── Images ── */}
+        <div className="space-y-3">
+          <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-line bg-white">
+            {primary ? (
+              <Image
+                src={primary.url}
+                alt={product.brand_name}
+                fill
+                sizes="320px"
+                className="object-contain p-6"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-ink-4">
+                <Box size={30} />
+                <span className="text-xs">No image uploaded</span>
+              </div>
+            )}
+          </div>
+
+          {product.images && product.images.length > 1 && (
+            <div className="grid grid-cols-4 gap-2">
+              {product.images.slice(0, 8).map(img => (
+                <div
+                  key={img.id}
+                  className="relative aspect-square overflow-hidden rounded-lg border border-line bg-white"
+                >
+                  <Image
+                    src={img.url}
+                    alt=""
+                    fill
+                    sizes="80px"
+                    className="object-contain p-1.5"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Detail ── */}
+        <div className="space-y-5">
+          <div className="rounded-xl border border-line bg-white p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={STATUS_TONE[product.status] ?? 'neutral'}>
+                {product.status.toLowerCase()}
+              </Badge>
+              {unpriced && <Badge tone="danger" noDot>No price set</Badge>}
+              {product.category?.name && (
+                <Badge tone="neutral" noDot>{product.category.name}</Badge>
+              )}
+            </div>
+
+            <h2 className="mt-3 font-display text-xl font-semibold text-ink">
+              {product.brand_name}
+            </h2>
+            {product.generic_name && (
+              <p className="mt-0.5 text-sm text-ink-3">
+                {product.generic_name}
+                {product.product_strength ? ` · ${product.product_strength}` : ''}
+              </p>
+            )}
+
+            <div className="mt-4 flex items-baseline gap-2.5">
+              <span className={cn('num font-display text-2xl font-semibold', unpriced ? 'text-ink-4' : 'text-ink')}>
+                {unpriced ? 'No price' : formatNaira(price)}
+              </span>
+              {discounted && (
+                <span className="num text-sm text-ink-4 line-through">
+                  {formatNaira(selling)}
+                </span>
+              )}
+              {product.discount_percentage && parseFloat(product.discount_percentage) > 0 && (
+                <Badge tone="success" noDot>{parseFloat(product.discount_percentage)}% off</Badge>
+              )}
+            </div>
+
+            {unpriced && (
+              <div className="mt-4 flex gap-2.5 rounded-lg bg-warning-soft px-4 py-3">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">This product can&rsquo;t be sold.</span>{' '}
+                  It has no selling price, so it can&rsquo;t be activated or added to
+                  an order. Ask an admin to set one.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Stock */}
+          <div className="overflow-hidden rounded-xl border border-line bg-white">
+            <div className="border-b border-line px-5 py-3">
+              <h3 className="text-sm font-semibold text-ink">Stock</h3>
+            </div>
+            <Fact label="On hand" value={`${product.total_stock.toLocaleString()} packs`} />
+            <Fact label="Reorder level" value={`${product.minimum_stock_level.toLocaleString()} packs`} />
+            <Fact label="Reorder quantity" value={`${product.reorder_quantity.toLocaleString()} packs`} />
+          </div>
+
+          {/* Packaging */}
+          <div className="overflow-hidden rounded-xl border border-line bg-white">
+            <div className="border-b border-line px-5 py-3">
+              <h3 className="text-sm font-semibold text-ink">Packaging &amp; ordering</h3>
+            </div>
+            <Fact label="Pack size" value={product.pack_size} />
+            <Fact
+              label="Per carton"
+              value={product.quantity_per_carton ? `${product.quantity_per_carton} packs` : null}
+            />
+            <Fact label="Minimum order" value={`${product.minimum_order} packs`} />
+            <Fact label="Sold by the unit" value={product.allow_unit_sale ? 'Yes' : 'No'} />
+            <Fact label="Manufacturer" value={product.manufacturer?.name} />
+            <Fact label="Last updated" value={formatDate(product.updated_at)} />
+          </div>
+
+          <p className="flex items-center gap-2 px-1 text-xs text-ink-4">
+            <CheckCircle size={13} />
+            Products are managed by an administrator. You have read access so you
+            can quote prices and stock.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function ProductEditPage({
   params,
 }: {
@@ -275,14 +452,13 @@ export default function ProductEditPage({
   const queryClient = useQueryClient();
   const { user }    = useUser();
 
-  // Guard: only ADMIN may reach this page.
-  // The redirect runs in an effect and the early return happens *after* every
-  // hook has been called — returning early from here would render fewer hooks
-  // than the previous pass and make React throw.
-  const isForbidden = !!user && user.role !== 'ADMIN';
-  useEffect(() => {
-    if (isForbidden) router.replace('/admin/products');
-  }, [isForbidden, router]);
+  // Reps reach this page too, but get the read-only view further down rather
+  // than the form. They used to be redirected to the list, which left them
+  // unable to answer basic questions about a product while on a call.
+  //
+  // `user` is undefined on the first pass, so this reads false until the
+  // session resolves. That only ever errs towards the stricter view.
+  const isReadOnly = !!user && user.role !== 'ADMIN';
 
   // Remote product state
   const [product,        setProduct]        = useState<ProductDTO | null>(null);
@@ -471,10 +647,6 @@ export default function ProductEditPage({
     }
   }
 
-  // Every hook has run by this point, so bailing out here is safe.
-  // The effect above handles the actual redirect.
-  if (isForbidden) return null;
-
   // ── Render: loading ──────────────────────────────────────────────────────
 
   if (loading) return <EditSkeleton />;
@@ -495,6 +667,10 @@ export default function ProductEditPage({
       </div>
     );
   }
+
+  // Every hook has run by this point, so returning a different tree here is
+  // safe — React only counts hooks, and none live below this line.
+  if (isReadOnly) return <ProductReadOnlyView product={product} />;
 
   const maxNewSlots = MAX_IMAGES - existingImages.length;
 

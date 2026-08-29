@@ -23,7 +23,12 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
     const session = await getSession(req);
     if (!session) return apiUnauthorized();
-    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
+    // Catalogue writes are ADMIN-only (client decision, Aug 2026). Reps read
+    // the catalogue all day while a pharmacy is on the phone, but they no
+    // longer shape it. Every GET on this route stays open to STAFF.
+    if (session.role !== 'ADMIN') {
+      return apiForbidden('Only an administrator can rename a category.');
+    }
 
     const { id } = await params;
     const catId  = parseInt(id, 10);

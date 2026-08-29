@@ -1166,7 +1166,7 @@ function CustomerTable({
               <Th>Stage</Th>
               <Th>Review note</Th>
               <Th>Registered</Th>
-              {isAdmin && <Th>Assigned rep</Th>}
+              <Th>Assigned rep</Th>
               <Th align="right">Actions</Th>
             </tr>
           </Thead>
@@ -1214,11 +1214,14 @@ function CustomerTable({
                 {/* Date */}
                 <Td muted>{formatDate(c.created_at)}</Td>
 
-                {/* Assigned rep — admin only, mirrors the driver-assign control
-                    on deliveries so the two flows feel the same. */}
-                {isAdmin && (
-                  <Td>
-                    {c.assigned_staff ? (
+                {/* Assigned rep.
+                    Visible to everyone — reps cover for each other, and
+                    knowing whose account this is comes up constantly. Only an
+                    admin can *change* it, so for staff this is plain text
+                    rather than a button that would 403. */}
+                <Td>
+                  {c.assigned_staff ? (
+                    isAdmin ? (
                       <button
                         type="button"
                         onClick={() => onAssign(c)}
@@ -1231,17 +1234,26 @@ function CustomerTable({
                         </span>
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => onAssign(c)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100"
-                      >
-                        <User size={11} />
-                        Assign rep
-                      </button>
-                    )}
-                  </Td>
-                )}
+                      <span className="inline-flex max-w-[11rem] items-center gap-1.5 text-xs text-ink-2">
+                        <User size={11} className="shrink-0" />
+                        <span className="truncate">
+                          {c.assigned_staff.first_name} {c.assigned_staff.last_name}
+                        </span>
+                      </span>
+                    )
+                  ) : isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => onAssign(c)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-100"
+                    >
+                      <User size={11} />
+                      Assign rep
+                    </button>
+                  ) : (
+                    <span className="text-xs text-ink-4">Unassigned</span>
+                  )}
+                </Td>
 
                 {/* Actions */}
                 <Td align="right">

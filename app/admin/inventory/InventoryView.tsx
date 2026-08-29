@@ -840,7 +840,7 @@ function formatExpiry(dateStr: string | null): { label: string; urgent: boolean 
   return { label, urgent: days <= 30 };
 }
 
-export function InventoryView() {
+export function InventoryView({ isAdmin = false }: { isAdmin?: boolean }) {
   const [tab,         setTab]         = useState<Tab>('all');
   const [page,        setPage]        = useState(1);
   const [receive,     setReceive]     = useState(false);
@@ -888,14 +888,19 @@ export function InventoryView() {
         title="Inventory"
         subtitle="Stock levels and batch expiry across the catalog."
         actions={
-          <>
-            <Button size="sm" variant="secondary" leadingIcon={<Upload size={14} />} onClick={() => setBulk(true)}>
-              Bulk receive
-            </Button>
-            <Button size="sm" leadingIcon={<Plus size={14} />} onClick={() => setReceive(true)}>
-              Receive stock
-            </Button>
-          </>
+          // Receiving is admin-only at the API. Hidden rather than disabled: a
+          // greyed-out button tells a rep the feature exists and they can't
+          // have it, which is worse than it simply not being their screen.
+          isAdmin ? (
+            <>
+              <Button size="sm" variant="secondary" leadingIcon={<Upload size={14} />} onClick={() => setBulk(true)}>
+                Bulk receive
+              </Button>
+              <Button size="sm" leadingIcon={<Plus size={14} />} onClick={() => setReceive(true)}>
+                Receive stock
+              </Button>
+            </>
+          ) : undefined
         }
       />
 
@@ -962,7 +967,9 @@ export function InventoryView() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line-subtle bg-bg-subtle text-left">
-                  {['Product', 'Batch', 'Qty', 'Cost price', 'Expiry', 'Actions'].map(h => (
+                  {/* Cost price is admin-only: beside the selling price it hands
+                      a rep the margin on everything we stock. */}
+                  {['Product', 'Batch', 'Qty', ...(isAdmin ? ['Cost price'] : []), 'Expiry', ...(isAdmin ? ['Actions'] : [])].map(h => (
                     <th key={h} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-ink-3">{h}</th>
                   ))}
                 </tr>
@@ -994,13 +1001,16 @@ export function InventoryView() {
                           {b.is_low_stock && <span className="ml-1 text-[10px] font-bold text-danger">LOW</span>}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 num text-ink-2">{formatNaira(b.cost_price)}</td>
+                      {isAdmin && (
+                        <td className="px-5 py-3.5 num text-ink-2">{formatNaira(b.cost_price)}</td>
+                      )}
                       <td className="px-5 py-3.5">
                         <span className={cn('text-sm', exp.urgent ? 'font-medium text-amber-600' : 'text-ink-2')}>
                           {exp.label}
                           {exp.urgent && b.expiry_date && <span className="ml-1.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">SOON</span>}
                         </span>
                       </td>
+                      {isAdmin && (
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1.5">
                           <button
@@ -1021,6 +1031,7 @@ export function InventoryView() {
                           </button>
                         </div>
                       </td>
+                      )}
                     </tr>
                   );
                 })}

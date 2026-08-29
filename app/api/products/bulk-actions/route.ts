@@ -22,7 +22,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession(req);
     if (!session) return apiUnauthorized();
-    if (!['ADMIN', 'STAFF'].includes(session.role)) return apiForbidden();
+    // Catalogue writes are ADMIN-only (client decision, Aug 2026). Reps read
+    // the catalogue all day while a pharmacy is on the phone, but they no
+    // longer shape it. Every GET on this route stays open to STAFF.
+    if (session.role !== 'ADMIN') {
+      return apiForbidden('Only an administrator can bulk-edit products.');
+    }
 
     let body: unknown;
     try { body = await req.json(); }
@@ -38,8 +43,9 @@ export async function POST(req: NextRequest) {
 
     const { action, skus } = parsed.data;
 
-    // ── delete is ADMIN-only ─────────────────────────────────────────────────
-    if (action === 'delete' && session.role !== 'ADMIN') return apiForbidden();
+    // `delete` used to carry an extra ADMIN check here, back when the rest of
+    // this route was open to STAFF. The guard at the top now covers every
+    // action, so singling delete out would only be misleading.
 
     // ── Normalise SKUs (uppercase, unique) ───────────────────────────────────
     const normalised = [...new Set(skus.map(s => s.toUpperCase()))];

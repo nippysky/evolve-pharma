@@ -112,3 +112,51 @@ export async function getStaffOrderScope(): Promise<StaffOrderScope> {
     return 'ALL';
   }
 }
+
+/**
+ * Contact details the apps show to their users.
+ *
+ * These were hardcoded in the mobile bundle — the dispatch number on the
+ * driver's Account screen, the support email on both profile screens. Changing
+ * a phone number should not require an app release, so they live here and the
+ * apps read them at runtime.
+ *
+ * The fallbacks are the values that were previously compiled in, so an empty
+ * settings table behaves exactly as before rather than showing blanks.
+ */
+export interface AppContactSettings {
+  /** Number the driver app dials from "Call dispatch" — the warehouse. */
+  dispatchPhone: string;
+  /** General line a customer calls for help. Distinct from dispatch. */
+  supportPhone:  string;
+  /** Address shown for account-change requests. */
+  supportEmail:  string;
+  companyName:   string;
+}
+
+export async function getAppContactSettings(): Promise<AppContactSettings> {
+  const fallback: AppContactSettings = {
+    dispatchPhone: '+2348055136726',
+    supportPhone:  '+2348055136726',
+    supportEmail:  'info@envolvepharm.com.ng',
+    companyName:   'Envolve Pharmaceuticals',
+  };
+
+  try {
+    const rows = await db.$queryRaw<Array<{ key: string; value: string }>>`
+      SELECT \`key\`, \`value\` FROM app_settings
+      WHERE \`key\` IN ('dispatch_phone', 'company_phone', 'company_email', 'company_name')
+    `;
+    const map = new Map(rows.map(r => [r.key, r.value?.trim()]));
+
+    return {
+      dispatchPhone: map.get('dispatch_phone') || fallback.dispatchPhone,
+      supportPhone:  map.get('company_phone')   || fallback.supportPhone,
+      supportEmail:  map.get('company_email')   || fallback.supportEmail,
+      companyName:   map.get('company_name')    || fallback.companyName,
+    };
+  } catch {
+    // Settings table missing on a fresh database — the apps still need a number.
+    return fallback;
+  }
+}

@@ -768,7 +768,7 @@ export default function AdminDeliveriesClient() {
                             {d.driver.first_name} {d.driver.last_name}
                           </span>
                         </div>
-                      ) : (
+                      ) : isAdmin ? (
                         <button
                           type="button"
                           onClick={() => setAssigning(d)}
@@ -777,6 +777,14 @@ export default function AdminDeliveriesClient() {
                           <User size={11} />
                           Assign driver
                         </button>
+                      ) : (
+                        // Assignment is admin-only. Reps saw a button here that
+                        // opened nothing — the modal below is already gated on
+                        // isAdmin — so show the state instead of a dead control.
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-2.5 py-1 text-xs font-medium text-ink-3">
+                          <User size={11} />
+                          Unassigned
+                        </span>
                       )}
                     </td>
 

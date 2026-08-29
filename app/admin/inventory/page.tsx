@@ -11,5 +11,7 @@ export default async function ConsoleInventoryPage() {
   if (!session) redirect('/staff/sign-in');
   if (!['ADMIN', 'STAFF'].includes(session.role)) redirect('/admin/overview');
 
-  return <InventoryView />;
+  // Reps read inventory but do not change it — receiving, adjusting and batch
+  // edits are all admin-only at the API, so the buttons are hidden for staff.
+  return <InventoryView isAdmin={session.role === 'ADMIN'} />;
 }

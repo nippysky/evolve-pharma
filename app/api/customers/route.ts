@@ -37,6 +37,9 @@ export async function GET(req: NextRequest) {
           ],
         } : {}),
       },
+      // Anyone may filter by rep via ?assigned_staff_id. Reps deliberately see
+      // the whole book — cover and hand-offs are routine — so ownership is
+      // surfaced in the response rather than used to restrict the list.
       ...(Number.isFinite(assignedTo) ? { assigned_staff_id: assignedTo } : {}),
       ...(statusFilter && validStatuses.includes(statusFilter)
         ? { status: statusFilter as 'REGISTERED' | 'OTP_CONFIRMED' | 'PCN_CERT_UPLOADED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' }

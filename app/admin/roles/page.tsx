@@ -23,8 +23,10 @@ const ALL_PERMISSIONS: StaffPermissionKey[] = [
 const PERMISSION_LABELS: Record<StaffPermissionKey, { label: string; description: string }> = {
   onboard_customers: { label: 'Onboard customers',  description: 'Create, review, and approve new pharmacy accounts' },
   manage_products:   { label: 'Manage products',    description: 'Add, edit, archive products and set pricing' },
-  manage_inventory:  { label: 'Manage inventory',   description: 'Receive stock, adjust batches, view expiry alerts' },
-  assign_drivers:    { label: 'Assign drivers',     description: 'Assign drivers to deliveries and track shipments' },
+  // Receiving, adjusting and driver assignment became admin-only actions.
+  // These two now grant visibility, not the write they are named after.
+  manage_inventory:  { label: 'View inventory',     description: 'See batches, stock levels and expiry alerts' },
+  assign_drivers:    { label: 'View deliveries',    description: 'Track shipments and move them through their statuses' },
   view_reports:      { label: 'View reports',       description: 'Access the reports page and business analytics' },
 };
 

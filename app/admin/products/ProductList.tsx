@@ -5,6 +5,7 @@ import {
 } from 'react';
 import { createPortal }    from 'react-dom';
 import Image               from 'next/image';
+import Link                from 'next/link';
 import { useRouter }       from 'next/navigation';
 import { useQueryClient }  from '@tanstack/react-query';
 import {
@@ -861,11 +862,21 @@ export function ProductsList({ isAdmin = false }: { isAdmin?: boolean }) {
                         <ImageStack images={p.images ?? []} alt={p.brand_name} />
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-ink">{p.brand_name}</p>
+                        {/* The name is the way into the detail page. Admins get
+                            the editor, reps get the read-only view — same URL.
+                            Before this the only route in was the Edit item on
+                            the admin-only action menu, so a rep could see a
+                            product in the list and nowhere else. */}
+                        <Link
+                          href={`/admin/products/${encodeURIComponent(p.sku.toLowerCase())}`}
+                          className="group/name block min-w-0"
+                        >
+                          <p className="truncate font-medium text-ink group-hover/name:text-brand-600 group-hover/name:underline">
+                            {p.brand_name}
+                          </p>
                           <p className="truncate text-xs text-ink-3">{p.generic_name}</p>
                           {p.product_strength && <p className="text-[10px] text-ink-4">{p.product_strength}</p>}
-                        </div>
+                        </Link>
                       </td>
                       <td className="px-4 py-3.5 font-mono text-xs text-ink-2">{p.sku}</td>
                       <td className="px-4 py-3.5 text-ink-2">{p.category?.name ?? '—'}</td>

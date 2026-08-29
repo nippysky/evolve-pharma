@@ -44,6 +44,10 @@ const ALLOWED_KEYS = new Set([
   'referral_redemption_enabled', 'referral_min_redemption',
   // Who a STAFF member may place orders on behalf of: 'ALL' | 'ASSIGNED'
   'staff_order_scope',
+  // Number the driver app dials from "Call dispatch". Was hardcoded in the
+  // mobile bundle, so changing it meant a release; now the office can change
+  // it here and the app picks it up on next launch.
+  'dispatch_phone',
 ]);
 
 export async function GET(req: NextRequest) {

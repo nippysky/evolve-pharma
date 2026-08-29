@@ -2792,6 +2792,26 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Get app settings (contact details)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/settings/app",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"settings",
+								"app"
+							]
+						},
+						"description": "Contact details the mobile apps display: dispatch phone (driver app), support phone and email, company name.\n\nReadable by ANY signed-in role — unlike /api/admin/settings, which is ADMIN-only and also exposes VAT rates, referral economics and staff scope policy. Drivers and reps need these three values and nothing else.\n\nValues come from app_settings; falls back to the numbers that used to be hardcoded in the mobile bundle."
+					},
+					"response": []
 				}
 			]
 		},

@@ -7,6 +7,7 @@ import { Button }                from '@/components/ui/Button';
 import { Field, Input }          from '@/components/ui/Field';
 import { Search, AlertTriangle, RotateCw, Building, Plus, Trash, Edit, X } from '@/components/icons';
 import { useToast }              from '@/contexts/ToastContext';
+import { useUser }               from '@/contexts/UserContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -289,6 +290,11 @@ function DeleteModal({ manufacturer, onClose, onDeleted }: DeleteModalProps) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ManufacturersPage() {
+  // Deleting a manufacturer is ADMIN-only at the API. The button is hidden
+  // rather than shown-and-403'd; creating and renaming stay open to staff.
+  const { user } = useUser();
+  const isAdmin  = user?.role === 'ADMIN';
+
   const queryClient = useQueryClient();
 
   const [query,    setQuery]    = useState('');
@@ -341,9 +347,11 @@ export default function ManufacturersPage() {
             >
               ← Products
             </Link>
-            <Button size="sm" leadingIcon={<Plus size={14} />} onClick={() => setShowNew(true)}>
-              New manufacturer
-            </Button>
+            {isAdmin && (
+              <Button size="sm" leadingIcon={<Plus size={14} />} onClick={() => setShowNew(true)}>
+                New manufacturer
+              </Button>
+            )}
           </div>
         }
       />
@@ -397,9 +405,11 @@ export default function ManufacturersPage() {
           <p className="text-sm text-ink-3">
             {query
               ? 'Try a different keyword.'
-              : 'Click "New manufacturer" to add one, or bulk-import products — manufacturers are auto-created from the import.'}
+              : isAdmin
+                ? 'Click "New manufacturer" to add one, or bulk-import products — manufacturers are auto-created from the import.'
+                : 'Manufacturers are added by an administrator, or automatically when products are bulk-imported.'}
           </p>
-          {!query && (
+          {!query && isAdmin && (
             <Button size="sm" leadingIcon={<Plus size={13} />} onClick={() => setShowNew(true)}>
               New manufacturer
             </Button>
@@ -430,22 +440,26 @@ export default function ManufacturersPage() {
 
               {/* Action buttons — visible on hover */}
               <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  type="button"
-                  onClick={() => setToRename(m)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-ink-4 hover:bg-brand-50 hover:text-brand-600 transition-colors"
-                  title="Rename"
-                >
-                  <Edit size={12} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setToDelete(m)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-ink-4 hover:bg-red-50 hover:text-red-500 transition-colors"
-                  title="Delete"
-                >
-                  <Trash size={12} />
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setToRename(m)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-ink-4 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+                    title="Rename"
+                  >
+                    <Edit size={12} />
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setToDelete(m)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-ink-4 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash size={12} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
